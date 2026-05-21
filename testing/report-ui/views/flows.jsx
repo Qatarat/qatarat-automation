@@ -218,19 +218,38 @@ const FlowDetail = ({ flow, onClose }) => {
         <div className="card" style={{ marginTop: 14 }}>
           <div className="card-head"><h3>Screen captures</h3><span className="sub">{flow.screens} screenshots</span></div>
           <div className="card-body">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 10 }}>
-              {Array.from({ length: flow.screens }).map((_, i) => (
-                <div key={i} style={{
-                  aspectRatio: "9/19", borderRadius: 8, border: "1px solid var(--border)",
-                  background: "repeating-linear-gradient(135deg, var(--surface-2) 0 6px, var(--surface) 6px 12px)",
-                  position: "relative", overflow: "hidden",
-                }}>
-                  <div style={{ position: "absolute", inset: "auto 0 0 0", padding: "5px 7px", background: "linear-gradient(180deg, transparent, rgba(0,0,0,.6))", fontFamily: "Geist Mono", fontSize: 10, color: "var(--text-2)" }}>
-                    {(i + 1).toString().padStart(2, "0")}.png
+            {flow.screenshots && flow.screenshots.length > 0 ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 10 }}>
+                {flow.screenshots.map((src, i) => {
+                  const label = src.split("/").pop();
+                  return (
+                    <a key={i} href={src} target="_blank" rel="noopener noreferrer"
+                       style={{ textDecoration: "none", display: "block", aspectRatio: "9/19", borderRadius: 8, border: "1px solid var(--border)", position: "relative", overflow: "hidden", background: "var(--surface-2)" }}>
+                      <img src={src} alt={label} loading="lazy"
+                           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                           onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                      <div style={{ position: "absolute", inset: "auto 0 0 0", padding: "5px 7px", background: "linear-gradient(180deg, transparent, rgba(0,0,0,.75))", fontFamily: "Geist Mono", fontSize: 10, color: "var(--text-2)" }}>
+                        {label}
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "28px 16px", color: "var(--text-3)", textAlign: "center" }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border)", display: "grid", placeItems: "center" }}>
+                  <Icon name="phone" size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", marginBottom: 4 }}>No screenshots this run</div>
+                  <div style={{ fontSize: 12, fontFamily: "Geist Mono" }}>
+                    {flow.status === "idle"
+                      ? "Flow has not been executed yet — trigger a CI run to capture screens."
+                      : "Screenshots upload as CI artifacts. Re-trigger Publish Report to include them."}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

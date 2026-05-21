@@ -13,17 +13,41 @@ const OverviewView = () => {
     return c;
   }, [allTests]);
 
+  const ranCount = allTests.filter(t => t.status !== "idle").length;
   const total = counts.pass + counts.fail + counts.flaky;
-  const passRate = (counts.pass / total) * 100;
+  const passRate = total > 0 ? (counts.pass / total) * 100 : 0;
+  const neverRan = ranCount === 0;
 
-  const durationSeries = HISTORY.map(h => h.duration);
-  const passSeries = HISTORY.map(h => (h.pass / h.total) * 100);
+  // Only build chart series from days that actually have data
+  const historyWithData = HISTORY.filter(h => h.total > 0);
+  const durationSeries = historyWithData.length > 0 ? historyWithData.map(h => h.duration) : [0];
+  const passSeries = historyWithData.length > 0
+    ? historyWithData.map(h => h.total > 0 ? (h.pass / h.total) * 100 : 0)
+    : [0];
 
-  const failingFlows = MAESTRO_FLOWS.filter(f => f.status !== "pass");
-  const failingAppium = APPIUM_TESTS.flatMap(f => f.tests.filter(t => t.status !== "pass").map(t => ({ ...t, file: f.file })));
+  const failingFlows = MAESTRO_FLOWS.filter(f => f.status === "fail" || f.status === "flaky");
+  const failingAppium = APPIUM_TESTS.flatMap(f => f.tests.filter(t => t.status === "fail" || t.status === "flaky").map(t => ({ ...t, file: f.file })));
 
   return (
     <div className="grid" style={{ gap: 20 }}>
+      {/* Not-run-yet banner */}
+      {neverRan && (
+        <div style={{
+          padding: "14px 18px", borderRadius: 12,
+          background: "var(--surface)", border: "1px solid var(--border)",
+          display: "flex", alignItems: "center", gap: 14,
+        }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "var(--accent-2)", color: "var(--accent)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="bolt" size={18} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 500, marginBottom: 3 }}>No test runs yet</div>
+            <div style={{ fontSize: 13, color: "var(--text-2)" }}>
+              Trigger a workflow from the <a href="../../actions" target="_blank" rel="noopener" style={{ color: "var(--accent)" }}>GitHub Actions tab</a> — results will appear here after the first run completes and the report is published.
+            </div>
+          </div>
+        </div>
+      )}
       {/* Hero header */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "end", marginBottom: 4 }}>
         <div>
@@ -47,10 +71,10 @@ const OverviewView = () => {
 
       {/* Stat row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-        <Stat label="Pass Rate" value={passRate} decimals={1} suffix="%" trend={+1.2} color="var(--pass)" sub={`${counts.pass} of ${total} tests`} />
-        <Stat label="Total Tests" value={total} sub={`${MAESTRO_FLOWS.length} flows · ${APPIUM_TESTS.reduce((s, f) => s + f.tests.length, 0)} deep tests`} />
-        <Stat label="Run Duration" value={RUN_META.duration / 60} decimals={1} suffix="m" trend={-3.4} sub="vs. 30-day average" />
-        <Stat label="Coverage" value={87.4} decimals={1} suffix="%" trend={+0.6} sub="across 18 modules" />
+        <Stat label="Pass Rate" value={passRate} decimals={1} suffix="%" color={neverRan ? "var(--text-3)" : "var(--pass)"} sub={neverRan ? "no runs yet" : `${counts.pass} of ${total} tests`} />
+        <Stat label="Total Tests" value={MAESTRO_FLOWS.length + APPIUM_TESTS.reduce((s, f) => s + f.tests.length, 0)} sub={`${MAESTRO_FLOWS.length} flows · ${APPIUM_TESTS.reduce((s, f) => s + f.tests.length, 0)} deep tests`} />
+        <Stat label="Run Duration" value={RUN_META.duration / 60} decimals={1} suffix="m" sub={neverRan ? "no runs yet" : "this run"} />
+        <Stat label="Executed" value={ranCount} sub={`of ${MAESTRO_FLOWS.length + APPIUM_TESTS.reduce((s, f) => s + f.tests.length, 0)} tests`} />
       </div>
 
       {/* Donut + History */}
@@ -60,13 +84,16 @@ const OverviewView = () => {
           <div className="card-body" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, paddingTop: 22 }}>
             <Donut
               size={160} thickness={16}
-              centerLabel={`${passRate.toFixed(0)}%`}
-              centerSub="pass rate"
-              segments={[
-                { value: counts.pass, color: "oklch(74% 0.18 155)", label: "Passed" },
-                { value: counts.flaky, color: "oklch(80% 0.16 75)", label: "Flaky" },
-                { value: counts.fail, color: "oklch(70% 0.22 18)", label: "Failed" },
-              ]}
+              centerLabel={neverRan ? "—" : `${passRate.toFixed(0)}%`}
+              centerSub={neverRan ? "no runs" : "pass rate"}
+              segments={neverRan
+                ? [{ value: 1, color: "var(--surface-3)", label: "No data" }]
+                : [
+                    { value: Math.max(counts.pass, 0.001), color: "oklch(74% 0.18 155)", label: "Passed" },
+                    { value: counts.flaky, color: "oklch(80% 0.16 75)", label: "Flaky" },
+                    { value: counts.fail, color: "oklch(70% 0.22 18)", label: "Failed" },
+                  ]
+              }
             />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, width: "100%" }}>
               {[
