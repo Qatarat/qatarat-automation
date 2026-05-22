@@ -1,5 +1,5 @@
 // App shell — sidebar nav, tweaks, view router
-const { OverviewView, FlowsView, AppiumView, PipelineView, HistoryView } = window;
+const { OverviewView, FlowsView, PipelineView, HistoryView } = window;
 
 // Hex → accent OKLCH mapping. TweakColor stores hex; we translate to CSS vars.
 const ACCENTS = {
@@ -47,12 +47,11 @@ const App = () => {
   const navItems = [
     { id: "overview", label: "Overview",      icon: "overview", count: null },
     { id: "flows",    label: "Maestro flows", icon: "flows",    count: (data.MAESTRO_FLOWS || []).length },
-    { id: "appium",   label: "Appium tests",  icon: "appium",   count: (data.APPIUM_TESTS || []).reduce((s, f) => s + f.tests.length, 0) },
     { id: "pipeline", label: "CI / CD",       icon: "pipeline", count: (data.CI_WORKFLOWS || []).length },
     { id: "history",  label: "History",       icon: "history",  count: null },
   ];
 
-  const ViewCmp = { overview: OverviewView, flows: FlowsView, appium: AppiumView, pipeline: PipelineView, history: HistoryView }[view];
+  const ViewCmp = { overview: OverviewView, flows: FlowsView, pipeline: PipelineView, history: HistoryView }[view];
   const crumbLabel = navItems.find(n => n.id === view)?.label || "Overview";
 
   // Format lastRun timestamp

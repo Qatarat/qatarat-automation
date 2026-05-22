@@ -10,11 +10,12 @@ mkdir -p "$REPORTS_DIR"
 FLOW_TIMEOUT=300   # 5 min hard cap per flow — prevents a stuck flow from eating the budget
 
 FAIL=0
-for flow in 01_splash_onboarding 02_login_otp 03_guest_user 05_cart_add_items 06_checkout_payment_select; do
+for flow_yaml in "$FLOWS_DIR"/[0-9][0-9]_*.yaml; do
+  flow="$(basename "$flow_yaml" .yaml)"
   echo "▶  Running flow: $flow"
   timeout "$FLOW_TIMEOUT" maestro test --format junit \
     --output "$REPORTS_DIR/${flow}-results.xml" \
-    "$FLOWS_DIR/${flow}.yaml" \
+    "$flow_yaml" \
     && echo "   ✓ $flow" \
     || {
       RC=$?
