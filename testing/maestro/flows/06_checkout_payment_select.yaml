@@ -41,6 +41,9 @@ appId: com.qatarat.app
     optional: true
 - inputText: "8801685220417"
 - tapOn:
+    text: "By clicking continue"
+    optional: true
+- tapOn:
     text: "Continue"
     optional: true
 - waitForAnimationToEnd:
@@ -56,7 +59,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Select a Service"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - scrollUntilVisible:
     element:
       text: "Add"
@@ -73,28 +77,38 @@ appId: com.qatarat.app
 - tapOn:
     text: "Cart"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "Checkout"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 8000
 
 # Payment method screen
 - takeScreenshot: checkout_payment_selection
 
-# Verify Tabby BNPL visible
+# Verify Tabby BNPL visible (optional — not all regions/carts qualify)
 - tapOn:
     text: "Pay later with Tabby"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
 
-# Promo code
+# Promo code — cap wait at 8s so a slow API doesn't hang CI
 - tapOn:
     text: "Redeem your Promo Code"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Promo Code"
     optional: true
 - inputText: "TEST10"
 - tapOn:
     text: "Apply"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 8000
 
 - takeScreenshot: checkout_promo_applied

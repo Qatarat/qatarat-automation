@@ -7,7 +7,9 @@ on:
     branches: [main, develop]
 
 concurrency:
-  group: maestro-smoke-${{ github.ref }}
+  # PRs: group by PR number so a new commit cancels the stale run.
+  # Main branch pushes: group by SHA so runs never cancel each other.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:

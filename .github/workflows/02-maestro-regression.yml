@@ -11,7 +11,8 @@ on:
         default: ""
 
 concurrency:
-  group: maestro-regression-${{ github.ref }}
+  # PRs: cancel stale run on new commit. Main/schedule: never cancel.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:

@@ -8,6 +8,25 @@ REPORTS_DIR="$SCRIPT_DIR/maestro/reports"
 SOLO_FLOW="${1:-}"
 mkdir -p "$REPORTS_DIR"
 
+FLOW_TIMEOUT=480   # 8 min hard cap per flow for regression (some flows are heavier)
+
+_run_flow() {
+  local flow_file="$1"
+  local name
+  name="$(basename "$flow_file" .yaml)"
+  echo "▶  Running flow: $name"
+  timeout "$FLOW_TIMEOUT" maestro test --format junit \
+    --output "$REPORTS_DIR/${name}-results.xml" \
+    "$flow_file" \
+    && echo "   ✓ $name" \
+    || {
+      RC=$?
+      [ "$RC" -eq 124 ] && echo "   ✗ $name TIMED OUT (>${FLOW_TIMEOUT}s)" \
+                        || echo "   ✗ $name FAILED (exit $RC)"
+      return 1
+    }
+}
+
 FAIL=0
 if [ -n "$SOLO_FLOW" ]; then
   FLOW_FILE="$(ls "$FLOWS_DIR/${SOLO_FLOW}"*.yaml 2>/dev/null | head -1)"
@@ -15,22 +34,10 @@ if [ -n "$SOLO_FLOW" ]; then
     echo "ERROR: no flow file found for prefix '$SOLO_FLOW'"
     exit 1
   fi
-  name="$(basename "$FLOW_FILE" .yaml)"
-  echo "▶  Running single flow: $name"
-  maestro test --format junit \
-    --output "$REPORTS_DIR/${name}-results.xml" \
-    "$FLOW_FILE" \
-    && echo "   ✓ $name" \
-    || { echo "   ✗ $name FAILED"; FAIL=1; }
+  _run_flow "$FLOW_FILE" || FAIL=1
 else
   for flow_file in "$FLOWS_DIR"/[0-9][0-9]_*.yaml; do
-    name="$(basename "$flow_file" .yaml)"
-    echo "▶  Running flow: $name"
-    maestro test --format junit \
-      --output "$REPORTS_DIR/${name}-results.xml" \
-      "$flow_file" \
-      && echo "   ✓ $name" \
-      || { echo "   ✗ $name FAILED"; FAIL=$((FAIL + 1)); }
+    _run_flow "$flow_file" || FAIL=$((FAIL + 1))
   done
 fi
 
