@@ -41,6 +41,25 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Resolve which run's artifacts to download:
+      #   workflow_run  → use the triggering run's ID (has the test XMLs/screenshots)
+      #   push / dispatch → find the most recent successful smoke or regression run
+      - name: Resolve artifact source run ID
+        id: source-run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+            echo "Triggered by workflow_run: using run ${{ github.event.workflow_run.id }}"
+          else
+            echo "Triggered by ${{ github.event_name }}: searching for latest test run"
+            ID=$(gh api "repos/${{ github.repository }}/actions/runs?status=success&per_page=30" \
+              --jq '[.workflow_runs[] | select(.name | test("Maestro|Appium"))] | first | .id // ""' 2>/dev/null || echo "")
+            echo "id=${ID}" >> "$GITHUB_OUTPUT"
+            echo "Latest test run ID: ${ID:-none found}"
+          fi
+
       - name: Install Allure CLI
         run: |
           wget -qO allure.tgz https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz
@@ -49,36 +68,55 @@ jobs:
           sudo ln -s /opt/allure/bin/allure /usr/local/bin/allure
 
       - name: Download JUnit XML artifacts
+        if: steps.source-run.outputs.id != ''
         uses: actions/download-artifact@v4
         with:
+          run-id: ${{ steps.source-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-artifacts/
           pattern: "*junit*"
           merge-multiple: false
         continue-on-error: true
 
       - name: Download Appium Allure results
+        if: steps.source-run.outputs.id != ''
         uses: actions/download-artifact@v4
         with:
+          run-id: ${{ steps.source-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: allure-results/
           pattern: "appium-allure-results-*"
           merge-multiple: true
         continue-on-error: true
 
       - name: Download Maestro screenshots
+        if: steps.source-run.outputs.id != ''
         uses: actions/download-artifact@v4
         with:
+          run-id: ${{ steps.source-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-screenshots/
           pattern: "maestro-*-screenshots-*"
           merge-multiple: true
         continue-on-error: true
 
       - name: Download Appium screenshots
+        if: steps.source-run.outputs.id != ''
         uses: actions/download-artifact@v4
         with:
+          run-id: ${{ steps.source-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-screenshots/
           pattern: "appium-screenshots-*"
           merge-multiple: true
         continue-on-error: true
+
+      - name: Show downloaded artifacts
+        run: |
+          echo "=== raw-artifacts/ ==="
+          find raw-artifacts/ -type f 2>/dev/null | head -20 || echo "(none)"
+          echo "=== raw-screenshots/ ==="
+          find raw-screenshots/ -type f 2>/dev/null | wc -l || echo "0"
 
       - name: Flatten JUnit XMLs into allure-results
         run: |
@@ -89,7 +127,7 @@ jobs:
       - name: Generate Allure HTML report
         run: |
           mkdir -p allure-report
-          if [ "$(ls -A allure-results/ 2>/dev/null)" ]; then
+          if [ "$(ls -A allure-results/*.xml 2>/dev/null)" ]; then
             allure generate allure-results/ --clean -o allure-report/
           else
             echo "No allure results — skipping"
