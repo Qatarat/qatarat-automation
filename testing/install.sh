@@ -200,6 +200,30 @@ sed -i${OS=="mac" && echo " ''"} \
   "s|python3 -m pytest|\"$VENV_DIR/bin/python\" -m pytest|g" \
   "$SCRIPT_DIR/run_appium.sh" 2>/dev/null || true
 
+# ── iOS tools (macOS only — optional, for iPhone USB testing) ─────────
+if [[ "$OS" == "mac" ]]; then
+  echo ""
+  read -p "$(echo -e "${YELLOW}[?]${NC} Install iOS testing tools for iPhone USB testing? [y/N]: ")" DO_IOS
+  if [[ "$DO_IOS" =~ ^[Yy]$ ]]; then
+    if ! command -v xcrun &>/dev/null; then
+      warn "Xcode CLI tools not found — run: xcode-select --install"
+    else
+      log "Xcode CLI tools: $(xcode-select -p)"
+    fi
+    if ! command -v idb_companion &>/dev/null; then
+      warn "Installing idb-companion (Maestro needs this for iOS devices)..."
+      brew tap facebook/fb 2>/dev/null || true
+      brew install facebook/fb/idb-companion \
+        && log "idb-companion installed" \
+        || warn "idb-companion install failed — try: brew install facebook/fb/idb-companion"
+    else
+      log "idb-companion: OK"
+    fi
+    echo ""
+    warn "iOS requires the app pre-installed via Xcode or TestFlight — iOS blocks unsigned IPA sideloading."
+  fi
+fi
+
 # ── Summary ───────────────────────────────────────────
 echo ""
 echo "================================================"

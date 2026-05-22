@@ -13,10 +13,12 @@ IOS_CAPS = {
 }
 
 # Real device — requires IPA and provisioning
+# UDID read from IOS_UDID (set by run_on_device.sh) or IOS_DEVICE_NAME env var
+_ios_udid = os.environ.get("IOS_UDID", "")
 IOS_DEVICE_CAPS = {
     **IOS_CAPS,
     "appium:deviceName": os.environ.get("IOS_DEVICE_NAME", "iPhone"),
-    "appium:udid": os.environ.get("IOS_UDID", ""),
+    "appium:udid": _ios_udid,
     "appium:platformVersion": os.environ.get("IOS_VERSION", "17"),
     "appium:app": os.environ.get("IOS_APP_PATH", ""),  # path to .ipa file
     "appium:xcodeOrgId": os.environ.get("XCODE_ORG_ID", ""),
