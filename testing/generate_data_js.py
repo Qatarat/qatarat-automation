@@ -239,9 +239,11 @@ def main():
         elif "iOS" in w["name"]:
             row["status"] = "idle"
         else:
-            row["status"] = "pass"
-            row["passRate"] = 100
-            row["runs"] = 1
+            # Publish Report — ran if anything else ran
+            row["status"] = "pass" if (maestro_ran or appium_ran) else "idle"
+            if maestro_ran or appium_ran:
+                row["passRate"] = 100
+                row["runs"] = 1
         row["lastRun"] = "just now" if row.get("runs") else "never"
         ci_workflows.append(row)
 
@@ -256,15 +258,17 @@ def main():
     total_duration = sum(flow_durations.values()) + sum(
         round(v[1]) for v in appium_map.values()
     )
+    never_ran = not maestro_ran and not appium_ran
     run_meta = {
-        "id":          f"run-{run_num}",
-        "commit":      sha,
-        "branch":      branch,
-        "triggeredBy": actor,
-        "startedAt":   now,
-        "duration":    total_duration or 0,
-        "device":      "Pixel 6 · Android 13 · API 33",
+        "id":             f"run-{run_num}",
+        "commit":         sha,
+        "branch":         branch,
+        "triggeredBy":    actor,
+        "startedAt":      now if not never_ran else "",
+        "duration":       total_duration or 0,
+        "device":         "Pixel 6 · Android 13 · API 33",
         "flutterVersion": "3.24.5",
+        "neverRan":       never_ran,
     }
 
     # ── 8. Commits from git log ───────────────────────────────────────────
@@ -284,13 +288,14 @@ def main():
             if len(parts) != 4:
                 continue
             h, msg, author, time = parts
-            if idx == 0:
+            if idx == 0 and not never_ran:
                 commits.append({"sha": h[:7], "msg": msg, "author": author, "time": time,
                                  "tests": total, "pass": m_pass + a_pass,
-                                 "fail": m_fail + a_fail, "flaky": 0})
+                                 "fail": m_fail + a_fail, "flaky": 0, "hasData": True})
             else:
+                # Historical commits: no test data available for these runs
                 commits.append({"sha": h[:7], "msg": msg, "author": author, "time": time,
-                                 "tests": total, "pass": total, "fail": 0, "flaky": 0})
+                                 "tests": 0, "pass": 0, "fail": 0, "flaky": 0, "hasData": False})
     except Exception:
         pass
 

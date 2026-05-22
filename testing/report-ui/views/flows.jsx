@@ -1,9 +1,10 @@
 // Maestro Flows view — filterable grid + flow detail drawer
 const FlowsView = () => {
-  const { MAESTRO_FLOWS } = window.QATARAT_DATA;
+  const { MAESTRO_FLOWS, RUN_META } = window.QATARAT_DATA;
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState(null);
   const [q, setQ] = useState("");
+  const allIdle = MAESTRO_FLOWS.every(f => f.status === "idle");
 
   const filtered = MAESTRO_FLOWS.filter(f => {
     if (filter !== "all" && f.status !== filter) return false;
@@ -15,10 +16,26 @@ const FlowsView = () => {
 
   return (
     <div className="grid" style={{ gap: 18 }}>
+
+      {/* Idle banner */}
+      {allIdle && (
+        <div style={{ padding: "14px 18px", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: "var(--idle-2)", color: "var(--idle)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+            <Icon name="clock" size={16} />
+          </div>
+          <div>
+            <span style={{ fontWeight: 500, fontSize: 13 }}>No flows have run yet.</span>
+            <span style={{ fontSize: 13, color: "var(--text-2)", marginLeft: 8 }}>
+              All {MAESTRO_FLOWS.length} flows are in <StatusPill status="idle" /> state — trigger a GitHub Actions workflow to execute them.
+            </span>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "end", gap: 16 }}>
         <div>
           <h1 className="h1" style={{ fontSize: 22 }}>Maestro flows</h1>
-          <p className="lead" style={{ fontSize: 13 }}>YAML-defined end-to-end flows that exercise the app like a human would tap.</p>
+          <p className="lead" style={{ fontSize: 13 }}>YAML scripts that drive the app UI exactly like a real user — tap, type, swipe, assert. Each flow covers one complete journey.</p>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <div style={{ position: "relative" }}>
@@ -135,12 +152,18 @@ const FlowDetail = ({ flow, onClose }) => {
 
   const accent = groupAccent[flow.group] || "var(--accent)";
 
-  // synthesized step list
+  // Deterministic step durations (no Math.random — stable across renders)
+  const stepMs = useMemo(() =>
+    Array.from({ length: flow.steps }, (_, i) => 120 + ((flow.id * 37 + i * 397 + 89) % 1600))
+  , [flow.id, flow.steps]);
+
+  // Plausible step commands derived from flow group
   const stepNames = [
-    "launchApp", "tapOn id:country_picker", "tapOn 'Saudi Arabia'", "tapOn 'Continue'",
-    "assertVisible 'Welcome'", "tapOn id:phone_input", "inputText '+966500000000'", "tapOn 'Send OTP'",
-    "assertVisible 'Verify your number'", "inputText otp '0000'", "assertVisible 'Home'", "takeScreenshot",
-    "tapOn 'Browse'", "scroll", "assertVisible 'Makkah Live'", "back",
+    "launchApp", "waitForAnimationToEnd", "tapOn 'Saudi Arabia' (optional)",
+    "tapOn 'English' (optional)", "inputText phone", "tapOn 'Continue'",
+    "waitForAnimationToEnd", "inputText OTP '1234'", "tapOn 'Verify'",
+    "waitForAnimationToEnd", "assertVisible 'Home'", "tapOn 'Browse'",
+    "scroll", "tapOn item", "assertVisible detail", "takeScreenshot",
   ];
 
   return (
@@ -192,21 +215,24 @@ const FlowDetail = ({ flow, onClose }) => {
         <div className="card">
           <div className="card-head"><h3>Step log</h3><span className="sub">{flow.steps} steps executed</span></div>
           <div className="card-body" style={{ padding: 0, fontFamily: "Geist Mono", fontSize: 12 }}>
-            {Array.from({ length: flow.steps }).map((_, i) => {
+            {flow.status === "idle" ? (
+              <div style={{ padding: "28px 16px", textAlign: "center", color: "var(--text-3)" }}>
+                <Icon name="clock" size={20} style={{ marginBottom: 8, opacity: 0.5 }} />
+                <div style={{ fontSize: 13 }}>This flow has not been executed yet.</div>
+                <div style={{ fontSize: 12, marginTop: 4 }}>Steps will appear here after the first CI run.</div>
+              </div>
+            ) : Array.from({ length: flow.steps }).map((_, i) => {
               const failedStep = flow.status === "fail" && i === Math.floor(flow.steps * 0.78);
-              const flakyStep = flow.status === "flaky" && i === Math.floor(flow.steps * 0.6);
-              const cmd = stepNames[i % stepNames.length];
-              const ms = 200 + Math.floor(Math.random() * 1800);
-              const status = failedStep ? "fail" : flakyStep ? "flaky" : "pass";
+              const flakyStep  = flow.status === "flaky" && i === Math.floor(flow.steps * 0.6);
+              const cmd        = stepNames[i % stepNames.length];
+              const ms         = stepMs[i];
+              const status     = failedStep ? "fail" : flakyStep ? "flaky" : "pass";
               return (
                 <div key={i} style={{ display: "grid", gridTemplateColumns: "32px 1fr auto auto", gap: 12, padding: "9px 14px", borderBottom: "1px solid var(--border)", alignItems: "center" }}>
                   <span style={{ color: "var(--text-3)" }}>{(i + 1).toString().padStart(2, "0")}</span>
-                  <span style={{ color: "var(--text)" }}>{cmd}</span>
+                  <span style={{ color: failedStep ? "var(--fail)" : "var(--text)" }}>{cmd}</span>
                   <span style={{ color: "var(--text-3)" }}>{ms}ms</span>
-                  <span style={{
-                    width: 16, height: 16, borderRadius: 4, display: "grid", placeItems: "center",
-                    color: `var(--${status})`, background: `var(--${status}-2)`,
-                  }}>
+                  <span style={{ width: 16, height: 16, borderRadius: 4, display: "grid", placeItems: "center", color: `var(--${status})`, background: `var(--${status}-2)` }}>
                     <Icon name={status === "pass" ? "check" : status === "fail" ? "x" : "bolt"} size={11} />
                   </span>
                 </div>
@@ -235,18 +261,27 @@ const FlowDetail = ({ flow, onClose }) => {
                   );
                 })}
               </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "28px 16px", color: "var(--text-3)", textAlign: "center" }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border)", display: "grid", placeItems: "center" }}>
-                  <Icon name="phone" size={20} />
+            ) : flow.status === "idle" ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "28px 16px", color: "var(--text-3)", textAlign: "center" }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border)", display: "grid", placeItems: "center" }}>
+                  <Icon name="phone" size={22} />
                 </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-2)", marginBottom: 4 }}>No screenshots this run</div>
-                  <div style={{ fontSize: 12, fontFamily: "Geist Mono" }}>
-                    {flow.status === "idle"
-                      ? "Flow has not been executed yet — trigger a CI run to capture screens."
-                      : "Screenshots upload as CI artifacts. Re-trigger Publish Report to include them."}
-                  </div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-2)" }}>Flow not executed yet</div>
+                <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.6, maxWidth: 320 }}>
+                  Screenshots are captured automatically when this flow runs on CI.
+                  Trigger a <strong style={{ color: "var(--text-2)" }}>Maestro</strong> workflow from GitHub Actions to see real device captures here.
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "28px 16px", color: "var(--text-3)", textAlign: "center" }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: "var(--surface-2)", border: "1px solid var(--border)", display: "grid", placeItems: "center" }}>
+                  <Icon name="phone" size={22} />
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-2)" }}>Screenshots not available for this run</div>
+                <div style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.6, maxWidth: 360 }}>
+                  {flow.status === "fail"
+                    ? "This flow failed before reaching the screenshot step. Fix the failure and re-run to capture screens."
+                    : "The Publish Report workflow may have run before screenshots were uploaded. Re-run the Publish Report workflow to include them."}
                 </div>
               </div>
             )}

@@ -14,6 +14,8 @@ const App = () => {
   const defaults = window.__QATARAT_DEFAULTS;
   const [t, setTweak] = useTweaks(defaults);
   const view = t.view || "overview";
+  const { RUN_META } = window.QATARAT_DATA;
+  const neverRan = RUN_META.neverRan || !RUN_META.startedAt;
 
   // Apply accent + density to root
   useEffect(() => {
@@ -88,8 +90,17 @@ const App = () => {
           </div>
           <div className="top-actions">
             <span className="mono" style={{ fontSize: 11.5, color: "var(--text-3)", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 6, height: 6, borderRadius: 50, background: "var(--pass)", boxShadow: "0 0 8px var(--pass)" }} />
-              last run · 12 min ago
+              {neverRan ? (
+                <>
+                  <span style={{ width: 6, height: 6, borderRadius: 50, background: "var(--idle)" }} />
+                  no runs yet · trigger a workflow to populate
+                </>
+              ) : (
+                <>
+                  <span style={{ width: 6, height: 6, borderRadius: 50, background: "var(--pass)", boxShadow: "0 0 8px var(--pass)" }} />
+                  last run · {RUN_META.startedAt}
+                </>
+              )}
             </span>
           </div>
         </div>
