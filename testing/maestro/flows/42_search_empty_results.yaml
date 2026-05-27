@@ -86,7 +86,7 @@ appId: com.qatarat.app
 - tapOn:
     text: "Clear"
     optional: true
-- clearText
+- eraseText: 50
 - waitForAnimationToEnd:
     timeout: 2000
 

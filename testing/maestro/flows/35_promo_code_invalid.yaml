@@ -104,7 +104,7 @@ appId: com.qatarat.app
     optional: true
 
 # --- Test 2: Completely fake code ---
-- clearText
+- eraseText: 50
 - inputText: "ZZZNONSENSE999"
 - tapOn:
     text: "Apply"
@@ -121,7 +121,7 @@ appId: com.qatarat.app
     optional: true
 
 # --- Test 3: Empty promo code ---
-- clearText
+- eraseText: 50
 - tapOn:
     text: "Apply"
     optional: true

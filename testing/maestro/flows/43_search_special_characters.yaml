@@ -68,7 +68,7 @@ appId: com.qatarat.app
     optional: true
 
 # --- Test 2: SQL injection-like string ---
-- clearText
+- eraseText: 50
 - inputText: "' OR '1'='1"
 - waitForAnimationToEnd:
     timeout: 5000
@@ -77,7 +77,7 @@ appId: com.qatarat.app
     optional: true
 
 # --- Test 3: XSS-like string ---
-- clearText
+- eraseText: 50
 - inputText: "<script>alert(1)</script>"
 - waitForAnimationToEnd:
     timeout: 5000
@@ -86,7 +86,7 @@ appId: com.qatarat.app
     optional: true
 
 # --- Test 4: Very long string (boundary test) ---
-- clearText
+- eraseText: 50
 - inputText: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 - waitForAnimationToEnd:
     timeout: 5000
@@ -95,7 +95,7 @@ appId: com.qatarat.app
     optional: true
 
 # Clear and return to normal state
-- clearText
+- eraseText: 50
 - waitForAnimationToEnd:
     timeout: 2000
 

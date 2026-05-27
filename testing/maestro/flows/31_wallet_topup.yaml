@@ -72,7 +72,7 @@ appId: com.qatarat.app
 - tapOn:
     text: "Amount"
     optional: true
-- clearText
+- eraseText: 50
 - inputText: "200"
 - waitForAnimationToEnd:
     timeout: 2000

@@ -95,7 +95,7 @@ appId: com.qatarat.app
     optional: true
 - waitForAnimationToEnd:
     timeout: 2000
-- clearText
+- eraseText: 50
 - inputText: "مسجد"
 - waitForAnimationToEnd:
     timeout: 5000

@@ -72,7 +72,7 @@ appId: com.qatarat.app
 - tapOn:
     text: "Enter first name"
     optional: true
-- clearText
+- eraseText: 50
 - inputText: "Ahmad"
 - waitForAnimationToEnd:
     timeout: 2000
@@ -84,7 +84,7 @@ appId: com.qatarat.app
 - tapOn:
     text: "Enter last name"
     optional: true
-- clearText
+- eraseText: 50
 - inputText: "Al-Rashid"
 - waitForAnimationToEnd:
     timeout: 2000
@@ -96,7 +96,7 @@ appId: com.qatarat.app
 - tapOn:
     text: "Enter email"
     optional: true
-- clearText
+- eraseText: 50
 - inputText: "ahmad.alrashid@example.com"
 - waitForAnimationToEnd:
     timeout: 2000
