@@ -2,7 +2,9 @@
 
 [![Maestro Smoke](https://github.com/Qatarat/qatarat-automation/actions/workflows/01-maestro-smoke.yml/badge.svg)](https://github.com/Qatarat/qatarat-automation/actions/workflows/01-maestro-smoke.yml)
 [![Maestro Regression](https://github.com/Qatarat/qatarat-automation/actions/workflows/02-maestro-regression.yml/badge.svg)](https://github.com/Qatarat/qatarat-automation/actions/workflows/02-maestro-regression.yml)
-[![Appium Deep Tests](https://github.com/Qatarat/qatarat-automation/actions/workflows/03-appium-android.yml/badge.svg)](https://github.com/Qatarat/qatarat-automation/actions/workflows/03-appium-android.yml)
+[![Appium Android](https://github.com/Qatarat/qatarat-automation/actions/workflows/03-appium-android.yml/badge.svg)](https://github.com/Qatarat/qatarat-automation/actions/workflows/03-appium-android.yml)
+[![Maestro iOS](https://github.com/Qatarat/qatarat-automation/actions/workflows/04-maestro-ios.yml/badge.svg)](https://github.com/Qatarat/qatarat-automation/actions/workflows/04-maestro-ios.yml)
+[![Appium iOS](https://github.com/Qatarat/qatarat-automation/actions/workflows/06-appium-ios.yml/badge.svg)](https://github.com/Qatarat/qatarat-automation/actions/workflows/06-appium-ios.yml)
 
 **Flutter app** · Android & iOS · Package `com.qatarat.app`
 
@@ -63,13 +65,16 @@ $ANDROID_HOME/emulator/emulator -avd Pixel_7_API_34 &
    # Open Simulator.app
    open -a Simulator
    ```
-4. Install the IPA (for local Appium testing):
+4. The IPA is already unzipped — install the `.app` bundle directly:
    ```bash
-   xcrun simctl install booted "Qatarat (Lambda-Stage-IOS-1.8.2).ipa.zip"
+   # Get the booted simulator UDID
+   SIM=$(xcrun simctl list devices booted | grep -oE "[A-F0-9-]{36}" | head -1)
+   xcrun simctl install "$SIM" "Qatarat (Lambda-Stage-IOS-1.8.2).ipa/Payload/Runner.app"
    ```
-5. Verify Appium iOS driver:
+5. Install Appium iOS driver:
    ```bash
    appium driver install xcuitest
+   appium driver install --source=npm appium-flutter-driver
    appium driver list --installed
    ```
 
@@ -144,10 +149,11 @@ PLATFORM=ios DEVICE_MODE=simulator python -m pytest tests/ -v
 
 | Workflow | Trigger | Duration | Coverage |
 |----------|---------|----------|----------|
-| Maestro Smoke | Every push / PR | ~8 min | 8 critical flows |
-| Maestro Regression | Nightly 01:00 UTC | ~45 min | All 50 flows |
-| Appium Deep Tests | Every Monday | ~75 min | 191 tests |
-| Maestro iOS | Manual only | ~20 min | Smoke on iOS Simulator |
+| Maestro Smoke (Android) | Every push / PR | ~8 min | 8 critical flows |
+| Maestro Regression (Android) | Nightly 01:00 UTC | ~45 min | All 50 flows |
+| Appium Deep Tests (Android) | Every Monday | ~75 min | 191 tests |
+| Maestro iOS Simulator | Every Tuesday 03:00 UTC + manual | ~30 min | All 50 flows on iPhone 15 Pro |
+| Appium iOS Simulator | Every Wednesday 04:00 UTC + manual | ~90 min | 191 tests on iPhone 15 Pro |
 | Publish Report | After any test run | ~3 min | Deploys to GitHub Pages |
 
 **GitHub Pages setup:**
@@ -340,8 +346,16 @@ python -m pytest tests/ -m negative -v
 python -m pytest tests/ -m security -v
 allure serve allure-results   # open Allure report locally
 
-# iOS (macOS only)
-PLATFORM=ios DEVICE_MODE=simulator python -m pytest tests/ -v
+# iOS Simulator (macOS only)
+PLATFORM=ios DEVICE_MODE=simulator IOS_SIM_NAME="iPhone 15 Pro" IOS_VERSION="17.5" \
+  python -m pytest tests/ -v
+
+# iOS — specific module
+PLATFORM=ios DEVICE_MODE=simulator python -m pytest tests/donation/ -v
+
+# iOS CI script (auto-detects Runner.app)
+bash testing/run_appium_ios_ci.sh
+bash testing/run_appium_ios_ci.sh donation   # specific marker
 ```
 
 ---

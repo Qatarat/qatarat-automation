@@ -330,9 +330,9 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
       <div class="stat-sub">Android + iOS</div>
     </div>
     <div class="stat-card">
-      <div class="stat-num c-gold">5</div>
+      <div class="stat-num c-gold">7</div>
       <div class="stat-label">CI Workflows</div>
-      <div class="stat-sub">Automated on every push</div>
+      <div class="stat-sub">Android + iOS automated</div>
     </div>
   </div>
 
@@ -399,7 +399,11 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
     </div>
     <div class="env-card">
       <div class="env-label">iOS Device</div>
-      <div class="env-val">iPhone 15 — iOS 17.5 Simulator</div>
+      <div class="env-val">iPhone 15 Pro — iOS 17.5 Simulator</div>
+    </div>
+    <div class="env-card">
+      <div class="env-label">iOS App</div>
+      <div class="env-val text-mono">Runner.app v1.8.1 (build 188)</div>
     </div>
     <div class="env-card">
       <div class="env-label">App Package</div>
@@ -978,17 +982,24 @@ var PIPELINES = [
   },
   {
     icon:'🍎', bg:'rgba(240,192,64,.15)',
-    name:'Maestro iOS',
-    trigger:'Manual only',
-    pills:['~20 min','iOS','Smoke flows'],
-    steps:['Checkout repo','Boot iOS simulator','Install IPA','Run smoke','Upload screenshots']
+    name:'Maestro iOS Simulator',
+    trigger:'Every Tuesday 03:00 UTC + manual',
+    pills:['~30 min','iOS 17','All 50 flows'],
+    steps:['Checkout repo (LFS)','Boot iPhone 15 Pro sim','Extract Runner.app from IPA','Install app on simulator','Run full 50-flow suite','Upload JUnit + screenshots']
+  },
+  {
+    icon:'🧪', bg:'rgba(188,140,255,.15)',
+    name:'Appium iOS Simulator',
+    trigger:'Every Wednesday 04:00 UTC + manual',
+    pills:['~90 min','iOS 17','191 tests'],
+    steps:['Checkout repo (LFS)','Boot iPhone 15 Pro sim','Install XCUITest + Flutter drivers','Install Runner.app','Start Appium server','Run 191 pytest tests','Upload Allure + JUnit + screenshots']
   },
   {
     icon:'📊', bg:'rgba(0,212,170,.15)',
     name:'Publish Report',
-    trigger:'After test runs',
+    trigger:'After any test run (Android or iOS)',
     pills:['~3 min','Pages','Auto-deploy'],
-    steps:['Download artifacts','Generate Allure','Build dashboard','Deploy to Pages','Post summary']
+    steps:['Download Android + iOS artifacts','Generate Allure report','Deploy docs/index.html','Deploy to GitHub Pages','Post step summary']
   }
 ];
 

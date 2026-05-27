@@ -6,10 +6,13 @@ on:
       - "Maestro — Smoke (Android)"
       - "Maestro — Full Regression (Android)"
       - "Appium — Deep Tests (Android)"
+      - "Maestro — Smoke & Regression (iOS Simulator)"
+      - "Appium — Deep Tests (iOS Simulator)"
     types: [completed]
   push:
     branches: [main]
     paths:
+      - "docs/**"
       - "testing/report-ui/**"
       - "testing/generate_data_js.py"
   workflow_dispatch:
@@ -133,7 +136,7 @@ jobs:
           merge-multiple: true
         continue-on-error: true
 
-      - name: Download Appium screenshots
+      - name: Download Appium Android screenshots
         if: steps.appium-run.outputs.id != ''
         uses: actions/download-artifact@v4
         with:
@@ -141,6 +144,44 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-screenshots/
           pattern: "appium-screenshots-*"
+          merge-multiple: true
+        continue-on-error: true
+
+      # ── iOS Appium artifacts ──────────────────────────────────────────────
+      - name: Resolve Appium iOS source run ID
+        id: appium-ios-run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ] && \
+             echo "${{ github.event.workflow_run.name }}" | grep -qi "ios"; then
+            echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+          else
+            ID=$(gh api "repos/${{ github.repository }}/actions/runs?status=success&per_page=50" \
+              --jq '[.workflow_runs[] | select(.name | test("iOS"))] | first | .id // ""' 2>/dev/null || echo "")
+            echo "id=${ID}" >> "$GITHUB_OUTPUT"
+            echo "Latest iOS run ID: ${ID:-none found}"
+          fi
+
+      - name: Download Appium iOS JUnit XML
+        if: steps.appium-ios-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.appium-ios-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-artifacts/appium-ios/
+          pattern: "appium-ios-junit*"
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Download Appium iOS screenshots
+        if: steps.appium-ios-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.appium-ios-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-screenshots/
+          pattern: "appium-ios-screenshots-*"
           merge-multiple: true
         continue-on-error: true
 
@@ -179,14 +220,11 @@ jobs:
             gh-pages/data.js \
             gh-pages/screenshots/
 
-      - name: Copy React dashboard to gh-pages
+      - name: Copy self-contained dashboard to gh-pages
         run: |
-          mkdir -p gh-pages/views
-          cp testing/report-ui/index.html       gh-pages/index.html
-          cp testing/report-ui/ui.jsx           gh-pages/ui.jsx
-          cp testing/report-ui/tweaks-panel.jsx gh-pages/tweaks-panel.jsx
-          cp testing/report-ui/app.jsx          gh-pages/app.jsx
-          cp testing/report-ui/views/*.jsx      gh-pages/views/
+          mkdir -p gh-pages
+          cp docs/index.html gh-pages/index.html
+          cp docs/.nojekyll  gh-pages/.nojekyll 2>/dev/null || touch gh-pages/.nojekyll
 
       - name: Copy Allure report
         run: cp -r allure-report/ gh-pages/allure-report/ 2>/dev/null || mkdir -p gh-pages/allure-report
