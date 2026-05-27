@@ -1,8 +1,8 @@
 # Qatarat (قطرات) — Mobile App Test Suite
 
-[![Maestro Smoke](../../actions/workflows/01-maestro-smoke.yml/badge.svg)](../../actions/workflows/01-maestro-smoke.yml)
-[![Maestro Regression](../../actions/workflows/02-maestro-regression.yml/badge.svg)](../../actions/workflows/02-maestro-regression.yml)
-[![Appium Deep Tests](../../actions/workflows/03-appium-android.yml/badge.svg)](../../actions/workflows/03-appium-android.yml)
+[![Maestro Smoke](https://github.com/Qatarat/qatarat-automation/actions/workflows/01-maestro-smoke.yml/badge.svg)](https://github.com/Qatarat/qatarat-automation/actions/workflows/01-maestro-smoke.yml)
+[![Maestro Regression](https://github.com/Qatarat/qatarat-automation/actions/workflows/02-maestro-regression.yml/badge.svg)](https://github.com/Qatarat/qatarat-automation/actions/workflows/02-maestro-regression.yml)
+[![Appium Deep Tests](https://github.com/Qatarat/qatarat-automation/actions/workflows/03-appium-android.yml/badge.svg)](https://github.com/Qatarat/qatarat-automation/actions/workflows/03-appium-android.yml)
 
 **Flutter app** · Android & iOS · Package `com.qatarat.app`
 
