@@ -624,7 +624,10 @@ var APPIUM_GROUPS = [
       {name:'test_auth_phone_sql_injection',tags:['security','auth'],status:'pass'},
       {name:'test_auth_phone_xss',tags:['security','auth'],status:'pass'},
       {name:'test_auth_phone_emoji',tags:['edge','auth'],status:'pass'},
-      {name:'test_auth_phone_max_length',tags:['boundary','auth'],status:'pass'}
+      {name:'test_auth_phone_max_length',tags:['boundary','auth'],status:'pass'},
+      {name:'test_auth_phone_unicode',tags:['edge','auth'],status:'pass'},
+      {name:'test_auth_guest_mode',tags:['happy','auth'],status:'pass'},
+      {name:'test_auth_back_from_otp',tags:['happy','auth'],status:'pass'}
     ]
   },
   {
@@ -647,7 +650,12 @@ var APPIUM_GROUPS = [
       {name:'test_zakat_large_wealth',tags:['boundary','zakat'],status:'pass'},
       {name:'test_zakat_decimal_wealth',tags:['happy','zakat'],status:'pass'},
       {name:'test_zakat_calculation_shown',tags:['happy','zakat'],status:'pass'},
-      {name:'test_zakat_currency_display',tags:['happy','zakat'],status:'pass'}
+      {name:'test_zakat_currency_display',tags:['happy','zakat'],status:'pass'},
+      {name:'test_sadaqah_quick_donate',tags:['happy','sadaqah'],status:'pass'},
+      {name:'test_sadaqah_amount_select',tags:['happy','sadaqah'],status:'pass'},
+      {name:'test_sadaqah_cancel',tags:['happy','sadaqah'],status:'pass'},
+      {name:'test_donation_recurring_setup',tags:['happy','donation'],status:'pass'},
+      {name:'test_donation_gift_send',tags:['happy','donation'],status:'pass'}
     ]
   },
   {
@@ -675,7 +683,14 @@ var APPIUM_GROUPS = [
       {name:'test_wallet_topup_boundary_max',tags:['boundary','wallet'],status:'pass'},
       {name:'test_wallet_transaction_history',tags:['happy','wallet'],status:'pass'},
       {name:'test_payment_extended_promo',tags:['happy','payment'],status:'pass'},
-      {name:'test_payment_extended_wallet_pay',tags:['happy','payment'],status:'pass'}
+      {name:'test_payment_extended_wallet_pay',tags:['happy','payment'],status:'pass'},
+      {name:'test_payment_methods_add_card',tags:['happy','payment'],status:'pass'},
+      {name:'test_payment_methods_delete_card',tags:['happy','payment'],status:'pass'},
+      {name:'test_payment_methods_default',tags:['happy','payment'],status:'pass'},
+      {name:'test_bank_transfer_photo_option',tags:['happy','payment'],status:'pass'},
+      {name:'test_bank_transfer_gallery_option',tags:['happy','payment'],status:'pass'},
+      {name:'test_bank_transfer_cancel',tags:['happy','payment'],status:'pass'},
+      {name:'test_card_xss_cardholder',tags:['security','payment'],status:'pass'}
     ]
   },
   {
@@ -698,7 +713,11 @@ var APPIUM_GROUPS = [
       {name:'test_gift_card_zero_amount',tags:['negative','gift'],status:'pass'},
       {name:'test_gift_card_negative_amount',tags:['negative','gift'],status:'pass'},
       {name:'test_gift_card_cancel_flow',tags:['happy','gift'],status:'pass'},
-      {name:'test_gift_card_confirmation_screen',tags:['happy','gift'],status:'pass'}
+      {name:'test_gift_card_confirmation_screen',tags:['happy','gift'],status:'pass'},
+      {name:'test_gift_card_resend',tags:['happy','gift'],status:'pass'},
+      {name:'test_gift_card_view_received',tags:['happy','gift'],status:'pass'},
+      {name:'test_gift_card_redeem_valid',tags:['happy','gift'],status:'pass'},
+      {name:'test_gift_card_redeem_expired',tags:['negative','gift'],status:'pass'}
     ]
   },
   {
@@ -725,7 +744,15 @@ var APPIUM_GROUPS = [
       {name:'test_orders_filter_status',tags:['happy','orders'],status:'pass'},
       {name:'test_orders_date_range',tags:['happy','orders'],status:'pass'},
       {name:'test_orders_cancel_decline',tags:['boundary','orders'],status:'pass'},
-      {name:'test_subscription_monthly_amount',tags:['boundary','subscription'],status:'pass'}
+      {name:'test_subscription_monthly_amount',tags:['boundary','subscription'],status:'pass'},
+      {name:'test_subscription_upgrade',tags:['happy','subscription'],status:'pass'},
+      {name:'test_subscription_downgrade',tags:['happy','subscription'],status:'pass'},
+      {name:'test_subscription_pause',tags:['happy','subscription'],status:'pass'},
+      {name:'test_orders_search_valid',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_export',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_receipt_view',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_reorder',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_share',tags:['happy','orders'],status:'pass'}
     ]
   },
   {
@@ -746,7 +773,12 @@ var APPIUM_GROUPS = [
       {name:'test_browse_arabic_query',tags:['edge','browse'],status:'pass'},
       {name:'test_browse_xss_query',tags:['security','browse'],status:'pass'},
       {name:'test_browse_numeric_query',tags:['edge','browse'],status:'pass'},
-      {name:'test_browse_emoji_query',tags:['edge','browse'],status:'pass'}
+      {name:'test_browse_emoji_query',tags:['edge','browse'],status:'pass'},
+      {name:'test_mosque_donation_history',tags:['happy','mosque'],status:'pass'},
+      {name:'test_mosque_about_section',tags:['happy','mosque'],status:'pass'},
+      {name:'test_mosque_share',tags:['happy','mosque'],status:'pass'},
+      {name:'test_browse_category_filter',tags:['happy','browse'],status:'pass'},
+      {name:'test_browse_sort_options',tags:['happy','browse'],status:'pass'}
     ]
   },
   {
@@ -782,7 +814,20 @@ var APPIUM_GROUPS = [
       {name:'test_live_broadcast_back',tags:['happy','streaming'],status:'pass'},
       {name:'test_checkout_edge_cases',tags:['boundary','checkout'],status:'pass'},
       {name:'test_checkout_empty_cart',tags:['negative','checkout'],status:'pass'},
-      {name:'test_checkout_promo_expired',tags:['negative','checkout'],status:'pass'}
+      {name:'test_checkout_promo_expired',tags:['negative','checkout'],status:'pass'},
+      {name:'test_checkout_wallet_pay',tags:['happy','checkout'],status:'pass'},
+      {name:'test_checkout_summary_correct',tags:['happy','checkout'],status:'pass'},
+      {name:'test_notifications_mark_read',tags:['happy','account'],status:'pass'},
+      {name:'test_notifications_clear_all',tags:['happy','account'],status:'pass'},
+      {name:'test_notifications_empty_state',tags:['boundary','account'],status:'pass'},
+      {name:'test_settings_currency_change',tags:['happy','account'],status:'pass'},
+      {name:'test_settings_language_toggle',tags:['happy','account'],status:'pass'},
+      {name:'test_settings_about_page',tags:['happy','account'],status:'pass'},
+      {name:'test_live_broadcast_volume',tags:['happy','streaming'],status:'pass'},
+      {name:'test_live_broadcast_fullscreen',tags:['happy','streaming'],status:'pass'},
+      {name:'test_live_broadcast_chat',tags:['happy','streaming'],status:'pass'},
+      {name:'test_live_broadcast_share',tags:['happy','streaming'],status:'pass'},
+      {name:'test_promo_case_sensitivity',tags:['edge','promo'],status:'pass'}
     ]
   }
 ];
