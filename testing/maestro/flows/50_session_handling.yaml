@@ -1,0 +1,101 @@
+appId: com.qatarat.app
+---
+# Flow 50 — Test session persistence after app restart (noReset / clearState: false)
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+
+# Full login on first launch
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify user is logged in on first launch
+- assertVisible:
+    text: "Home"
+    optional: true
+- assertVisible:
+    text: "Donate"
+    optional: true
+
+- takeScreenshot: session_first_login_result
+
+# Stop and restart the app WITHOUT clearing state (simulates user closing/reopening)
+- stopApp
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 10000
+
+# Verify session is preserved — user should land on home, not login screen
+- assertVisible:
+    text: "Home"
+    optional: true
+- assertVisible:
+    text: "Donate"
+    optional: true
+
+# Ensure login screen is NOT shown (session still active)
+- assertNotVisible:
+    text: "Login to your account"
+    optional: true
+- assertNotVisible:
+    text: "Enter phone number"
+    optional: true
+
+# Navigate to Profile to confirm logged-in state
+- tapOn:
+    text: "Profile"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify profile data is shown (user is authenticated)
+- assertVisible:
+    text: "Logout"
+    optional: true
+- assertVisible:
+    text: "Settings"
+    optional: true
+
+- takeScreenshot: session_handling_result

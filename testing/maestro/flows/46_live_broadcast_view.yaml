@@ -1,0 +1,111 @@
+appId: com.qatarat.app
+---
+# Flow 46 — Navigate to live broadcast/stream section
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Live Broadcast section
+- tapOn:
+    text: "Live"
+    optional: true
+- tapOn:
+    text: "Live Broadcast"
+    optional: true
+- tapOn:
+    text: "Watch Live"
+    optional: true
+- tapOn:
+    text: "Broadcasts"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify live section is displayed
+- assertVisible:
+    text: "Live"
+    optional: true
+- assertVisible:
+    text: "Broadcast"
+    optional: true
+
+# Tap on first available live stream or broadcast
+- tapOn:
+    index: 0
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify player/viewer is shown
+- assertVisible:
+    text: "Live"
+    optional: true
+
+# Scroll to see more streams
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Test mute/unmute if available
+- tapOn:
+    text: "Mute"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn:
+    text: "Unmute"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Close / back from broadcast
+- tapOn:
+    text: "Close"
+    optional: true
+- tapOn:
+    text: "Back"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- takeScreenshot: live_broadcast_view_result

@@ -1,0 +1,92 @@
+appId: com.qatarat.app
+---
+# Flow 26 — View a mosque/charity profile, donation history, about section
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to mosques / charities listing
+- tapOn:
+    text: "Mosques"
+    optional: true
+- tapOn:
+    text: "Charities"
+    optional: true
+- tapOn:
+    text: "Donate"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Open the first mosque/charity in the list
+- tapOn:
+    index: 0
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# View the About section
+- tapOn:
+    text: "About"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# View donation history for this charity
+- tapOn:
+    text: "Donation History"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "My Donations"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Scroll down to see more content
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- takeScreenshot: mosque_profile_view_result

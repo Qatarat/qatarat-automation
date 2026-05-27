@@ -1,8 +1,9 @@
 appId: com.qatarat.app
 ---
-# Full regression suite — all flows
+# Full regression suite — all 50 flows
 # Run: maestro test flows/suites/regression.yaml
 
+# ── Happy-path flows (01-16) ──────────────────────────────────────────────────
 - runFlow: ../01_splash_onboarding.yaml
 - runFlow: ../02_login_otp.yaml
 - runFlow: ../03_guest_user.yaml
@@ -20,7 +21,7 @@ appId: com.qatarat.app
 - runFlow: ../15_cancel_order.yaml
 - runFlow: ../16_share_app.yaml
 
-# Negative & boundary flows
+# ── Negative & boundary flows (17-25) ────────────────────────────────────────
 - runFlow: ../17_login_invalid_phone.yaml
 - runFlow: ../18_login_wrong_otp.yaml
 - runFlow: ../19_invalid_promo.yaml
@@ -28,7 +29,32 @@ appId: com.qatarat.app
 - runFlow: ../21_gift_card_validation.yaml
 - runFlow: ../22_cart_quantity_boundary.yaml
 - runFlow: ../23_app_background_resume.yaml
-
-# Extended edge-case flows
 - runFlow: ../24_browse_search_edge_cases.yaml
 - runFlow: ../25_payment_input_edge_cases.yaml
+
+# ── Post-login deep coverage (26-50) ─────────────────────────────────────────
+- runFlow: ../26_mosque_profile_view.yaml
+- runFlow: ../27_donation_zakat_flow.yaml
+- runFlow: ../28_donation_sadaqah.yaml
+- runFlow: ../29_donation_recurring.yaml
+- runFlow: ../30_donation_gift_card.yaml
+- runFlow: ../31_wallet_topup.yaml
+- runFlow: ../32_wallet_balance_view.yaml
+- runFlow: ../33_payment_methods_manage.yaml
+- runFlow: ../34_promo_code_valid.yaml
+- runFlow: ../35_promo_code_invalid.yaml
+- runFlow: ../36_language_switch_arabic.yaml
+- runFlow: ../37_language_switch_back.yaml
+- runFlow: ../38_profile_edit.yaml
+- runFlow: ../39_logout_success.yaml
+- runFlow: ../40_otp_resend.yaml
+- runFlow: ../41_search_mosque_name.yaml
+- runFlow: ../42_search_empty_results.yaml
+- runFlow: ../43_search_special_characters.yaml
+- runFlow: ../44_notifications_view.yaml
+- runFlow: ../45_deep_link_handling.yaml
+- runFlow: ../46_live_broadcast_view.yaml
+- runFlow: ../47_dark_mode_toggle.yaml
+- runFlow: ../48_app_background_resume.yaml
+- runFlow: ../49_accessibility_labels.yaml
+- runFlow: ../50_session_handling.yaml

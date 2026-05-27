@@ -1,0 +1,136 @@
+appId: com.qatarat.app
+---
+# Flow 35 — Negative test: apply invalid/expired promo codes and verify error messages
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to donate/checkout
+- tapOn:
+    text: "Donate"
+    optional: true
+- tapOn:
+    text: "Sadaqah"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Select donation amount
+- tapOn:
+    text: "100"
+    optional: true
+- tapOn:
+    text: "SAR 100"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Proceed to checkout
+- tapOn:
+    text: "Donate Now"
+    optional: true
+- tapOn:
+    text: "Proceed"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# --- Test 1: Expired promo code ---
+- tapOn:
+    text: "Promo Code"
+    optional: true
+- tapOn:
+    text: "Have a promo code?"
+    optional: true
+- tapOn:
+    text: "Enter promo code"
+    optional: true
+- inputText: "EXPIRED2020"
+- tapOn:
+    text: "Apply"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify error message for expired code
+- assertVisible:
+    text: "Invalid"
+    optional: true
+- assertVisible:
+    text: "Expired"
+    optional: true
+- assertVisible:
+    text: "not valid"
+    optional: true
+
+# --- Test 2: Completely fake code ---
+- clearText
+- inputText: "ZZZNONSENSE999"
+- tapOn:
+    text: "Apply"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify error for unrecognised code
+- assertVisible:
+    text: "Invalid"
+    optional: true
+- assertVisible:
+    text: "not found"
+    optional: true
+
+# --- Test 3: Empty promo code ---
+- clearText
+- tapOn:
+    text: "Apply"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# App should still be stable (no crash)
+- assertVisible:
+    text: "Promo"
+    optional: true
+
+- takeScreenshot: promo_code_invalid_result

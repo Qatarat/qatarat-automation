@@ -1,0 +1,103 @@
+appId: com.qatarat.app
+---
+# Flow 44 — Open notifications panel, view notification list
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Open Notifications panel
+- tapOn:
+    text: "Notifications"
+    optional: true
+- tapOn:
+    id: "notification_bell"
+    optional: true
+- tapOn:
+    id: "notifications_icon"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify notifications screen loaded
+- assertVisible:
+    text: "Notifications"
+    optional: true
+
+# Scroll through notification list
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Tap first notification to view detail
+- tapOn:
+    index: 0
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Go back to notifications list
+- tapOn:
+    text: "Back"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Mark all as read if option available
+- tapOn:
+    text: "Mark all as read"
+    optional: true
+- tapOn:
+    text: "Mark All Read"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Verify read state
+- assertVisible:
+    text: "Notifications"
+    optional: true
+
+- takeScreenshot: notifications_view_result

@@ -1,0 +1,127 @@
+appId: com.qatarat.app
+---
+# Flow 30 — Send donation as gift card, enter recipient details
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Gift Card section
+- tapOn:
+    text: "Gift Card"
+    optional: true
+- tapOn:
+    text: "Gift Cards"
+    optional: true
+- tapOn:
+    text: "Send a Gift"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Select a gift card value
+- tapOn:
+    text: "SAR 50"
+    optional: true
+- tapOn:
+    text: "50"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Enter recipient name
+- tapOn:
+    text: "Recipient Name"
+    optional: true
+- tapOn:
+    text: "Enter recipient name"
+    optional: true
+- inputText: "Ahmed Al-Rashid"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Enter recipient phone or email
+- tapOn:
+    text: "Recipient Phone"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "0501234567"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Add a personal message
+- tapOn:
+    text: "Personal Message"
+    optional: true
+- tapOn:
+    text: "Add message"
+    optional: true
+- inputText: "May Allah accept this donation on your behalf"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Proceed to checkout
+- tapOn:
+    text: "Send Gift"
+    optional: true
+- tapOn:
+    text: "Proceed to Payment"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Select payment method
+- tapOn:
+    text: "Wallet"
+    optional: true
+- tapOn:
+    text: "Pay"
+    optional: true
+- tapOn:
+    text: "Confirm"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+- takeScreenshot: donation_gift_card_result

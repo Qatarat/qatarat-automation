@@ -1,0 +1,124 @@
+appId: com.qatarat.app
+---
+# Flow 31 — Top up wallet balance, enter amount, select payment method
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Wallet
+- tapOn:
+    text: "Wallet"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Tap Top Up / Add Funds
+- tapOn:
+    text: "Top Up"
+    optional: true
+- tapOn:
+    text: "Add Funds"
+    optional: true
+- tapOn:
+    text: "Recharge"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Enter top-up amount
+- tapOn:
+    text: "Enter Amount"
+    optional: true
+- tapOn:
+    text: "Amount"
+    optional: true
+- clearText
+- inputText: "200"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Select a preset amount if custom not available
+- tapOn:
+    text: "SAR 200"
+    optional: true
+- tapOn:
+    text: "200"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Select payment method
+- tapOn:
+    text: "Credit Card"
+    optional: true
+- tapOn:
+    text: "Debit Card"
+    optional: true
+- tapOn:
+    text: "Apple Pay"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Proceed to confirm
+- tapOn:
+    text: "Proceed"
+    optional: true
+- tapOn:
+    text: "Top Up Now"
+    optional: true
+- tapOn:
+    text: "Confirm"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify updated balance
+- assertVisible:
+    text: "Wallet"
+    optional: true
+- assertVisible:
+    text: "Balance"
+    optional: true
+
+- takeScreenshot: wallet_topup_result

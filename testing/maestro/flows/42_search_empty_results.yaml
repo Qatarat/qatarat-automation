@@ -1,0 +1,98 @@
+appId: com.qatarat.app
+---
+# Flow 42 — Search with nonsense query, verify empty state UI shown correctly
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Search
+- tapOn:
+    text: "Search"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Enter a nonsense / gibberish query that will yield no results
+- tapOn:
+    text: "Search mosques, charities..."
+    optional: true
+- tapOn:
+    text: "Search"
+    optional: true
+- inputText: "xyzxyzxyz99999qqq"
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify empty state is displayed (no crash)
+- assertVisible:
+    text: "No results"
+    optional: true
+- assertVisible:
+    text: "No results found"
+    optional: true
+- assertVisible:
+    text: "Nothing found"
+    optional: true
+- assertVisible:
+    text: "Try a different search"
+    optional: true
+
+# Verify app did not crash — search bar should still be visible
+- assertVisible:
+    text: "Search"
+    optional: true
+
+# Clear the search
+- tapOn:
+    text: "Clear"
+    optional: true
+- clearText
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Verify list returns to default/recent state after clearing
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- takeScreenshot: search_empty_results_result

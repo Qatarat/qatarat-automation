@@ -1,0 +1,115 @@
+appId: com.qatarat.app
+---
+# Flow 27 — Navigate to Zakat calculator, enter amount, proceed to payment
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Zakat section
+- tapOn:
+    text: "Zakat"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Open Zakat calculator
+- tapOn:
+    text: "Zakat Calculator"
+    optional: true
+- tapOn:
+    text: "Calculate Zakat"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Enter gold/cash amount fields
+- tapOn:
+    text: "Cash and Bank Savings"
+    optional: true
+- clearText
+- inputText: "10000"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- tapOn:
+    text: "Gold"
+    optional: true
+- clearText
+- inputText: "500"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Calculate
+- tapOn:
+    text: "Calculate"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Proceed to pay Zakat
+- tapOn:
+    text: "Pay Zakat"
+    optional: true
+- tapOn:
+    text: "Donate Zakat"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Select payment method
+- tapOn:
+    text: "Wallet"
+    optional: true
+- tapOn:
+    text: "Credit Card"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    text: "Proceed"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- takeScreenshot: donation_zakat_flow_result

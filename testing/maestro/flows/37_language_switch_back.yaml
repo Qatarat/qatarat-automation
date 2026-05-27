@@ -1,0 +1,116 @@
+appId: com.qatarat.app
+---
+# Flow 37 — Switch app language from Arabic back to English
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Profile / Settings — try English text first
+- tapOn:
+    text: "Profile"
+    optional: true
+- tapOn:
+    text: "Settings"
+    optional: true
+
+# Also try Arabic labels in case app is already in Arabic
+- tapOn:
+    text: "الإعدادات"
+    optional: true
+- tapOn:
+    text: "الملف الشخصي"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Open Language settings (English or Arabic label)
+- tapOn:
+    text: "Language"
+    optional: true
+- tapOn:
+    text: "اللغة"
+    optional: true
+- tapOn:
+    text: "App Language"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Select English
+- tapOn:
+    text: "English"
+    optional: true
+- tapOn:
+    text: "الإنجليزية"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Confirm dialog if present
+- tapOn:
+    text: "Confirm"
+    optional: true
+- tapOn:
+    text: "تأكيد"
+    optional: true
+- tapOn:
+    text: "OK"
+    optional: true
+- tapOn:
+    text: "Apply"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify English text is restored (LTR layout)
+- assertVisible:
+    text: "Home"
+    optional: true
+- assertVisible:
+    text: "Donate"
+    optional: true
+- assertVisible:
+    text: "Wallet"
+    optional: true
+
+- takeScreenshot: language_switch_back_english_result

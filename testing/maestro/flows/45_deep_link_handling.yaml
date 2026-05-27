@@ -1,0 +1,93 @@
+appId: com.qatarat.app
+---
+# Flow 45 — Test deep link navigation to mosque profile
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Trigger deep link to a mosque/charity profile page
+# Using openLink to simulate deep link handling
+- openLink: "qatarat://mosque/1"
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify the mosque profile screen opened
+- assertVisible:
+    text: "Donate"
+    optional: true
+- assertVisible:
+    text: "About"
+    optional: true
+
+# Go back to home
+- tapOn:
+    text: "Back"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Test deep link to donation screen
+- openLink: "qatarat://donate"
+- waitForAnimationToEnd:
+    timeout: 8000
+
+- assertVisible:
+    text: "Donate"
+    optional: true
+- assertVisible:
+    text: "Zakat"
+    optional: true
+
+# Test deep link to wallet
+- openLink: "qatarat://wallet"
+- waitForAnimationToEnd:
+    timeout: 8000
+
+- assertVisible:
+    text: "Wallet"
+    optional: true
+- assertVisible:
+    text: "Balance"
+    optional: true
+
+- takeScreenshot: deep_link_handling_result

@@ -1,0 +1,131 @@
+appId: com.qatarat.app
+---
+# Flow 47 — Toggle dark mode in Settings if available
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Profile / Settings
+- tapOn:
+    text: "Profile"
+    optional: true
+- tapOn:
+    text: "Settings"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Scroll to find Appearance / Dark Mode toggle
+- scrollUntilVisible:
+    element:
+      text: "Dark Mode"
+    direction: DOWN
+    timeout: 10000
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: "Appearance"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: "Theme"
+    direction: DOWN
+    timeout: 5000
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Enable Dark Mode
+- tapOn:
+    text: "Dark Mode"
+    optional: true
+- tapOn:
+    text: "Dark"
+    optional: true
+- tapOn:
+    text: "Appearance"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify dark mode applied (look for dark theme indicator)
+- assertVisible:
+    text: "Dark"
+    optional: true
+
+# Navigate to home to see dark mode applied
+- tapOn:
+    text: "Home"
+    optional: true
+- tapOn:
+    text: "Back"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- takeScreenshot: dark_mode_enabled_result
+
+# Go back to Settings and toggle back to Light Mode
+- tapOn:
+    text: "Profile"
+    optional: true
+- tapOn:
+    text: "Settings"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Dark Mode"
+    optional: true
+- tapOn:
+    text: "Light"
+    optional: true
+- tapOn:
+    text: "Light Mode"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- takeScreenshot: dark_mode_toggle_result

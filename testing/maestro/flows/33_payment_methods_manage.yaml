@@ -1,0 +1,146 @@
+appId: com.qatarat.app
+---
+# Flow 33 — Add a new payment card, verify it appears in list
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Profile / Settings
+- tapOn:
+    text: "Profile"
+    optional: true
+- tapOn:
+    text: "Settings"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Open Payment Methods
+- tapOn:
+    text: "Payment Methods"
+    optional: true
+- tapOn:
+    text: "Saved Cards"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Add new card
+- tapOn:
+    text: "Add Card"
+    optional: true
+- tapOn:
+    text: "Add New Card"
+    optional: true
+- tapOn:
+    text: "+ Add"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Enter card number
+- tapOn:
+    text: "Card Number"
+    optional: true
+- tapOn:
+    text: "Enter card number"
+    optional: true
+- inputText: "4111111111111111"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Enter expiry date
+- tapOn:
+    text: "Expiry Date"
+    optional: true
+- tapOn:
+    text: "MM/YY"
+    optional: true
+- inputText: "12/26"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Enter CVV
+- tapOn:
+    text: "CVV"
+    optional: true
+- tapOn:
+    text: "Enter CVV"
+    optional: true
+- inputText: "123"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Enter cardholder name
+- tapOn:
+    text: "Cardholder Name"
+    optional: true
+- tapOn:
+    text: "Name on Card"
+    optional: true
+- inputText: "Ahmed Al-Rashid"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Save the card
+- tapOn:
+    text: "Save Card"
+    optional: true
+- tapOn:
+    text: "Add"
+    optional: true
+- tapOn:
+    text: "Confirm"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify card appears in the list
+- assertVisible:
+    text: "4111"
+    optional: true
+- assertVisible:
+    text: "Visa"
+    optional: true
+
+- takeScreenshot: payment_methods_manage_result

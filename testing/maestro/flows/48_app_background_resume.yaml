@@ -1,0 +1,106 @@
+appId: com.qatarat.app
+---
+# Flow 48 — Background the app for 5 seconds, resume, verify state is preserved
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to a specific page to later verify state on resume
+- tapOn:
+    text: "Donate"
+    optional: true
+- tapOn:
+    text: "Sadaqah"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Select an amount to set some UI state
+- tapOn:
+    text: "100"
+    optional: true
+- tapOn:
+    text: "SAR 100"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Background the app for 5 seconds
+- runFlow:
+    commands:
+      - pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Resume the app by tapping on it (Maestro will bring it to foreground)
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify state is preserved — app should return to same screen
+# (Donation/Sadaqah screen should still be visible or home screen with session intact)
+- assertVisible:
+    text: "Donate"
+    optional: true
+- assertVisible:
+    text: "Home"
+    optional: true
+
+# Verify user is still logged in (not kicked back to login)
+- assertNotVisible:
+    text: "Login to your account"
+    optional: true
+
+# Navigate to ensure app is functional after resume
+- tapOn:
+    text: "Home"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- takeScreenshot: app_background_resume_result

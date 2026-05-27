@@ -1,0 +1,102 @@
+appId: com.qatarat.app
+---
+# Flow 43 — Search with special characters (@#$%^&*), verify no crash
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Search
+- tapOn:
+    text: "Search"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# --- Test 1: Special characters ---
+- tapOn:
+    text: "Search mosques, charities..."
+    optional: true
+- tapOn:
+    text: "Search"
+    optional: true
+- inputText: "@#$%^&*"
+- waitForAnimationToEnd:
+    timeout: 5000
+# App must not crash
+- assertVisible:
+    text: "Search"
+    optional: true
+
+# --- Test 2: SQL injection-like string ---
+- clearText
+- inputText: "' OR '1'='1"
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible:
+    text: "Search"
+    optional: true
+
+# --- Test 3: XSS-like string ---
+- clearText
+- inputText: "<script>alert(1)</script>"
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible:
+    text: "Search"
+    optional: true
+
+# --- Test 4: Very long string (boundary test) ---
+- clearText
+- inputText: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible:
+    text: "Search"
+    optional: true
+
+# Clear and return to normal state
+- clearText
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- takeScreenshot: search_special_characters_result

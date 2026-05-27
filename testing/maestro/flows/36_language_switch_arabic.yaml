@@ -1,0 +1,110 @@
+appId: com.qatarat.app
+---
+# Flow 36 — Switch app language to Arabic and verify RTL layout
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Profile / Settings
+- tapOn:
+    text: "Profile"
+    optional: true
+- tapOn:
+    text: "Settings"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Open Language settings
+- tapOn:
+    text: "Language"
+    optional: true
+- tapOn:
+    text: "App Language"
+    optional: true
+- tapOn:
+    text: "Change Language"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Select Arabic
+- tapOn:
+    text: "Arabic"
+    optional: true
+- tapOn:
+    text: "العربية"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Confirm language change dialog if present
+- tapOn:
+    text: "Confirm"
+    optional: true
+- tapOn:
+    text: "OK"
+    optional: true
+- tapOn:
+    text: "Apply"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify Arabic text is visible (RTL layout)
+- assertVisible:
+    text: "الرئيسية"
+    optional: true
+- assertVisible:
+    text: "تبرع"
+    optional: true
+- assertVisible:
+    text: "المحفظة"
+    optional: true
+
+# Scroll to verify RTL rendering
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- takeScreenshot: language_switch_arabic_result

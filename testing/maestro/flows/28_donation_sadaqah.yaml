@@ -1,0 +1,109 @@
+appId: com.qatarat.app
+---
+# Flow 28 — Make a quick Sadaqah donation, select amount, confirm
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Sadaqah
+- tapOn:
+    text: "Sadaqah"
+    optional: true
+- tapOn:
+    text: "Donate"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Select a preset donation amount
+- tapOn:
+    text: "50"
+    optional: true
+- tapOn:
+    text: "SAR 50"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Or enter a custom amount
+- tapOn:
+    text: "Other Amount"
+    optional: true
+- tapOn:
+    text: "Enter Amount"
+    optional: true
+- clearText
+- inputText: "100"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Add optional message/note
+- tapOn:
+    text: "Add a note"
+    optional: true
+- inputText: "For the sake of Allah"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Proceed to confirm
+- tapOn:
+    text: "Donate Now"
+    optional: true
+- tapOn:
+    text: "Confirm"
+    optional: true
+- tapOn:
+    text: "Confirm Donation"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify confirmation screen
+- assertVisible:
+    text: "Thank you"
+    optional: true
+- assertVisible:
+    text: "Donation Successful"
+    optional: true
+
+- takeScreenshot: donation_sadaqah_result

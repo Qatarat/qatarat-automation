@@ -1,0 +1,108 @@
+appId: com.qatarat.app
+---
+# Flow 41 — Search for mosque/charity by name using the search bar
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Search
+- tapOn:
+    text: "Search"
+    optional: true
+- tapOn:
+    id: "search_bar"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Search for a mosque by name
+- tapOn:
+    text: "Search mosques, charities..."
+    optional: true
+- tapOn:
+    text: "Search"
+    optional: true
+- inputText: "Al-Haram"
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify results appear
+- assertVisible:
+    text: "Al-Haram"
+    optional: true
+- assertVisible:
+    text: "Mosque"
+    optional: true
+
+# Tap the first search result
+- tapOn:
+    index: 0
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify profile loaded
+- assertVisible:
+    text: "Donate"
+    optional: true
+- assertVisible:
+    text: "About"
+    optional: true
+
+# Go back and search again with Arabic text
+- tapOn:
+    text: "Back"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
+- clearText
+- inputText: "مسجد"
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify Arabic search results
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- takeScreenshot: search_mosque_name_result

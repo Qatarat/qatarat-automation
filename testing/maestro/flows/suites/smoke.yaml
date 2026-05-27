@@ -1,6 +1,6 @@
 appId: com.qatarat.app
 ---
-# Smoke suite — runs the critical-path flows only (fast, ~5 min)
+# Smoke suite — critical-path flows only (~8 min)
 # Run: maestro test flows/suites/smoke.yaml
 
 - runFlow: ../01_splash_onboarding.yaml
@@ -8,3 +8,6 @@ appId: com.qatarat.app
 - runFlow: ../03_guest_user.yaml
 - runFlow: ../05_cart_add_items.yaml
 - runFlow: ../06_checkout_payment_select.yaml
+- runFlow: ../26_mosque_profile_view.yaml
+- runFlow: ../28_donation_sadaqah.yaml
+- runFlow: ../39_logout_success.yaml

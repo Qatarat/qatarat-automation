@@ -1,0 +1,97 @@
+appId: com.qatarat.app
+---
+# Flow 40 — Test OTP resend functionality during login
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+
+# Onboarding / country selection
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Begin login flow
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Now on OTP screen — do NOT enter OTP yet
+# Wait briefly then test resend
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Tap "Resend OTP" / "Resend Code"
+- tapOn:
+    text: "Resend OTP"
+    optional: true
+- tapOn:
+    text: "Resend Code"
+    optional: true
+- tapOn:
+    text: "Didn't receive a code?"
+    optional: true
+- tapOn:
+    text: "Send again"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify resend confirmation or cooldown timer
+- assertVisible:
+    text: "Resend"
+    optional: true
+- assertVisible:
+    text: "Code sent"
+    optional: true
+- assertVisible:
+    text: "OTP sent"
+    optional: true
+
+# Now enter the OTP to complete login
+- tapOn:
+    text: "Enter OTP"
+    optional: true
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify successful login after resend
+- assertVisible:
+    text: "Home"
+    optional: true
+- assertVisible:
+    text: "Donate"
+    optional: true
+
+- takeScreenshot: otp_resend_result

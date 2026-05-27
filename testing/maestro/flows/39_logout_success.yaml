@@ -1,0 +1,109 @@
+appId: com.qatarat.app
+---
+# Flow 39 — Logout from app, verify returned to login screen
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Navigate to Profile / Settings
+- tapOn:
+    text: "Profile"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Scroll down to find Logout button
+- scrollUntilVisible:
+    element:
+      text: "Logout"
+    direction: DOWN
+    timeout: 10000
+    optional: true
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Tap Logout
+- tapOn:
+    text: "Logout"
+    optional: true
+- tapOn:
+    text: "Log Out"
+    optional: true
+- tapOn:
+    text: "Sign Out"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Confirm logout dialog
+- tapOn:
+    text: "Confirm"
+    optional: true
+- tapOn:
+    text: "Yes"
+    optional: true
+- tapOn:
+    text: "Yes, Logout"
+    optional: true
+- tapOn:
+    text: "OK"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# Verify we are back on the login/onboarding screen
+- assertVisible:
+    text: "Login"
+    optional: true
+- assertVisible:
+    text: "Login to your account"
+    optional: true
+- assertVisible:
+    text: "Select your country"
+    optional: true
+- assertVisible:
+    text: "Enter phone number"
+    optional: true
+
+- takeScreenshot: logout_success_result

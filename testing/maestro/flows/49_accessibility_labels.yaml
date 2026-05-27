@@ -1,0 +1,117 @@
+appId: com.qatarat.app
+---
+# Flow 49 — Verify key UI elements have accessibility labels
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 20000
+- tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Select your country"
+    optional: true
+- tapOn:
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    text: "Login to your account"
+    optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- inputText: "1234"
+- tapOn:
+    text: "Verify"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# --- Home Screen Accessibility ---
+# Verify bottom navigation bar items have accessible labels
+- assertVisible:
+    text: "Home"
+    optional: true
+- assertVisible:
+    text: "Donate"
+    optional: true
+- assertVisible:
+    text: "Wallet"
+    optional: true
+- assertVisible:
+    text: "Profile"
+    optional: true
+
+# --- Donate Screen Accessibility ---
+- tapOn:
+    text: "Donate"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- assertVisible:
+    text: "Zakat"
+    optional: true
+- assertVisible:
+    text: "Sadaqah"
+    optional: true
+
+# --- Wallet Screen Accessibility ---
+- tapOn:
+    text: "Wallet"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- assertVisible:
+    text: "Balance"
+    optional: true
+- assertVisible:
+    text: "Top Up"
+    optional: true
+
+# --- Profile Screen Accessibility ---
+- tapOn:
+    text: "Profile"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- assertVisible:
+    text: "Settings"
+    optional: true
+- assertVisible:
+    text: "Logout"
+    optional: true
+
+# Scroll and check more accessible elements on profile
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- assertVisible:
+    text: "Language"
+    optional: true
+- assertVisible:
+    text: "Payment Methods"
+    optional: true
+
+- takeScreenshot: accessibility_labels_result

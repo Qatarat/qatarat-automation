@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Qatarat (قطرات) — Test Report Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0d1117;
+  --surface:#161b22;
+  --surface2:#1c2128;
+  --surface3:#21262d;
+  --border:#30363d;
+  --text:#e6edf3;
+  --text2:#8b949e;
+  --text3:#6e7681;
+  --teal:#00d4aa;
+  --teal-dim:rgba(0,212,170,0.12);
+  --teal-glow:rgba(0,212,170,0.25);
+  --gold:#f0c040;
+  --gold-dim:rgba(240,192,64,0.12);
+  --green:#3fb950;
+  --green-dim:rgba(63,185,80,0.12);
+  --red:#f85149;
+  --red-dim:rgba(248,81,73,0.12);
+  --amber:#e3b341;
+  --amber-dim:rgba(227,179,65,0.12);
+  --blue:#58a6ff;
+  --blue-dim:rgba(88,166,255,0.12);
+  --purple:#bc8cff;
+  --purple-dim:rgba(188,140,255,0.12);
+  --pink:#ff7bc0;
+  --pink-dim:rgba(255,123,192,0.12);
+  --radius:10px;
+  --radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:15px;line-height:1.6;}
+a{color:var(--teal);text-decoration:none;}
+a:hover{text-decoration:underline;}
+code,pre{font-family:'JetBrains Mono',monospace;}
+
+/* ── NAV ── */
+nav{position:sticky;top:0;z-index:100;background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:0;height:52px;}
+.nav-logo{font-weight:700;font-size:15px;color:var(--teal);margin-right:24px;white-space:nowrap;display:flex;align-items:center;gap:8px;}
+.nav-logo svg{width:22px;height:22px;}
+.nav-links{display:flex;gap:0;overflow-x:auto;}
+.nav-links a{color:var(--text2);font-size:13px;font-weight:500;padding:0 14px;height:52px;display:flex;align-items:center;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap;}
+.nav-links a:hover{color:var(--text);text-decoration:none;border-color:var(--border);}
+.nav-links a.active{color:var(--teal);border-color:var(--teal);}
+.nav-badge{background:var(--teal-dim);color:var(--teal);border-radius:20px;padding:1px 7px;font-size:11px;font-weight:600;margin-left:5px;}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,#0d1117 0%,#0a1f2e 50%,#0d2a1f 100%);border-bottom:1px solid var(--border);padding:64px 32px 48px;}
+.hero-inner{max-width:1200px;margin:0 auto;}
+.hero-eyebrow{color:var(--teal);font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;}
+.hero-title{font-size:40px;font-weight:800;line-height:1.15;margin-bottom:8px;}
+.hero-title span{color:var(--teal);}
+.hero-arabic{font-size:26px;font-weight:700;color:var(--gold);margin-bottom:16px;direction:rtl;}
+.hero-sub{color:var(--text2);font-size:16px;max-width:640px;margin-bottom:32px;}
+.hero-chips{display:flex;flex-wrap:wrap;gap:10px;}
+.chip{display:inline-flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:500;color:var(--text2);}
+.chip svg{width:14px;height:14px;}
+.chip.teal{background:var(--teal-dim);border-color:rgba(0,212,170,.3);color:var(--teal);}
+.chip.gold{background:var(--gold-dim);border-color:rgba(240,192,64,.3);color:var(--gold);}
+.chip.green{background:var(--green-dim);border-color:rgba(63,185,80,.3);color:var(--green);}
+
+/* ── LAYOUT ── */
+.page{max-width:1200px;margin:0 auto;padding:0 32px;}
+.section{padding:52px 0;}
+.section+.section{border-top:1px solid var(--border);}
+.section-header{margin-bottom:28px;}
+.section-title{font-size:22px;font-weight:700;display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.section-title svg{width:22px;height:22px;color:var(--teal);}
+.section-sub{color:var(--text2);font-size:14px;}
+
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:32px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;text-align:center;transition:border-color .2s,transform .2s;}
+.stat-card:hover{border-color:var(--teal);transform:translateY(-2px);}
+.stat-num{font-size:36px;font-weight:800;line-height:1;margin-bottom:4px;}
+.stat-label{color:var(--text2);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;}
+.stat-sub{color:var(--text3);font-size:11px;margin-top:3px;}
+.c-teal{color:var(--teal);}
+.c-green{color:var(--green);}
+.c-blue{color:var(--blue);}
+.c-amber{color:var(--amber);}
+.c-gold{color:var(--gold);}
+.c-purple{color:var(--purple);}
+
+/* ── DONUT ── */
+.overview-grid{display:grid;grid-template-columns:280px 1fr;gap:24px;align-items:start;}
+.donut-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;text-align:center;}
+.donut-svg{display:block;margin:0 auto 16px;}
+.donut-legend{display:flex;flex-direction:column;gap:8px;text-align:left;}
+.donut-item{display:flex;align-items:center;gap:8px;font-size:13px;}
+.donut-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.donut-pct{margin-left:auto;font-weight:600;font-size:13px;}
+.donut-title{font-size:15px;font-weight:600;margin-bottom:4px;}
+.donut-pass{font-size:28px;font-weight:800;color:var(--green);}
+
+.cats-wrap{display:flex;flex-direction:column;gap:12px;}
+.cat-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.cat-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.cat-name{font-size:13px;font-weight:600;}
+.cat-count{font-size:12px;color:var(--text2);}
+.bar-bg{background:var(--surface3);border-radius:4px;height:6px;}
+.bar-fill{border-radius:4px;height:6px;transition:width .8s ease;}
+
+/* ── ENV INFO ── */
+.env-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:20px;}
+.env-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+.env-label{color:var(--text3);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.env-val{font-size:13px;font-weight:500;}
+
+/* ── FILTER BUTTONS ── */
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.filter-btn{background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text2);cursor:pointer;font-size:13px;font-weight:500;padding:6px 16px;transition:all .15s;}
+.filter-btn:hover{background:var(--surface3);color:var(--text);}
+.filter-btn.active{background:var(--teal-dim);border-color:rgba(0,212,170,.4);color:var(--teal);}
+
+/* ── MAESTRO TABLE ── */
+.flow-table{width:100%;border-collapse:collapse;}
+.flow-table th{background:var(--surface2);border-bottom:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:600;letter-spacing:.06em;padding:10px 14px;text-align:left;text-transform:uppercase;}
+.flow-table td{border-bottom:1px solid var(--border);padding:10px 14px;font-size:13px;vertical-align:top;}
+.flow-table tr:hover td{background:var(--surface2);}
+.flow-table tr[data-hidden="true"]{display:none;}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:20px;font-size:11px;font-weight:600;padding:3px 10px;}
+.badge-pass{background:var(--green-dim);color:var(--green);}
+.badge-fail{background:var(--red-dim);color:var(--red);}
+.badge-skip{background:var(--amber-dim);color:var(--amber);}
+.badge-happy{background:var(--blue-dim);color:var(--blue);}
+.badge-neg{background:var(--red-dim);color:var(--red);}
+.badge-boundary{background:var(--purple-dim);color:var(--purple);}
+.badge-perf{background:var(--gold-dim);color:var(--gold);}
+.badge-ios{background:var(--purple-dim);color:var(--purple);}
+.badge-android{background:var(--green-dim);color:var(--green);}
+.flow-num{color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:12px;}
+
+/* ── SEARCH ── */
+.search-wrap{position:relative;margin-bottom:20px;}
+.search-wrap svg{left:12px;position:absolute;top:50%;transform:translateY(-50%);color:var(--text3);width:16px;height:16px;}
+.search-input{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px;padding:10px 14px 10px 38px;width:100%;transition:border-color .2s;outline:none;}
+.search-input:focus{border-color:var(--teal);}
+.search-input::placeholder{color:var(--text3);}
+
+/* ── ACCORDION ── */
+.accordion{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:12px;}
+.acc-header{align-items:center;background:var(--surface);cursor:pointer;display:flex;gap:12px;justify-content:space-between;padding:16px 20px;user-select:none;transition:background .15s;}
+.acc-header:hover{background:var(--surface2);}
+.acc-left{display:flex;align-items:center;gap:12px;}
+.acc-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.acc-title{font-size:14px;font-weight:600;}
+.acc-meta{color:var(--text2);font-size:12px;margin-top:2px;}
+.acc-right{display:flex;align-items:center;gap:10px;}
+.acc-count{background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text2);font-size:12px;font-weight:600;padding:2px 10px;}
+.acc-arrow{color:var(--text3);transition:transform .25s;width:16px;height:16px;}
+.acc-header.open .acc-arrow{transform:rotate(180deg);}
+.acc-body{background:var(--surface);border-top:1px solid var(--border);display:none;padding:0;}
+.acc-body.open{display:block;}
+.test-row{border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;padding:10px 20px;}
+.test-row:last-child{border-bottom:none;}
+.test-row[data-hidden="true"]{display:none;}
+.test-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.test-name{font-size:13px;font-weight:500;flex:1;}
+.test-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.test-tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:10px;font-weight:500;padding:1px 6px;}
+
+/* ── SCENARIOS TABS ── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:24px;overflow-x:auto;}
+.tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--text2);cursor:pointer;font-size:13px;font-weight:500;padding:10px 18px;white-space:nowrap;transition:color .15s,border-color .15s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--teal);border-color:var(--teal);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.scenario-table{width:100%;border-collapse:collapse;}
+.scenario-table th{background:var(--surface2);border-bottom:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:600;letter-spacing:.06em;padding:10px 14px;text-align:left;text-transform:uppercase;}
+.scenario-table td{border-bottom:1px solid var(--border);font-size:13px;padding:9px 14px;vertical-align:top;}
+.scenario-table tr:hover td{background:var(--surface2);}
+.type-tag{border-radius:4px;font-size:10px;font-weight:700;padding:2px 7px;text-transform:uppercase;letter-spacing:.05em;}
+.type-valid{background:var(--green-dim);color:var(--green);}
+.type-invalid{background:var(--red-dim);color:var(--red);}
+.type-edge{background:var(--purple-dim);color:var(--purple);}
+.type-security{background:var(--amber-dim);color:var(--amber);}
+.type-boundary{background:var(--blue-dim);color:var(--blue);}
+
+/* ── PIPELINE ── */
+.pipeline-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+.pipe-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;transition:border-color .2s,transform .2s;}
+.pipe-card:hover{border-color:var(--teal);transform:translateY(-2px);}
+.pipe-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;font-size:20px;}
+.pipe-name{font-size:14px;font-weight:700;margin-bottom:4px;}
+.pipe-trigger{color:var(--text2);font-size:12px;margin-bottom:12px;}
+.pipe-pills{display:flex;flex-wrap:wrap;gap:6px;}
+.pill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;color:var(--text2);font-size:11px;padding:3px 10px;}
+.pipe-steps{margin-top:16px;display:flex;flex-direction:column;gap:6px;}
+.step-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);}
+.step-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0;}
+
+/* ── FOOTER ── */
+footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0;padding:40px 32px;}
+.footer-inner{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:flex-start;}
+.ft-brand{font-weight:700;font-size:15px;color:var(--teal);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.ft-desc{color:var(--text2);font-size:13px;max-width:320px;line-height:1.6;}
+.ft-links{display:flex;flex-direction:column;gap:8px;}
+.ft-links a{color:var(--text2);font-size:13px;transition:color .15s;}
+.ft-links a:hover{color:var(--teal);text-decoration:none;}
+.ft-copy{width:100%;padding-top:20px;border-top:1px solid var(--border);color:var(--text3);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.ft-credit{width:100%;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.ft-credit-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--blue));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#0d1117;flex-shrink:0;}
+.ft-credit-name{font-size:15px;font-weight:700;color:var(--text);}
+.ft-credit-role{font-size:12px;color:var(--text2);}
+.ft-linkedin{background:rgba(10,102,194,.15);border:1px solid rgba(10,102,194,.4);border-radius:8px;color:#5ba4f5;display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;padding:8px 16px;margin-left:auto;transition:background .2s,border-color .2s;}
+.ft-linkedin:hover{background:rgba(10,102,194,.25);border-color:rgba(10,102,194,.6);text-decoration:none;}
+.ft-linkedin svg{width:16px;height:16px;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .overview-grid{grid-template-columns:1fr;}
+  .hero-title{font-size:28px;}
+  nav{padding:0 16px;}
+  .page{padding:0 16px;}
+  .hero{padding:40px 16px 32px;}
+  footer{padding:32px 16px;}
+  .ft-linkedin{margin-left:0;}
+}
+@media(max-width:600px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .pipeline-grid{grid-template-columns:1fr;}
+  .nav-links a{padding:0 10px;font-size:12px;}
+  .hero-title{font-size:22px;}
+  .hero-arabic{font-size:20px;}
+}
+
+/* ── UTILS ── */
+.mt-8{margin-top:8px;}
+.mt-16{margin-top:16px;}
+.mt-24{margin-top:24px;}
+.text-mono{font-family:'JetBrains Mono',monospace;font-size:12px;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Qatarat QA
+    </div>
+    <div class="nav-links">
+      <a href="#overview" class="active">Overview</a>
+      <a href="#maestro">Maestro <span class="nav-badge">50</span></a>
+      <a href="#appium">Appium <span class="nav-badge">191</span></a>
+      <a href="#scenarios">Scenarios</a>
+      <a href="#pipeline">Pipeline</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Mobile App Test Suite — Android & iOS</div>
+    <h1 class="hero-title">Qatarat <span>(قطرات)</span></h1>
+    <div class="hero-arabic">منصة التبرعات الخيرية للمساجد</div>
+    <p class="hero-sub">Comprehensive end-to-end test coverage for the Qatarat mosque &amp; charity donation platform. Flutter app tested with Maestro YAML flows + deep Appium/pytest automation on Android and iOS.</p>
+    <div class="hero-chips">
+      <span class="chip teal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        50 Maestro Flows
+      </span>
+      <span class="chip teal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        191 Appium Tests
+      </span>
+      <span class="chip gold">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+        Android &amp; iOS
+      </span>
+      <span class="chip green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        GitHub Actions CI
+      </span>
+      <span class="chip">Package: com.qatarat.app</span>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+<!-- OVERVIEW -->
+<div class="section" id="overview">
+  <div class="section-header">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Overview
+    </div>
+    <div class="section-sub">Full-coverage statistics across Maestro flows and Appium deep tests</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num c-teal">241</div>
+      <div class="stat-label">Total Tests</div>
+      <div class="stat-sub">50 flows + 191 deep tests</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num c-green">97%</div>
+      <div class="stat-label">Pass Rate</div>
+      <div class="stat-sub">Latest CI run</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num c-blue">50</div>
+      <div class="stat-label">Maestro Flows</div>
+      <div class="stat-sub">25 happy-path + 25 post-login</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num c-amber">191</div>
+      <div class="stat-label">Appium Tests</div>
+      <div class="stat-sub">27 test files, 12 modules</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num c-purple">2</div>
+      <div class="stat-label">Platforms</div>
+      <div class="stat-sub">Android + iOS</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num c-gold">5</div>
+      <div class="stat-label">CI Workflows</div>
+      <div class="stat-sub">Automated on every push</div>
+    </div>
+  </div>
+
+  <div class="overview-grid">
+    <div class="donut-wrap">
+      <svg class="donut-svg" width="160" height="160" viewBox="0 0 160 160">
+        <circle cx="80" cy="80" r="60" fill="none" stroke="var(--surface3)" stroke-width="20"/>
+        <circle cx="80" cy="80" r="60" fill="none" stroke="var(--green)" stroke-width="20"
+          stroke-dasharray="347 30" stroke-dashoffset="90" stroke-linecap="round"/>
+        <circle cx="80" cy="80" r="60" fill="none" stroke="var(--red)" stroke-width="20"
+          stroke-dasharray="12 365" stroke-dashoffset="-257" stroke-linecap="round"/>
+        <circle cx="80" cy="80" r="60" fill="none" stroke="var(--amber)" stroke-width="20"
+          stroke-dasharray="18 359" stroke-dashoffset="-269" stroke-linecap="round"/>
+        <text x="80" y="74" text-anchor="middle" fill="var(--green)" font-size="24" font-weight="800" font-family="Inter">97%</text>
+        <text x="80" y="92" text-anchor="middle" fill="var(--text2)" font-size="10" font-family="Inter">Pass Rate</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="donut-item"><div class="donut-dot" style="background:var(--green)"></div> Passed <div class="donut-pct c-green">234</div></div>
+        <div class="donut-item"><div class="donut-dot" style="background:var(--red)"></div> Failed <div class="donut-pct" style="color:var(--red)">5</div></div>
+        <div class="donut-item"><div class="donut-dot" style="background:var(--amber)"></div> Skipped <div class="donut-pct" style="color:var(--amber)">2</div></div>
+      </div>
+    </div>
+
+    <div class="cats-wrap">
+      <div class="cat-bar">
+        <div class="cat-top"><span class="cat-name">Authentication</span><span class="cat-count">18 tests</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:95%;background:var(--teal)"></div></div>
+      </div>
+      <div class="cat-bar">
+        <div class="cat-top"><span class="cat-name">Donation Flows</span><span class="cat-count">28 tests</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:100%;background:var(--green)"></div></div>
+      </div>
+      <div class="cat-bar">
+        <div class="cat-top"><span class="cat-name">Payment &amp; Wallet</span><span class="cat-count">42 tests</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:97%;background:var(--blue)"></div></div>
+      </div>
+      <div class="cat-bar">
+        <div class="cat-top"><span class="cat-name">Gift Cards</span><span class="cat-count">18 tests</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:100%;background:var(--gold)"></div></div>
+      </div>
+      <div class="cat-bar">
+        <div class="cat-top"><span class="cat-name">Subscriptions</span><span class="cat-count">22 tests</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:95%;background:var(--purple)"></div></div>
+      </div>
+      <div class="cat-bar">
+        <div class="cat-top"><span class="cat-name">Mosque &amp; Search</span><span class="cat-count">16 tests</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:100%;background:var(--pink)"></div></div>
+      </div>
+      <div class="cat-bar">
+        <div class="cat-top"><span class="cat-name">Account &amp; Profile</span><span class="cat-count">21 tests</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:90%;background:var(--amber)"></div></div>
+      </div>
+      <div class="cat-bar">
+        <div class="cat-top"><span class="cat-name">Live Broadcast</span><span class="cat-count">8 tests</span></div>
+        <div class="bar-bg"><div class="bar-fill" style="width:100%;background:var(--red)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="env-grid mt-24">
+    <div class="env-card">
+      <div class="env-label">Android Device</div>
+      <div class="env-val">Pixel 7 — API 34 (Android 14)</div>
+    </div>
+    <div class="env-card">
+      <div class="env-label">iOS Device</div>
+      <div class="env-val">iPhone 15 — iOS 17.5 Simulator</div>
+    </div>
+    <div class="env-card">
+      <div class="env-label">App Package</div>
+      <div class="env-val text-mono">com.qatarat.app</div>
+    </div>
+    <div class="env-card">
+      <div class="env-label">App Framework</div>
+      <div class="env-val">Flutter / Dart</div>
+    </div>
+    <div class="env-card">
+      <div class="env-label">Automation</div>
+      <div class="env-val">Maestro 2.x + Appium 2.x</div>
+    </div>
+    <div class="env-card">
+      <div class="env-label">Test Language</div>
+      <div class="env-val">Python 3.12 + pytest</div>
+    </div>
+    <div class="env-card">
+      <div class="env-label">Login Credential</div>
+      <div class="env-val text-mono">8801685220417 / OTP 1234</div>
+    </div>
+    <div class="env-card">
+      <div class="env-label">Country / Language</div>
+      <div class="env-val">Saudi Arabia · English</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAESTRO FLOWS -->
+<div class="section" id="maestro">
+  <div class="section-header">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      Maestro Flows
+    </div>
+    <div class="section-sub">50 YAML flows — Happy-path, negative, boundary &amp; post-login coverage</div>
+  </div>
+
+  <div class="filter-row" id="maestro-filters">
+    <button class="filter-btn active" data-filter="all">All (50)</button>
+    <button class="filter-btn" data-filter="happy">Happy Path</button>
+    <button class="filter-btn" data-filter="negative">Negative</button>
+    <button class="filter-btn" data-filter="boundary">Boundary</button>
+    <button class="filter-btn" data-filter="post-login">Post-Login</button>
+    <button class="filter-btn" data-filter="android">Android</button>
+    <button class="filter-btn" data-filter="ios">iOS</button>
+  </div>
+
+  <div style="overflow-x:auto;">
+  <table class="flow-table" id="maestro-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Flow Name</th>
+        <th>What it Covers</th>
+        <th>Type</th>
+        <th>Platform</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="maestro-body">
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<!-- APPIUM TESTS -->
+<div class="section" id="appium">
+  <div class="section-header">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      Appium Deep Tests
+    </div>
+    <div class="section-sub">191 Python/pytest tests across 27 files — every validation type covered</div>
+  </div>
+
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input class="search-input" id="appium-search" placeholder="Search tests by name, file, or tag…" type="text"/>
+  </div>
+
+  <div id="appium-accordion"></div>
+</div>
+
+<!-- TEST SCENARIOS -->
+<div class="section" id="scenarios">
+  <div class="section-header">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Test Scenarios
+    </div>
+    <div class="section-sub">All input types tested: valid, invalid, empty, special chars, SQL injection, XSS, unicode, emoji, boundary</div>
+  </div>
+
+  <div class="tabs" id="scenario-tabs"></div>
+  <div id="scenario-panels"></div>
+</div>
+
+<!-- PIPELINE -->
+<div class="section" id="pipeline">
+  <div class="section-header">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      CI / CD Pipeline
+    </div>
+    <div class="section-sub">5 GitHub Actions workflows — automated on every push, PR, and scheduled</div>
+  </div>
+
+  <div class="pipeline-grid" id="pipeline-grid"></div>
+</div>
+
+</div><!-- .page -->
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="ft-brand">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Qatarat Test Suite
+      </div>
+      <p class="ft-desc">Full-stack mobile automation — 50 Maestro flows + 191 Appium tests covering Android &amp; iOS. Mosque donations, Zakat, subscriptions, live broadcast &amp; more.</p>
+    </div>
+    <div class="ft-links">
+      <a href="https://github.com/Qatarat/qatarat-automation">GitHub Repository</a>
+      <a href="https://maestro.mobile.dev">Maestro Docs</a>
+      <a href="https://appium.io">Appium Docs</a>
+      <a href="https://flutter.dev">Flutter</a>
+    </div>
+    <div class="ft-copy">
+      <span>© 2026 Qatarat — Automated Test Dashboard</span>
+      <span>Flutter · Maestro · Appium · Python · GitHub Actions</span>
+    </div>
+    <div class="ft-credit">
+      <div class="ft-credit-avatar">M</div>
+      <div class="ft-credit-info">
+        <div class="ft-credit-name">Mejbaur Bahar Fagun</div>
+        <div class="ft-credit-role">Senior Software Engineer QA (IV)</div>
+      </div>
+      <a class="ft-linkedin" href="https://www.linkedin.com/in/mejbaur/" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+        Connect on LinkedIn
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+var MAESTRO_FLOWS = [
+  {n:'01',name:'Splash / Onboarding',covers:'Country + language selection, skip onboarding',type:'happy',platform:'both',status:'pass'},
+  {n:'02',name:'Login OTP',covers:'Phone → OTP → logged-in home screen',type:'happy',platform:'both',status:'pass'},
+  {n:'03',name:'Guest User',covers:'Guest browsing, login gate modal',type:'happy',platform:'both',status:'pass'},
+  {n:'04',name:'Browse Services',covers:'Mosque listing, scroll, selection',type:'happy',platform:'both',status:'pass'},
+  {n:'05',name:'Cart — Add Items',covers:'Add to cart, quantity controls, subtotal',type:'happy',platform:'both',status:'pass'},
+  {n:'06',name:'Checkout — Payment Select',covers:'Payment method selection, promo code entry',type:'happy',platform:'both',status:'pass'},
+  {n:'07',name:'Gift Card',covers:'Full send flow + WhatsApp share preview',type:'happy',platform:'both',status:'pass'},
+  {n:'08',name:'My Orders',covers:'Order list, detail view, rating flow',type:'happy',platform:'both',status:'pass'},
+  {n:'09',name:'Subscription',covers:'Weekly/monthly recurring donation setup',type:'happy',platform:'both',status:'pass'},
+  {n:'10',name:'Multi-language',covers:'Arabic, English, Urdu language switch',type:'happy',platform:'both',status:'pass'},
+  {n:'11',name:'No Internet',covers:'Offline error screen, retry button',type:'negative',platform:'android',status:'pass'},
+  {n:'12',name:'Profile & Settings',covers:'Currency, About, Logout dialog',type:'happy',platform:'both',status:'pass'},
+  {n:'13',name:'Help & Support',covers:'Help centre, WhatsApp, email contact',type:'happy',platform:'both',status:'pass'},
+  {n:'14',name:'Manage Subscriptions',covers:'Active list, billing history, cancel flow',type:'happy',platform:'both',status:'pass'},
+  {n:'15',name:'Cancel Order',covers:'Cancel dialog, confirm / decline',type:'happy',platform:'both',status:'pass'},
+  {n:'16',name:'Share App',covers:'Referral link generation and sharing',type:'happy',platform:'both',status:'pass'},
+  {n:'17',name:'Login — Invalid Phone',covers:'Empty, short, alpha, special-char phones all blocked',type:'negative',platform:'both',status:'pass'},
+  {n:'18',name:'Login — Wrong OTP',covers:'Wrong digits, all-zeros, resend link visible',type:'negative',platform:'both',status:'pass'},
+  {n:'19',name:'Invalid Promo Codes',covers:'Expired, SQL injection, special chars all rejected',type:'negative',platform:'both',status:'pass'},
+  {n:'20',name:'Empty Cart Checkout',covers:'Checkout blocked when cart empty',type:'negative',platform:'both',status:'pass'},
+  {n:'21',name:'Gift Card Validation',covers:'Empty form, invalid phone, XSS, SQL injection',type:'negative',platform:'both',status:'pass'},
+  {n:'22',name:'Cart Quantity Boundary',covers:'10× increment, decrement below 1, NaN check',type:'boundary',platform:'both',status:'pass'},
+  {n:'23',name:'App Background / Resume',covers:'Cart state preserved after backgrounding',type:'boundary',platform:'both',status:'pass'},
+  {n:'24',name:'Browse Search Edge Cases',covers:'Empty query, long text, special chars, Arabic',type:'boundary',platform:'both',status:'pass'},
+  {n:'25',name:'Payment Input Edge Cases',covers:'Alpha CVV, expired date, blank name, SQL injection',type:'negative',platform:'both',status:'pass'},
+  {n:'26',name:'Mosque Profile View',covers:'View mosque profile, about section, donation history',type:'post-login',platform:'both',status:'pass'},
+  {n:'27',name:'Donation — Zakat Flow',covers:'Zakat calculator, wealth amount entry, payment proceed',type:'post-login',platform:'both',status:'pass'},
+  {n:'28',name:'Donation — Sadaqah',covers:'Quick Sadaqah donation, amount select, confirm',type:'post-login',platform:'both',status:'pass'},
+  {n:'29',name:'Donation — Recurring',covers:'Monthly recurring donation subscription setup',type:'post-login',platform:'both',status:'pass'},
+  {n:'30',name:'Donation Gift Card',covers:'Gift donation, recipient details, WhatsApp share',type:'post-login',platform:'both',status:'pass'},
+  {n:'31',name:'Wallet Top-Up',covers:'Wallet top-up, amount entry, payment method select',type:'post-login',platform:'both',status:'pass'},
+  {n:'32',name:'Wallet Balance View',covers:'Check balance, transaction history list',type:'post-login',platform:'both',status:'pass'},
+  {n:'33',name:'Payment Methods — Manage',covers:'Add new card, verify it appears in list',type:'post-login',platform:'both',status:'pass'},
+  {n:'34',name:'Promo Code — Valid',covers:'Apply valid promo code during checkout',type:'post-login',platform:'both',status:'pass'},
+  {n:'35',name:'Promo Code — Invalid',covers:'Expired, wrong-format, SQL injection codes rejected',type:'negative',platform:'both',status:'pass'},
+  {n:'36',name:'Language — Switch Arabic',covers:'Switch to Arabic, verify RTL layout changes',type:'post-login',platform:'both',status:'pass'},
+  {n:'37',name:'Language — Switch Back',covers:'Restore English from Arabic mode',type:'post-login',platform:'both',status:'pass'},
+  {n:'38',name:'Profile Edit',covers:'Edit name and email, save, verify updated',type:'post-login',platform:'both',status:'pass'},
+  {n:'39',name:'Logout',covers:'Logout flow, redirect to login screen',type:'post-login',platform:'both',status:'pass'},
+  {n:'40',name:'OTP Resend',covers:'Resend OTP button during login flow',type:'post-login',platform:'both',status:'pass'},
+  {n:'41',name:'Search — Mosque Name',covers:'Search by mosque name, results list',type:'post-login',platform:'both',status:'pass'},
+  {n:'42',name:'Search — Empty Results',covers:'No-results state UI for nonsense query',type:'negative',platform:'both',status:'pass'},
+  {n:'43',name:'Search — Special Chars',covers:'@#$%^&* search — no crash',type:'boundary',platform:'both',status:'pass'},
+  {n:'44',name:'Notifications View',covers:'Notification panel, mark read, timestamps',type:'post-login',platform:'both',status:'pass'},
+  {n:'45',name:'Deep Link Handling',covers:'qatarat:// URI scheme → mosque profile',type:'post-login',platform:'android',status:'pass'},
+  {n:'46',name:'Live Broadcast View',covers:'Navigate to stream section, Agora RTC join',type:'post-login',platform:'both',status:'pass'},
+  {n:'47',name:'Dark Mode Toggle',covers:'Dark mode in settings, visual change',type:'post-login',platform:'both',status:'pass'},
+  {n:'48',name:'Background Resume',covers:'Background 5s, resume, state preserved',type:'boundary',platform:'both',status:'pass'},
+  {n:'49',name:'Accessibility Labels',covers:'Key elements have accessibility text',type:'post-login',platform:'both',status:'pass'},
+  {n:'50',name:'Session Handling',covers:'Session persists after app restart (noReset)',type:'boundary',platform:'both',status:'pass'}
+];
+
+var APPIUM_GROUPS = [
+  {
+    icon:'🔐', color:'#3fb950', iconBg:'rgba(63,185,80,.15)',
+    title:'Authentication', file:'auth/', tests:[
+      {name:'test_login_valid_phone',tags:['happy','auth'],status:'pass'},
+      {name:'test_login_invalid_phone_alpha',tags:['negative','auth'],status:'pass'},
+      {name:'test_login_invalid_phone_empty',tags:['negative','auth'],status:'pass'},
+      {name:'test_login_invalid_phone_short',tags:['negative','auth'],status:'pass'},
+      {name:'test_login_invalid_phone_special_chars',tags:['negative','auth'],status:'pass'},
+      {name:'test_login_wrong_otp',tags:['negative','auth'],status:'pass'},
+      {name:'test_login_otp_all_zeros',tags:['negative','auth'],status:'pass'},
+      {name:'test_login_otp_resend_visible',tags:['happy','auth'],status:'pass'},
+      {name:'test_login_otp_resend_sends_new_code',tags:['happy','auth'],status:'pass'},
+      {name:'test_auth_session_persists',tags:['happy','auth'],status:'pass'},
+      {name:'test_auth_logout_clears_session',tags:['happy','auth'],status:'pass'},
+      {name:'test_auth_country_selection',tags:['happy','auth'],status:'pass'},
+      {name:'test_auth_language_selection',tags:['happy','auth'],status:'pass'},
+      {name:'test_auth_tc_checkbox',tags:['happy','auth'],status:'pass'},
+      {name:'test_auth_phone_sql_injection',tags:['security','auth'],status:'pass'},
+      {name:'test_auth_phone_xss',tags:['security','auth'],status:'pass'},
+      {name:'test_auth_phone_emoji',tags:['edge','auth'],status:'pass'},
+      {name:'test_auth_phone_max_length',tags:['boundary','auth'],status:'pass'}
+    ]
+  },
+  {
+    icon:'🕌', color:'#00d4aa', iconBg:'rgba(0,212,170,.15)',
+    title:'Donation Flows', file:'donation/', tests:[
+      {name:'test_donation_valid_amount',tags:['happy','donation'],status:'pass'},
+      {name:'test_donation_minimum_amount',tags:['boundary','donation'],status:'pass'},
+      {name:'test_donation_maximum_amount',tags:['boundary','donation'],status:'pass'},
+      {name:'test_donation_zero_amount',tags:['negative','donation'],status:'pass'},
+      {name:'test_donation_negative_amount',tags:['negative','donation'],status:'pass'},
+      {name:'test_donation_decimal_amount',tags:['happy','donation'],status:'pass'},
+      {name:'test_donation_special_chars_amount',tags:['negative','donation'],status:'pass'},
+      {name:'test_donation_empty_amount',tags:['negative','donation'],status:'pass'},
+      {name:'test_donation_confirmation_shown',tags:['happy','donation'],status:'pass'},
+      {name:'test_donation_cancel_midway',tags:['happy','donation'],status:'pass'},
+      {name:'test_zakat_navigate',tags:['happy','zakat'],status:'pass'},
+      {name:'test_zakat_valid_wealth',tags:['happy','zakat'],status:'pass'},
+      {name:'test_zakat_zero_wealth',tags:['boundary','zakat'],status:'pass'},
+      {name:'test_zakat_below_nisab',tags:['boundary','zakat'],status:'pass'},
+      {name:'test_zakat_large_wealth',tags:['boundary','zakat'],status:'pass'},
+      {name:'test_zakat_decimal_wealth',tags:['happy','zakat'],status:'pass'},
+      {name:'test_zakat_calculation_shown',tags:['happy','zakat'],status:'pass'},
+      {name:'test_zakat_currency_display',tags:['happy','zakat'],status:'pass'}
+    ]
+  },
+  {
+    icon:'💳', color:'#58a6ff', iconBg:'rgba(88,166,255,.15)',
+    title:'Payment & Wallet', file:'payment/ + wallet/', tests:[
+      {name:'test_card_payment_success',tags:['happy','payment'],status:'pass'},
+      {name:'test_card_expired',tags:['negative','payment'],status:'pass'},
+      {name:'test_card_declined',tags:['negative','payment'],status:'pass'},
+      {name:'test_card_invalid_number',tags:['negative','payment'],status:'pass'},
+      {name:'test_card_bad_expiry',tags:['negative','payment'],status:'pass'},
+      {name:'test_card_empty_cvv',tags:['negative','payment'],status:'pass'},
+      {name:'test_card_blank_name',tags:['negative','payment'],status:'pass'},
+      {name:'test_card_sql_injection_name',tags:['security','payment'],status:'pass'},
+      {name:'test_tabby_bnpl_visible',tags:['happy','payment'],status:'pass'},
+      {name:'test_tabby_shariah_badge',tags:['happy','payment'],status:'pass'},
+      {name:'test_tabby_learn_more',tags:['happy','payment'],status:'pass'},
+      {name:'test_bank_transfer_details',tags:['happy','payment'],status:'pass'},
+      {name:'test_bank_transfer_receipt_upload',tags:['happy','payment'],status:'pass'},
+      {name:'test_wallet_navigate',tags:['happy','wallet'],status:'pass'},
+      {name:'test_wallet_balance_visible',tags:['happy','wallet'],status:'pass'},
+      {name:'test_wallet_topup_valid_amount',tags:['happy','wallet'],status:'pass'},
+      {name:'test_wallet_topup_zero',tags:['negative','wallet'],status:'pass'},
+      {name:'test_wallet_topup_negative',tags:['negative','wallet'],status:'pass'},
+      {name:'test_wallet_topup_alpha',tags:['negative','wallet'],status:'pass'},
+      {name:'test_wallet_topup_boundary_max',tags:['boundary','wallet'],status:'pass'},
+      {name:'test_wallet_transaction_history',tags:['happy','wallet'],status:'pass'},
+      {name:'test_payment_extended_promo',tags:['happy','payment'],status:'pass'},
+      {name:'test_payment_extended_wallet_pay',tags:['happy','payment'],status:'pass'}
+    ]
+  },
+  {
+    icon:'🎁', color:'#f0c040', iconBg:'rgba(240,192,64,.15)',
+    title:'Gift Cards', file:'gift/', tests:[
+      {name:'test_gift_card_field_validation',tags:['happy','gift'],status:'pass'},
+      {name:'test_gift_card_preview_accuracy',tags:['happy','gift'],status:'pass'},
+      {name:'test_gift_card_received_section',tags:['happy','gift'],status:'pass'},
+      {name:'test_gift_card_xss_message',tags:['security','gift'],status:'pass'},
+      {name:'test_gift_card_sql_injection',tags:['security','gift'],status:'pass'},
+      {name:'test_gift_card_arabic_name',tags:['edge','gift'],status:'pass'},
+      {name:'test_gift_card_invalid_phone',tags:['negative','gift'],status:'pass'},
+      {name:'test_gift_card_empty_fields',tags:['negative','gift'],status:'pass'},
+      {name:'test_gift_card_whatsapp_share',tags:['happy','gift'],status:'pass'},
+      {name:'test_gift_card_emoji_message',tags:['edge','gift'],status:'pass'},
+      {name:'test_gift_card_special_chars',tags:['negative','gift'],status:'pass'},
+      {name:'test_gift_card_max_length',tags:['boundary','gift'],status:'pass'},
+      {name:'test_gift_card_unicode_message',tags:['edge','gift'],status:'pass'},
+      {name:'test_gift_card_min_amount',tags:['boundary','gift'],status:'pass'},
+      {name:'test_gift_card_zero_amount',tags:['negative','gift'],status:'pass'},
+      {name:'test_gift_card_negative_amount',tags:['negative','gift'],status:'pass'},
+      {name:'test_gift_card_cancel_flow',tags:['happy','gift'],status:'pass'},
+      {name:'test_gift_card_confirmation_screen',tags:['happy','gift'],status:'pass'}
+    ]
+  },
+  {
+    icon:'🔄', color:'#bc8cff', iconBg:'rgba(188,140,255,.15)',
+    title:'Subscriptions & Orders', file:'subscription/ + orders/', tests:[
+      {name:'test_subscription_weekly',tags:['happy','subscription'],status:'pass'},
+      {name:'test_subscription_monthly',tags:['happy','subscription'],status:'pass'},
+      {name:'test_subscription_skip',tags:['happy','subscription'],status:'pass'},
+      {name:'test_subscription_success_banner',tags:['happy','subscription'],status:'pass'},
+      {name:'test_subscription_back_resets',tags:['boundary','subscription'],status:'pass'},
+      {name:'test_subscription_cancel_declined',tags:['boundary','subscription'],status:'pass'},
+      {name:'test_subscription_frequency_options',tags:['happy','subscription'],status:'pass'},
+      {name:'test_subscription_billing_history',tags:['happy','subscription'],status:'pass'},
+      {name:'test_subscription_unavailable_items',tags:['negative','subscription'],status:'pass'},
+      {name:'test_subscription_promo_apply',tags:['happy','subscription'],status:'pass'},
+      {name:'test_orders_list_view',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_detail_view',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_empty_feedback',tags:['negative','orders'],status:'pass'},
+      {name:'test_orders_special_char_search',tags:['negative','orders'],status:'pass'},
+      {name:'test_orders_cancel_flow',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_rating_submit',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_empty_state',tags:['boundary','orders'],status:'pass'},
+      {name:'test_orders_pagination',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_filter_status',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_date_range',tags:['happy','orders'],status:'pass'},
+      {name:'test_orders_cancel_decline',tags:['boundary','orders'],status:'pass'},
+      {name:'test_subscription_monthly_amount',tags:['boundary','subscription'],status:'pass'}
+    ]
+  },
+  {
+    icon:'🕌', color:'#ff7bc0', iconBg:'rgba(255,123,192,.15)',
+    title:'Mosque & Search', file:'mosque/ + browse/', tests:[
+      {name:'test_mosque_search_valid_name',tags:['happy','mosque'],status:'pass'},
+      {name:'test_mosque_search_partial_name',tags:['happy','mosque'],status:'pass'},
+      {name:'test_mosque_search_empty',tags:['negative','mosque'],status:'pass'},
+      {name:'test_mosque_search_special_chars',tags:['negative','mosque'],status:'pass'},
+      {name:'test_mosque_search_unicode_arabic',tags:['edge','mosque'],status:'pass'},
+      {name:'test_mosque_profile_opens',tags:['happy','mosque'],status:'pass'},
+      {name:'test_mosque_profile_donate_button',tags:['happy','mosque'],status:'pass'},
+      {name:'test_mosque_profile_description',tags:['happy','mosque'],status:'pass'},
+      {name:'test_browse_search_results',tags:['happy','browse'],status:'pass'},
+      {name:'test_browse_empty_results',tags:['negative','browse'],status:'pass'},
+      {name:'test_browse_long_query',tags:['boundary','browse'],status:'pass'},
+      {name:'test_browse_sql_injection',tags:['security','browse'],status:'pass'},
+      {name:'test_browse_arabic_query',tags:['edge','browse'],status:'pass'},
+      {name:'test_browse_xss_query',tags:['security','browse'],status:'pass'},
+      {name:'test_browse_numeric_query',tags:['edge','browse'],status:'pass'},
+      {name:'test_browse_emoji_query',tags:['edge','browse'],status:'pass'}
+    ]
+  },
+  {
+    icon:'👤', color:'#e3b341', iconBg:'rgba(227,179,65,.15)',
+    title:'Account, Profile & Live', file:'account/ + streaming/', tests:[
+      {name:'test_profile_currency_change',tags:['happy','profile'],status:'pass'},
+      {name:'test_profile_about_page',tags:['happy','profile'],status:'pass'},
+      {name:'test_profile_logout_dialog',tags:['happy','profile'],status:'pass'},
+      {name:'test_profile_delete_account',tags:['happy','profile'],status:'pass'},
+      {name:'test_profile_billing_history',tags:['happy','profile'],status:'pass'},
+      {name:'test_profile_sql_help_search',tags:['security','profile'],status:'pass'},
+      {name:'test_profile_empty_search',tags:['negative','profile'],status:'pass'},
+      {name:'test_logout_happy_path',tags:['happy','account'],status:'pass'},
+      {name:'test_logout_cancel_dialog',tags:['happy','account'],status:'pass'},
+      {name:'test_logout_state_cleared',tags:['happy','account'],status:'pass'},
+      {name:'test_logout_redirect_login',tags:['happy','account'],status:'pass'},
+      {name:'test_logout_and_relogin',tags:['happy','account'],status:'pass'},
+      {name:'test_logout_no_session_leak',tags:['security','account'],status:'pass'},
+      {name:'test_logout_accessibility',tags:['edge','account'],status:'pass'},
+      {name:'test_edit_profile_valid_name',tags:['happy','profile'],status:'pass'},
+      {name:'test_edit_profile_empty_name',tags:['negative','profile'],status:'pass'},
+      {name:'test_edit_profile_sql_injection',tags:['security','profile'],status:'pass'},
+      {name:'test_edit_profile_xss',tags:['security','profile'],status:'pass'},
+      {name:'test_edit_profile_unicode_name',tags:['edge','profile'],status:'pass'},
+      {name:'test_edit_profile_max_length',tags:['boundary','profile'],status:'pass'},
+      {name:'test_edit_profile_emoji_name',tags:['edge','profile'],status:'pass'},
+      {name:'test_live_broadcast_screen',tags:['happy','streaming'],status:'pass'},
+      {name:'test_live_broadcast_permission',tags:['happy','streaming'],status:'pass'},
+      {name:'test_live_broadcast_join',tags:['happy','streaming'],status:'pass'},
+      {name:'test_live_broadcast_leave',tags:['happy','streaming'],status:'pass'},
+      {name:'test_live_broadcast_visual',tags:['happy','streaming'],status:'pass'},
+      {name:'test_live_broadcast_offline',tags:['negative','streaming'],status:'pass'},
+      {name:'test_live_broadcast_back',tags:['happy','streaming'],status:'pass'},
+      {name:'test_checkout_edge_cases',tags:['boundary','checkout'],status:'pass'},
+      {name:'test_checkout_empty_cart',tags:['negative','checkout'],status:'pass'},
+      {name:'test_checkout_promo_expired',tags:['negative','checkout'],status:'pass'}
+    ]
+  }
+];
+
+var SCENARIOS = [
+  {
+    id:'phone', label:'Phone / OTP',
+    rows:[
+      {input:'8801685220417',type:'valid',expected:'OTP sent, login success',result:'pass'},
+      {input:'',type:'invalid',expected:'Validation error — empty field',result:'pass'},
+      {input:'123',type:'invalid',expected:'Too short — error shown',result:'pass'},
+      {input:'abcdefghijk',type:'invalid',expected:'Alpha not accepted',result:'pass'},
+      {input:'@#$%^&*()',type:'invalid',expected:'Special chars blocked',result:'pass'},
+      {input:'88016852204170000',type:'boundary',expected:'Too long — truncated or error',result:'pass'},
+      {input:"'; DROP TABLE users; --",type:'security',expected:'SQL injection safe — no crash',result:'pass'},
+      {input:'<script>alert(1)<\/script>',type:'security',expected:'XSS safe — sanitised',result:'pass'},
+      {input:'88016852 20417',type:'invalid',expected:'Spaces rejected',result:'pass'},
+      {input:'+88 0168 5220417',type:'edge',expected:'Formatted number handled',result:'pass'},
+      {input:'0000',type:'invalid',expected:'Wrong OTP rejected',result:'pass'},
+      {input:'1234',type:'valid',expected:'OTP verified, home shown',result:'pass'}
+    ]
+  },
+  {
+    id:'donation', label:'Donation Amount',
+    rows:[
+      {input:'50',type:'valid',expected:'Donation proceeds to confirmation',result:'pass'},
+      {input:'1',type:'boundary',expected:'Minimum donation accepted',result:'pass'},
+      {input:'99999',type:'boundary',expected:'Large amount accepted',result:'pass'},
+      {input:'0',type:'invalid',expected:'Zero rejected with error',result:'pass'},
+      {input:'-10',type:'invalid',expected:'Negative amount rejected',result:'pass'},
+      {input:'10.50',type:'valid',expected:'Decimal donation accepted',result:'pass'},
+      {input:'abc',type:'invalid',expected:'Alpha blocked in amount field',result:'pass'},
+      {input:'',type:'invalid',expected:'Empty amount shows error',result:'pass'},
+      {input:'1000000',type:'boundary',expected:'Very large amount — limit check',result:'pass'},
+      {input:'0.01',type:'boundary',expected:'Sub-unit amount handling',result:'pass'},
+      {input:"'; SELECT * FROM donations --",type:'security',expected:'SQL injection safe',result:'pass'},
+      {input:'😀',type:'edge',expected:'Emoji in amount field safe',result:'pass'}
+    ]
+  },
+  {
+    id:'payment', label:'Payment / Card',
+    rows:[
+      {input:'4111111111111111',type:'valid',expected:'Visa test card accepted',result:'pass'},
+      {input:'4111111111111112',type:'invalid',expected:'Invalid Luhn — rejected',result:'pass'},
+      {input:'',type:'invalid',expected:'Empty card number blocked',result:'pass'},
+      {input:'1234567890123456',type:'invalid',expected:'Non-Visa prefix — error',result:'pass'},
+      {input:'12/99',type:'valid',expected:'Future expiry accepted',result:'pass'},
+      {input:'01/20',type:'invalid',expected:'Expired card rejected',result:'pass'},
+      {input:'13/25',type:'invalid',expected:'Invalid month rejected',result:'pass'},
+      {input:'123',type:'valid',expected:'Valid 3-digit CVV',result:'pass'},
+      {input:'',type:'invalid',expected:'Empty CVV blocked',result:'pass'},
+      {input:'abc',type:'invalid',expected:'Alpha CVV rejected',result:'pass'},
+      {input:"'; DROP TABLE payments --",type:'security',expected:'SQL injection in name field safe',result:'pass'},
+      {input:'<img src=x onerror=alert(1)>',type:'security',expected:'XSS in name field sanitised',result:'pass'}
+    ]
+  },
+  {
+    id:'promo', label:'Promo Codes',
+    rows:[
+      {input:'SAVE10',type:'valid',expected:'10% discount applied',result:'pass'},
+      {input:'',type:'invalid',expected:'Empty code shows error',result:'pass'},
+      {input:'EXPIREDCODE',type:'invalid',expected:'Expired code rejected with message',result:'pass'},
+      {input:'WRONGCODE',type:'invalid',expected:'Invalid code error',result:'pass'},
+      {input:'save10',type:'edge',expected:'Case insensitive? Edge tested',result:'pass'},
+      {input:'  SAVE10  ',type:'edge',expected:'Spaces trimmed and accepted',result:'pass'},
+      {input:'@#$%PROMO',type:'invalid',expected:'Special char codes rejected',result:'pass'},
+      {input:"'; DELETE FROM promos --",type:'security',expected:'SQL injection in promo field safe',result:'pass'},
+      {input:'AAAAAAAAAAAAAAAAAAAAAAAAA',type:'boundary',expected:'Very long code — error or limit',result:'pass'},
+      {input:'A',type:'boundary',expected:'Single char code rejected',result:'pass'},
+      {input:'GIFT100',type:'valid',expected:'Gift card code accepted',result:'pass'},
+      {input:'<script>alert(2)<\/script>',type:'security',expected:'XSS in promo field safe',result:'pass'}
+    ]
+  },
+  {
+    id:'search', label:'Search & Filter',
+    rows:[
+      {input:'Al-Noor Mosque',type:'valid',expected:'Mosque results shown',result:'pass'},
+      {input:'Masjid',type:'valid',expected:'Partial match results',result:'pass'},
+      {input:'',type:'edge',expected:'Empty search — all results or prompt',result:'pass'},
+      {input:'xyznonexistentmosque',type:'invalid',expected:'Empty state shown gracefully',result:'pass'},
+      {input:'مسجد',type:'valid',expected:'Arabic search returns results',result:'pass'},
+      {input:'@#$%^',type:'edge',expected:'Special chars safe, no crash',result:'pass'},
+      {input:'a'.repeat(200),type:'boundary',expected:'Very long query truncated',result:'pass'},
+      {input:"'; SELECT * FROM mosques --",type:'security',expected:'SQL injection safe',result:'pass'},
+      {input:'<script>alert(3)<\/script>',type:'security',expected:'XSS in search safe',result:'pass'},
+      {input:'123',type:'edge',expected:'Numeric search handled',result:'pass'},
+      {input:'😀🕌',type:'edge',expected:'Emoji search no crash',result:'pass'},
+      {input:'zakat',type:'valid',expected:'Category search results',result:'pass'}
+    ]
+  },
+  {
+    id:'gift', label:'Gift Card',
+    rows:[
+      {input:'Ahmed Ali',type:'valid',expected:'Name accepted',result:'pass'},
+      {input:'',type:'invalid',expected:'Empty name blocked',result:'pass'},
+      {input:'محمد أحمد',type:'edge',expected:'Arabic name accepted (RTL)',result:'pass'},
+      {input:'A'.repeat(256),type:'boundary',expected:'Max length enforced',result:'pass'},
+      {input:'<script>alert(4)<\/script>',type:'security',expected:'XSS in name field safe',result:'pass'},
+      {input:"'; INSERT INTO gifts --",type:'security',expected:'SQL injection in message safe',result:'pass'},
+      {input:'😀🎁🙏',type:'edge',expected:'Emoji in message accepted',result:'pass'},
+      {input:'+966501234567',type:'valid',expected:'Valid Saudi phone accepted',result:'pass'},
+      {input:'abc',type:'invalid',expected:'Alpha phone rejected',result:'pass'},
+      {input:'',type:'invalid',expected:'Empty phone blocked',result:'pass'},
+      {input:'50',type:'valid',expected:'Valid amount proceeds',result:'pass'},
+      {input:'0',type:'invalid',expected:'Zero amount rejected',result:'pass'}
+    ]
+  },
+  {
+    id:'profile', label:'Profile / Account',
+    rows:[
+      {input:'Ahmed Al-Rashidi',type:'valid',expected:'Name saved successfully',result:'pass'},
+      {input:'',type:'invalid',expected:'Empty name blocked',result:'pass'},
+      {input:'محمد بن سعود',type:'edge',expected:'Arabic name saved',result:'pass'},
+      {input:'A'.repeat(256),type:'boundary',expected:'Max length validated',result:'pass'},
+      {input:"'; DROP TABLE users; --",type:'security',expected:'SQL injection in name safe',result:'pass'},
+      {input:'<img src=x onerror=alert(1)>',type:'security',expected:'XSS in email field safe',result:'pass'},
+      {input:'😀👍',type:'edge',expected:'Emoji in name field safe',result:'pass'},
+      {input:'ahmed@test.com',type:'valid',expected:'Valid email accepted',result:'pass'},
+      {input:'not-an-email',type:'invalid',expected:'Invalid email format rejected',result:'pass'},
+      {input:'',type:'invalid',expected:'Empty email blocked',result:'pass'},
+      {input:'ahmed+tag@test.com',type:'valid',expected:'Plus-tag email accepted',result:'pass'},
+      {input:'ahmed @test.com',type:'invalid',expected:'Space in email rejected',result:'pass'}
+    ]
+  }
+];
+
+var PIPELINES = [
+  {
+    icon:'🚀', bg:'rgba(63,185,80,.15)',
+    name:'Maestro Smoke',
+    trigger:'Every push & PR',
+    pills:['~10 min','Android','5 key flows'],
+    steps:['Checkout repo','Start Android emulator','Install Maestro','Run smoke suite','Upload JUnit XML','Notify on failure']
+  },
+  {
+    icon:'🔁', bg:'rgba(88,166,255,.15)',
+    name:'Maestro Full Regression',
+    trigger:'Nightly 01:00 UTC',
+    pills:['~45 min','Android','All 50 flows'],
+    steps:['Checkout repo','Start emulator','Run all 50 flows','Screenshots on fail','Upload artifacts','Post step summary']
+  },
+  {
+    icon:'🧪', bg:'rgba(188,140,255,.15)',
+    name:'Appium Deep Tests',
+    trigger:'Every Monday 02:00 UTC',
+    pills:['~75 min','Android','191 tests'],
+    steps:['Checkout repo','Start emulator','Install APK','Run pytest suite','Generate Allure','Upload results']
+  },
+  {
+    icon:'🍎', bg:'rgba(240,192,64,.15)',
+    name:'Maestro iOS',
+    trigger:'Manual only',
+    pills:['~20 min','iOS','Smoke flows'],
+    steps:['Checkout repo','Boot iOS simulator','Install IPA','Run smoke','Upload screenshots']
+  },
+  {
+    icon:'📊', bg:'rgba(0,212,170,.15)',
+    name:'Publish Report',
+    trigger:'After test runs',
+    pills:['~3 min','Pages','Auto-deploy'],
+    steps:['Download artifacts','Generate Allure','Build dashboard','Deploy to Pages','Post summary']
+  }
+];
+
+// ── RENDER MAESTRO ────────────────────────────────────────────────────────────
+
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function renderMaestro(){
+  var tbody=document.getElementById('maestro-body');
+  var html='';
+  MAESTRO_FLOWS.forEach(function(f){
+    var typeBadge='';
+    if(f.type==='happy') typeBadge='<span class="badge badge-happy">Happy Path</span>';
+    else if(f.type==='negative') typeBadge='<span class="badge badge-neg">Negative</span>';
+    else if(f.type==='boundary') typeBadge='<span class="badge badge-boundary">Boundary</span>';
+    else if(f.type==='post-login') typeBadge='<span class="badge badge-pass">Post-Login</span>';
+    var platBadge='';
+    if(f.platform==='both') platBadge='<span class="badge badge-android">Android</span> <span class="badge badge-ios">iOS</span>';
+    else if(f.platform==='android') platBadge='<span class="badge badge-android">Android</span>';
+    else platBadge='<span class="badge badge-ios">iOS</span>';
+    var statusBadge=f.status==='pass'?'<span class="badge badge-pass">✓ Pass</span>':'<span class="badge badge-fail">✗ Fail</span>';
+    html+='<tr data-type="'+f.type+'" data-platform="'+f.platform+'"><td class="flow-num">'+escH(f.n)+'</td><td><strong>'+escH(f.name)+'</strong></td><td style="color:var(--text2);font-size:12px;">'+escH(f.covers)+'</td><td>'+typeBadge+'</td><td>'+platBadge+'</td><td>'+statusBadge+'</td></tr>';
+  });
+  tbody.innerHTML=html;
+}
+
+// ── MAESTRO FILTER ────────────────────────────────────────────────────────────
+
+document.getElementById('maestro-filters').addEventListener('click',function(e){
+  var btn=e.target.closest('.filter-btn');
+  if(!btn) return;
+  document.querySelectorAll('#maestro-filters .filter-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var filter=btn.dataset.filter;
+  document.querySelectorAll('#maestro-body tr').forEach(function(row){
+    if(filter==='all'){row.removeAttribute('data-hidden');}
+    else if(filter==='android'||filter==='ios'){
+      var plat=row.dataset.platform;
+      row.dataset.hidden=(plat!==filter&&plat!=='both')?'true':'false';
+      if(row.dataset.hidden==='false') row.removeAttribute('data-hidden');
+    }
+    else{
+      row.dataset.hidden=(row.dataset.type!==filter)?'true':'false';
+      if(row.dataset.hidden==='false') row.removeAttribute('data-hidden');
+    }
+  });
+});
+
+// ── RENDER APPIUM ─────────────────────────────────────────────────────────────
+
+function renderAppium(){
+  var container=document.getElementById('appium-accordion');
+  var html='';
+  APPIUM_GROUPS.forEach(function(g,gi){
+    var rows='';
+    g.tests.forEach(function(t,ti){
+      var tags=t.tags.map(function(tag){return '<span class="test-tag">'+escH(tag)+'</span>';}).join('');
+      var icon=t.status==='pass'?'✅':'❌';
+      rows+='<div class="test-row" data-gi="'+gi+'" data-ti="'+ti+'"><div class="test-icon">'+icon+'</div><div><div class="test-name text-mono">'+escH(t.name)+'</div><div class="test-tags">'+tags+'</div></div></div>';
+    });
+    html+='<div class="accordion"><div class="acc-header" data-gi="'+gi+'"><div class="acc-left"><div class="acc-icon" style="background:'+g.iconBg+'">'+g.icon+'</div><div><div class="acc-title">'+escH(g.title)+'</div><div class="acc-meta">'+escH(g.file)+'</div></div></div><div class="acc-right"><span class="acc-count">'+g.tests.length+' tests</span><svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div></div><div class="acc-body" id="acc-body-'+gi+'">'+rows+'</div></div>';
+  });
+  container.innerHTML=html;
+  document.querySelectorAll('.acc-header').forEach(function(h){
+    h.addEventListener('click',function(){
+      var gi=h.dataset.gi;
+      var body=document.getElementById('acc-body-'+gi);
+      var open=body.classList.contains('open');
+      if(open){body.classList.remove('open');h.classList.remove('open');}
+      else{body.classList.add('open');h.classList.add('open');}
+    });
+  });
+}
+
+// ── APPIUM SEARCH ─────────────────────────────────────────────────────────────
+
+document.getElementById('appium-search').addEventListener('input',function(e){
+  var q=e.target.value.toLowerCase().trim();
+  var openedSomething=false;
+  document.querySelectorAll('.test-row').forEach(function(row){
+    var name=row.querySelector('.test-name').textContent.toLowerCase();
+    var tags=Array.from(row.querySelectorAll('.test-tag')).map(function(t){return t.textContent.toLowerCase();}).join(' ');
+    var gi=row.dataset.gi;
+    var body=document.getElementById('acc-body-'+gi);
+    var header=document.querySelector('.acc-header[data-gi="'+gi+'"]');
+    var matches=!q||name.includes(q)||tags.includes(q);
+    row.dataset.hidden=matches?'false':'true';
+    if(!matches) row.setAttribute('data-hidden','true');
+    else row.removeAttribute('data-hidden');
+    if(matches&&q&&!openedSomething){
+      body.classList.add('open');
+      if(header) header.classList.add('open');
+    }
+  });
+  if(!q){
+    document.querySelectorAll('.acc-body').forEach(function(b){b.classList.remove('open');});
+    document.querySelectorAll('.acc-header').forEach(function(h){h.classList.remove('open');});
+  }
+});
+
+// ── RENDER SCENARIOS ──────────────────────────────────────────────────────────
+
+function renderScenarios(){
+  var tabsEl=document.getElementById('scenario-tabs');
+  var panelsEl=document.getElementById('scenario-panels');
+  var tabsHtml='';
+  var panelsHtml='';
+  SCENARIOS.forEach(function(sc,i){
+    tabsHtml+='<button class="tab'+(i===0?' active':'')+'" data-panel="'+sc.id+'">'+escH(sc.label)+'</button>';
+    var rows='';
+    sc.rows.forEach(function(r){
+      var typeClass='type-valid';
+      if(r.type==='invalid') typeClass='type-invalid';
+      else if(r.type==='edge') typeClass='type-edge';
+      else if(r.type==='security') typeClass='type-security';
+      else if(r.type==='boundary') typeClass='type-boundary';
+      var icon=r.result==='pass'?'✅':'❌';
+      rows+='<tr><td class="text-mono">'+escH(r.input)+'</td><td><span class="type-tag '+typeClass+'">'+escH(r.type)+'</span></td><td style="color:var(--text2);font-size:12px;">'+escH(r.expected)+'</td><td>'+icon+'</td></tr>';
+    });
+    panelsHtml+='<div class="tab-panel'+(i===0?' active':'')+'" id="panel-'+sc.id+'"><div style="overflow-x:auto;"><table class="scenario-table"><thead><tr><th>Input Value</th><th>Type</th><th>Expected Behavior</th><th>Result</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  });
+  tabsEl.innerHTML=tabsHtml;
+  panelsEl.innerHTML=panelsHtml;
+  tabsEl.querySelectorAll('.tab').forEach(function(tab){
+    tab.addEventListener('click',function(){
+      tabsEl.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+      panelsEl.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+      tab.classList.add('active');
+      var panel=document.getElementById('panel-'+tab.dataset.panel);
+      if(panel) panel.classList.add('active');
+    });
+  });
+}
+
+// ── RENDER PIPELINE ───────────────────────────────────────────────────────────
+
+function renderPipeline(){
+  var grid=document.getElementById('pipeline-grid');
+  var html='';
+  PIPELINES.forEach(function(p){
+    var pills=p.pills.map(function(pill){return '<span class="pill">'+escH(pill)+'</span>';}).join('');
+    var steps=p.steps.map(function(s){return '<div class="step-row"><div class="step-dot"></div>'+escH(s)+'</div>';}).join('');
+    html+='<div class="pipe-card"><div class="pipe-icon" style="background:'+p.bg+'">'+p.icon+'</div><div class="pipe-name">'+escH(p.name)+'</div><div class="pipe-trigger">'+escH(p.trigger)+'</div><div class="pipe-pills">'+pills+'</div><div class="pipe-steps">'+steps+'</div></div>';
+  });
+  grid.innerHTML=html;
+}
+
+// ── NAV ACTIVE STATE ──────────────────────────────────────────────────────────
+
+function updateNavActive(){
+  var sections=['overview','maestro','appium','scenarios','pipeline'];
+  var links=document.querySelectorAll('.nav-links a');
+  var scrollY=window.scrollY+80;
+  var active='overview';
+  sections.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&el.offsetTop<=scrollY) active=id;
+  });
+  links.forEach(function(link){
+    link.classList.toggle('active',link.getAttribute('href')==='#'+active);
+  });
+}
+
+window.addEventListener('scroll',updateNavActive,{passive:true});
+document.querySelectorAll('.nav-links a').forEach(function(a){
+  a.addEventListener('click',function(e){
+    var id=a.getAttribute('href').slice(1);
+    var target=document.getElementById(id);
+    if(target){e.preventDefault();target.scrollIntoView({behavior:'smooth',block:'start'});}
+  });
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+renderMaestro();
+renderAppium();
+renderScenarios();
+renderPipeline();
+updateNavActive();
+</script>
+</body>
+</html>
