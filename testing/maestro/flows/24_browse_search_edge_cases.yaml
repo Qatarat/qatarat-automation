@@ -1,40 +1,81 @@
 appId: com.qatarat.app
 ---
 # Flow 24: Browse & Search edge cases
-# Tests: empty search, single char, Arabic query, gibberish no-results, XSS, SQL injection
+# Tests: single char, Arabic query, uppercase, gibberish (no-results), XSS, SQL injection, clear
 
 - launchApp:
     clearState: true
 - waitForAnimationToEnd:
     timeout: 20000
 
-# Skip onboarding / login — browse is accessible as guest
+# ── Onboarding ──
 - tapOn:
-    text: "Browse as Guest"
+    text: "Select your country"
     optional: true
 - tapOn:
-    text: "Continue as Guest"
+    text: "Saudi Arabia"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Select your language"
+    optional: true
+- tapOn:
+    text: "English"
     optional: true
 - waitForAnimationToEnd:
     timeout: 5000
 
-# Open browse/search
+# ── Login ──
 - tapOn:
-    id: "browse_tab"
+    text: "Login to your account"
     optional: true
 - tapOn:
-    text: "Browse"
+    text: "Enter phone number"
+    optional: true
+- inputText: "8801685220417"
+- tapOn:
+    text: "Continue"
     optional: true
 - waitForAnimationToEnd:
-    timeout: 4000
-
-# ── Test 1: Single character search ──
+    timeout: 5000
+- inputText: "1234"
 - tapOn:
-    id: "search_field"
+    text: "Verify"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 8000
+
+# ── Navigate to mosque/service search ──
+- tapOn:
+    text: "Mosques"
+    optional: true
+- tapOn:
+    text: "Charities"
+    optional: true
+- tapOn:
+    text: "Donate"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Tap the search input to focus it before typing
 - tapOn:
     text: "Search"
     optional: true
+- tapOn:
+    text: "Search mosques"
+    optional: true
+- tapOn:
+    text: "Search..."
+    optional: true
+- tapOn:
+    text: "Find a mosque"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# ── Test 1: Single character search ──
 - inputText: "a"
 - waitForAnimationToEnd:
     timeout: 3000

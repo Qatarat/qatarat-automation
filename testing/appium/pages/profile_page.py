@@ -1,6 +1,6 @@
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation, scroll_to_text
+from utils.helpers import wait_for_animation
 
 
 class ProfilePage(BasePage):
@@ -59,8 +59,24 @@ class ProfilePage(BasePage):
         return None
 
     def tap_logout(self):
-        scroll_to_text(self.driver, "Logout", max_scrolls=5)
+        size = self.driver.get_window_size()
+        w, h = size["width"], size["height"]
+        for _ in range(6):
+            els = self.driver.find_elements(
+                AppiumBy.XPATH,
+                '//*[@content-desc="Logout" or @text="Logout" or '
+                '@content-desc="Log out" or @text="Log out" or '
+                '@content-desc="Sign out" or @text="Sign out"]',
+            )
+            if els:
+                els[0].click()
+                wait_for_animation(self.driver)
+                return self
+            self.driver.swipe(w // 2, int(h * 0.75), w // 2, int(h * 0.25), 600)
+            wait_for_animation(self.driver, 0.5)
         self.tap_optional("Logout")
+        self.tap_optional("Log out")
+        self.tap_optional("Sign out")
         wait_for_animation(self.driver)
         return self
 

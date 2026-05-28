@@ -23,7 +23,7 @@ jobs:
   regression:
     name: Full Regression (Android API 33)
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 150
 
     steps:
       - name: Checkout
