@@ -2,25 +2,44 @@ from appium.webdriver.common.appiumby import AppiumBy
 from pages.base_page import BasePage
 from utils.helpers import wait_for_animation, scroll_to_text
 
+_WALLET_NAV_LABELS  = ["Wallet", "My Wallet", "محفظة", "محفظتي"]
+_WALLET_SCREEN_LABELS = ["Wallet", "Balance", "Top Up", "محفظة", "الرصيد", "رصيدي", "إضافة رصيد", "شحن"]
+_BALANCE_LABELS     = ["Balance", "SAR", "Wallet Balance", "Available", "الرصيد", "رصيدي", "ر.س"]
+_TOPUP_LABELS       = ["Top Up", "Add Funds", "Recharge", "إضافة رصيد", "شحن", "Add Money"]
+_TXHISTORY_LABELS   = ["Transactions", "Transaction History", "History", "المعاملات", "سجل المعاملات"]
+
 
 class WalletPage(BasePage):
 
     def navigate_to_wallet(self):
-        self.tap_optional("Wallet")
-        self.tap_optional("My Wallet")
+        # If already on wallet screen, done
+        if self.is_on_wallet_screen(timeout=3):
+            return self
+        # Try direct tap (if "Wallet" is a bottom-nav item or already visible)
+        for label in _WALLET_NAV_LABELS:
+            self.tap_optional(label, timeout=2)
+        if self.is_on_wallet_screen(timeout=3):
+            return self
+        # Wallet lives under the Profile tab on this app
+        self.tap_optional("Profile", timeout=5)
+        wait_for_animation(self.driver, 1.5)
+        for label in _WALLET_NAV_LABELS:
+            self.tap_optional(label, timeout=3)
         wait_for_animation(self.driver)
         return self
 
+    def is_on_wallet_screen(self, timeout=8):
+        return any(self.is_visible(lbl, timeout=timeout) for lbl in _WALLET_SCREEN_LABELS)
+
     def get_wallet_balance(self):
-        for label in ("Balance", "SAR", "Wallet Balance", "Available"):
+        for label in _BALANCE_LABELS:
             if self.is_visible(label, timeout=5):
                 return label
         return None
 
     def tap_topup_button(self):
-        self.tap_optional("Top Up")
-        self.tap_optional("Add Funds")
-        self.tap_optional("Recharge")
+        for label in _TOPUP_LABELS:
+            self.tap_optional(label)
         wait_for_animation(self.driver)
         return self
 
@@ -42,9 +61,13 @@ class WalletPage(BasePage):
         return self
 
     def get_transaction_history(self):
-        scroll_to_text(self.driver, "Transactions", max_scrolls=5)
-        self.tap_optional("Transactions")
-        self.tap_optional("Transaction History")
+        for label in _TXHISTORY_LABELS:
+            try:
+                scroll_to_text(self.driver, label, max_scrolls=5)
+                self.tap_optional(label)
+                break
+            except Exception:
+                pass
         wait_for_animation(self.driver)
         return self
 

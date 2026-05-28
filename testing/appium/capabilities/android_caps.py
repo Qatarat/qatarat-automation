@@ -2,21 +2,20 @@ import os
 
 ANDROID_CAPS = {
     "platformName": "Android",
-    "appium:automationName": "Flutter",           # uses appium-flutter-driver
+    "appium:automationName": "UiAutomator2",
     "appium:app": os.path.abspath(
         os.path.join(os.path.dirname(__file__), "../../../Qatarat (Lambda-Stage).apk")
     ),
     "appium:appPackage": "com.qatarat.app",
-    "appium:appActivity": "com.qatarat.app.MainActivity",
-    "appium:noReset": False,
+    "appium:appActivity": ".MainActivity",
+    "appium:noReset": True,
     "appium:fullReset": False,
     "appium:newCommandTimeout": 120,
     "appium:androidInstallTimeout": 90000,
     "appium:autoGrantPermissions": True,
     "appium:skipDeviceInitialization": False,
-    # Flutter-specific
-    "appium:retryBackoffTime": 500,
-    "appium:maxRetryCount": 3,
+    "appium:uiautomator2ServerInstallTimeout": 60000,
+    "appium:adbExecTimeout": 60000,
 }
 
 # Caps for running on a real device (override UDID)

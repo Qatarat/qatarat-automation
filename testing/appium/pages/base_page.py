@@ -16,7 +16,7 @@ class BasePage:
         wait_for_animation(self.driver)
         return self
 
-    def tap_optional(self, text, timeout=5):
+    def tap_optional(self, text, timeout=3):
         try:
             el = find_by_text(self.driver, text, timeout=timeout)
             el.click()

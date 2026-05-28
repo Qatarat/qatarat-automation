@@ -1,5 +1,6 @@
 import importlib
 import os
+import subprocess
 import pytest
 import allure
 from appium import webdriver
@@ -79,12 +80,51 @@ def _build_options(caps):
     return AppiumOptions().load_capabilities(caps)
 
 
+_PERMISSIONS = [
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.RECEIVE_SMS",
+    "android.permission.READ_SMS",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.READ_MEDIA_IMAGES",
+    "android.permission.CAMERA",
+]
+
+
+def _reset_android_app():
+    """Stop app via ADB so the next session starts from a clean screen.
+    We avoid pm clear to prevent instrumentation crashes caused by permission dialogs."""
+    pkg = "com.qatarat.app"
+    device = "emulator-5554"
+    try:
+        subprocess.run(
+            ["adb", "-s", device, "shell", "am", "force-stop", pkg],
+            capture_output=True, timeout=10,
+        )
+        # Ensure all permissions are granted so no system dialogs appear
+        for perm in _PERMISSIONS:
+            subprocess.run(
+                ["adb", "-s", device, "shell", "pm", "grant", pkg, perm],
+                capture_output=True, timeout=5,
+            )
+        import time as _t; _t.sleep(1)
+    except Exception:
+        pass
+
+
 @pytest.fixture(scope="function")
 def driver():
+    import time as _time
+    if PLATFORM == "android":
+        _reset_android_app()
     d = webdriver.Remote(APPIUM_SERVER, options=_build_options(get_caps()))
     d.implicitly_wait(10)
+    _time.sleep(4)   # wait for app splash / initial load
     yield d
-    d.quit()
+    try:
+        d.quit()
+    except Exception:
+        pass
 
 
 @pytest.fixture(scope="module")
@@ -104,12 +144,13 @@ def pytest_runtest_makereport(item, call):
         driver = item.funcargs.get("driver") or item.funcargs.get("driver_module")
         if driver:
             try:
+                png = driver.get_screenshot_as_png()
                 allure.attach(
-                    driver.get_screenshot_as_png(),
+                    png,
                     name=f"FAIL — {item.name}",
                     attachment_type=allure.attachment_type.PNG,
                 )
+                os.makedirs("reports/screenshots", exist_ok=True)
+                screenshot(driver, f"FAIL_{item.name}")
             except Exception:
                 pass
-            os.makedirs("reports/screenshots", exist_ok=True)
-            screenshot(driver, f"FAIL_{item.name}")

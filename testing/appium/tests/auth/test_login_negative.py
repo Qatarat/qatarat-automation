@@ -15,9 +15,11 @@ class TestLoginNegative:
 
     def _reach_phone_screen(self, driver):
         page = LoginPage(driver)
+        page._dismiss_system_dialogs()
+        page._switch_to_english()
         page.select_country_and_language()
         page.skip_onboarding()
-        page.tap("Login to your account")
+        page._navigate_to_login_screen()
         wait_for_animation(driver)
         return page
 

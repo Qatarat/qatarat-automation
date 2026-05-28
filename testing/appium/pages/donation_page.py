@@ -21,9 +21,12 @@ class DonationPage(BasePage):
         self.tap_optional("Amount")
         try:
             from appium.webdriver.common.appiumby import AppiumBy
-            el = self.driver.find_element(AppiumBy.XPATH, "//android.widget.EditText")
-            el.clear()
-            el.send_keys(str(amount))
+            els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+            if els:
+                els[0].clear()
+                els[0].send_keys(str(amount))
+            else:
+                self.input_text("Amount", str(amount))
         except Exception:
             self.input_text("Amount", str(amount))
         wait_for_animation(self.driver, 0.5)
@@ -60,6 +63,8 @@ class DonationPage(BasePage):
             if els:
                 els[0].clear()
                 els[0].send_keys(str(wealth_amount))
+            else:
+                self.input_text("Wealth", str(wealth_amount))
         except Exception:
             self.input_text("Wealth", str(wealth_amount))
         self.tap_optional("Calculate")

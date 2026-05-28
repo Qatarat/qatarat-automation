@@ -25,10 +25,10 @@ class TestGiftCardBoundary:
         wait_for_animation(driver, 2)
         return page
 
-    def _try_submit(self, page):
+    def _try_submit(self, driver, page):
         page.tap_optional("Next")
         page.tap_optional("Save Gift Details")
-        wait_for_animation(driver=None)   # brief pause via sleep fallback
+        wait_for_animation(driver)
 
     def test_very_long_recipient_name_handled(self, driver):
         """A 150-char name must be truncated or rejected — not crash."""

@@ -13,10 +13,7 @@ class TestWallet:
     """Tests covering wallet navigation, balance display, top-up, and transaction history."""
 
     def _login_and_open_wallet(self, driver):
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        LoginPage(driver).login()
         page = WalletPage(driver)
         page.navigate_to_wallet()
         return page
@@ -25,9 +22,7 @@ class TestWallet:
     @allure.title("Navigate to the Wallet screen successfully")
     def test_wallet_navigate(self, driver):
         page = self._login_and_open_wallet(driver)
-        assert page.is_visible("Wallet") or \
-               page.is_visible("Balance") or \
-               page.is_visible("Top Up"), \
+        assert page.is_on_wallet_screen(timeout=10), \
             "Wallet screen did not load after navigation"
         screenshot(driver, "wallet_navigate")
 
@@ -36,8 +31,9 @@ class TestWallet:
     def test_wallet_balance_visible(self, driver):
         page = self._login_and_open_wallet(driver)
         balance = page.get_wallet_balance()
-        assert balance is not None or page.is_visible("SAR") or \
-               page.is_visible("Balance"), \
+        assert balance is not None or \
+               page.is_visible("SAR", timeout=5) or \
+               page.is_visible("ر.س", timeout=5), \
             "Wallet balance not visible on screen"
         screenshot(driver, "wallet_balance_visible")
 
@@ -113,9 +109,10 @@ class TestWallet:
         page = self._login_and_open_wallet(driver)
         page.get_transaction_history()
         wait_for_animation(driver)
-        assert page.is_visible("Transactions") or \
-               page.is_visible("History") or \
-               page.is_visible("No transactions") or \
+        assert page.is_visible("Transactions", timeout=5) or \
+               page.is_visible("المعاملات", timeout=5) or \
+               page.is_visible("History", timeout=5) or \
+               page.is_visible("No transactions", timeout=5) or \
                not page.is_visible("500", timeout=3), \
             "Transaction history did not load or caused a server error"
         screenshot(driver, "wallet_transaction_history")

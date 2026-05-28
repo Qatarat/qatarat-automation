@@ -11,15 +11,7 @@ SCREENSHOT_DIR = os.path.join(os.path.dirname(__file__), "../reports/screenshots
 
 
 def wait_for_text(driver, text, timeout=15):
-    try:
-        return WebDriverWait(driver, timeout).until(
-            EC.presence_of_element_located((AppiumBy.FLUTTER_SEMANTICS_ID, text))
-        )
-    except TimeoutException:
-        # Fallback to accessibility id
-        return WebDriverWait(driver, timeout).until(
-            EC.presence_of_element_located((AppiumBy.ACCESSIBILITY_ID, text))
-        )
+    return find_by_text(driver, text, timeout=timeout)
 
 
 def tap_text(driver, text, timeout=15):
@@ -31,15 +23,22 @@ def tap_text(driver, text, timeout=15):
 def find_by_text(driver, text, timeout=10):
     """Find element by visible text — tries multiple locator strategies."""
     strategies = [
-        (AppiumBy.FLUTTER_SEMANTICS_ID, text),
+        (AppiumBy.XPATH, f'//*[@content-desc="{text}"]'),
         (AppiumBy.ACCESSIBILITY_ID, text),
         (AppiumBy.XPATH, f'//*[@text="{text}"]'),
+        (AppiumBy.XPATH, f'//*[contains(@content-desc,"{text}")]'),
         (AppiumBy.XPATH, f'//*[contains(@text,"{text}")]'),
-        (AppiumBy.XPATH, f'//*[@content-desc="{text}"]'),
     ]
+    # Spread total timeout across strategies but cap per-strategy to avoid slow misses
+    n = len(strategies)
+    per_strategy = max(1, min(3, timeout // n))
+    deadline = time.time() + timeout
     for by, val in strategies:
+        if time.time() >= deadline:
+            break
+        wait = min(per_strategy, max(1, deadline - time.time()))
         try:
-            return WebDriverWait(driver, timeout).until(
+            return WebDriverWait(driver, wait).until(
                 EC.presence_of_element_located((by, val))
             )
         except (TimeoutException, NoSuchElementException):

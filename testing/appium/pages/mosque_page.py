@@ -9,11 +9,15 @@ class MosquePage(BasePage):
         self.tap_optional("Search")
         self.tap_optional("Search Mosques")
         try:
-            el = self.driver.find_element(AppiumBy.XPATH, "//android.widget.EditText")
-            el.clear()
-            el.send_keys(name)
+            els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+            if els:
+                els[0].clear()
+                els[0].send_keys(name)
+            elif name:
+                self.input_text("Search", name)
         except Exception:
-            self.input_text("Search", name)
+            if name:
+                self.input_text("Search", name)
         wait_for_animation(self.driver)
         return self
 
