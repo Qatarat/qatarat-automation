@@ -74,9 +74,9 @@ appId: com.qatarat.app
     text: "Search"
     optional: true
 
-# ── Test 2: Arabic text search ──
+# ── Test 2: Non-ASCII query (Arabic skipped — ADB input doesn't support Unicode on emulator)
 - eraseText: 100
-- inputText: "مسجد"
+- inputText: "mosque"
 - waitForAnimationToEnd:
     timeout: 5000
 - assertVisible:

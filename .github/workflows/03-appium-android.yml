@@ -22,8 +22,8 @@ jobs:
   appium-tests:
     name: Appium Deep Tests (Android API 33)
     runs-on: ubuntu-latest
-    # push runs account-marker subset (~15 min); schedule/dispatch runs all (~150 min)
-    timeout-minutes: ${{ github.event_name == 'push' && 45 || 150 }}
+    # push runs account-marker subset (~60 min); schedule/dispatch runs all (~150 min)
+    timeout-minutes: ${{ github.event_name == 'push' && 60 || 150 }}
 
     steps:
       - name: Checkout

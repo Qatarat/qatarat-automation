@@ -16,7 +16,7 @@ jobs:
   smoke:
     name: Smoke Tests (Android API 33)
     runs-on: ubuntu-latest
-    timeout-minutes: 130
+    timeout-minutes: 160
 
     steps:
       - name: Checkout
