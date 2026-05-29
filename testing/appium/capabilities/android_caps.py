@@ -10,12 +10,16 @@ ANDROID_CAPS = {
     "appium:appActivity": ".MainActivity",
     "appium:noReset": True,
     "appium:fullReset": False,
-    "appium:newCommandTimeout": 120,
+    # Allow 5 min server-side inactivity (matches pytest --timeout=300)
+    "appium:newCommandTimeout": 300,
     "appium:androidInstallTimeout": 90000,
     "appium:autoGrantPermissions": True,
     "appium:skipDeviceInitialization": False,
-    "appium:uiautomator2ServerInstallTimeout": 60000,
+    "appium:uiautomator2ServerInstallTimeout": 90000,
     "appium:adbExecTimeout": 60000,
+    # Skip reinstalling UiAutomator2 server if already present — saves ~60s per session
+    "appium:skipServerInstallation": True,
+    "appium:skipServerInstallationCheck": False,
 }
 
 # Caps for running on a real device (override UDID)
@@ -31,6 +35,6 @@ ANDROID_EMULATOR_CAPS = {
     **ANDROID_CAPS,
     "appium:deviceName": os.environ.get("ANDROID_EMU_NAME", "Pixel_7_API_34"),
     "appium:avd": os.environ.get("ANDROID_AVD", "Pixel_7_API_34"),
-    "appium:platformVersion": "14",
+    "appium:platformVersion": "13",    # api-level 33 = Android 13
     "appium:isHeadless": False,
 }

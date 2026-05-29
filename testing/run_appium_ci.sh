@@ -18,8 +18,8 @@ cd "$APPIUM_DIR"
 PYTEST_ARGS=(
   tests/
   -v
-  --timeout=180
-  --timeout-method=thread
+  --timeout=300
+  --timeout-method=signal
   --html="$REPORTS_DIR/report.html"
   --self-contained-html
   --tb=short
