@@ -2,6 +2,7 @@ Appium-Python-Client==4.3.0
 pytest==8.3.3
 pytest-html==4.1.1
 pytest-xdist==3.6.1
+pytest-timeout==2.3.1
 python-dotenv==1.0.1
 Pillow==10.4.0
 requests==2.32.3

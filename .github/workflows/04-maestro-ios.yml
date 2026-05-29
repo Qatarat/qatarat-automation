@@ -76,7 +76,8 @@ jobs:
           echo "App installed successfully"
 
       - name: Verify app installed
-        run: xcrun simctl get_app_container "$SIM_ID" com.qatarat.app 2>/dev/null && echo "App verified" || echo "Warning: could not verify"
+        run: |
+          xcrun simctl get_app_container "$SIM_ID" com.qatarat.app 2>/dev/null && echo "App verified" || echo "Warning: could not verify"
 
       - name: Run Maestro Suite
         run: |

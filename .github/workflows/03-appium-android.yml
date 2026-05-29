@@ -22,7 +22,8 @@ jobs:
   appium-tests:
     name: Appium Deep Tests (Android API 33)
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    # push runs account-marker subset (~15 min); schedule/dispatch runs all (~150 min)
+    timeout-minutes: ${{ github.event_name == 'push' && 45 || 150 }}
 
     steps:
       - name: Checkout
@@ -81,7 +82,12 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: adb install -r "Qatarat (Lambda-Stage).apk" && bash testing/run_appium_ci.sh "${{ github.event.inputs.marker }}"
+          script: >-
+            adb install -r "Qatarat (Lambda-Stage).apk" &&
+            bash testing/run_appium_ci.sh "${{
+              github.event_name == 'push' && 'account' ||
+              github.event.inputs.marker || ''
+            }}"
 
       - name: Publish step summary
         if: always()

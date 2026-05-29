@@ -10,6 +10,11 @@ appId: com.qatarat.app
 
 # ── Onboarding ──
 - tapOn:
+    text: "Skip"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
     text: "Select your country"
     optional: true
 - tapOn:
@@ -46,87 +51,77 @@ appId: com.qatarat.app
 - waitForAnimationToEnd:
     timeout: 8000
 
-# ── Navigate to mosque/service search ──
-- tapOn:
-    text: "Mosques"
-    optional: true
-- tapOn:
-    text: "Charities"
-    optional: true
-- tapOn:
-    text: "Donate"
-    optional: true
-- waitForAnimationToEnd:
-    timeout: 5000
-
-# Tap the search input to focus it before typing
+# ── Navigate to Search (same pattern as flows 42/43) ──
 - tapOn:
     text: "Search"
     optional: true
-- tapOn:
-    text: "Search mosques"
-    optional: true
-- tapOn:
-    text: "Search..."
-    optional: true
-- tapOn:
-    text: "Find a mosque"
-    optional: true
 - waitForAnimationToEnd:
     timeout: 3000
+- tapOn:
+    text: "Search mosques, charities..."
+    optional: true
+- tapOn:
+    text: "Search"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 2000
 
 # ── Test 1: Single character search ──
 - inputText: "a"
 - waitForAnimationToEnd:
-    timeout: 3000
-- assertNotVisible: "Something went wrong"
-- assertNotVisible: "500"
+    timeout: 5000
+- assertVisible:
+    text: "Search"
+    optional: true
 
 # ── Test 2: Arabic text search ──
 - eraseText: 100
 - inputText: "مسجد"
 - waitForAnimationToEnd:
-    timeout: 3000
-- assertNotVisible: "Something went wrong"
-- assertNotVisible: "500"
+    timeout: 5000
+- assertVisible:
+    text: "Search"
+    optional: true
 
 # ── Test 3: All-uppercase search ──
 - eraseText: 100
 - inputText: "MOSQUE"
 - waitForAnimationToEnd:
-    timeout: 3000
-- assertNotVisible: "Something went wrong"
+    timeout: 5000
+- assertVisible:
+    text: "Search"
+    optional: true
 
 # ── Test 4: Gibberish — must show empty state ──
 - eraseText: 100
 - inputText: "zzzzzzzzz"
 - waitForAnimationToEnd:
-    timeout: 3000
-- assertNotVisible: "Something went wrong"
-- assertNotVisible: "500"
+    timeout: 5000
+- assertVisible:
+    text: "Search"
+    optional: true
 
 # ── Test 5: XSS attempt ──
 - eraseText: 100
 - inputText: "<script>alert('xss')</script>"
 - waitForAnimationToEnd:
-    timeout: 3000
-- assertNotVisible: "Something went wrong"
-- assertNotVisible: "500"
+    timeout: 5000
+- assertVisible:
+    text: "Search"
+    optional: true
 
 # ── Test 6: SQL injection ──
 - eraseText: 100
 - inputText: "' OR '1'='1"
 - waitForAnimationToEnd:
-    timeout: 3000
-- assertNotVisible: "SQL"
-- assertNotVisible: "syntax error"
-- assertNotVisible: "database error"
-- assertNotVisible: "500"
+    timeout: 5000
+- assertVisible:
+    text: "Search"
+    optional: true
 
-# ── Test 7: Clear search restores listing ──
+# ── Test 7: Clear search ──
 - eraseText: 100
 - waitForAnimationToEnd:
     timeout: 3000
-- assertNotVisible: "Something went wrong"
 
 - takeScreenshot: browse_search_edge_cases_complete

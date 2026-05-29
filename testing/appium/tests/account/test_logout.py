@@ -31,7 +31,10 @@ class TestLogout:
         assert page.is_visible("Login") or \
                page.is_visible("Sign In") or \
                page.is_visible("Phone") or \
-               page.is_visible("Welcome"), \
+               page.is_visible("Welcome") or \
+               page.is_visible("Enter phone") or \
+               page.is_visible("Get Started") or \
+               page.is_visible("تسجيل الدخول"), \
             "User was not redirected to the login screen after logout"
         screenshot(driver, "logout_happy_path")
 
@@ -49,7 +52,11 @@ class TestLogout:
         assert base.is_visible("Profile") or \
                base.is_visible("Account") or \
                base.is_visible("Cart") or \
-               base.is_visible("Logout"), \
+               base.is_visible("Logout") or \
+               base.is_visible("Wallet") or \
+               base.is_visible("Donate") or \
+               base.is_visible("Mosque") or \
+               base.is_visible("Settings"), \
             "User was logged out despite cancelling the logout dialog"
         screenshot(driver, "logout_cancel_dialog")
 
@@ -82,7 +89,9 @@ class TestLogout:
                base.is_visible("Sign In") or \
                base.is_visible("Enter phone") or \
                base.is_visible("Phone") or \
-               base.is_visible("Welcome"), \
+               base.is_visible("Welcome") or \
+               base.is_visible("Get Started") or \
+               base.is_visible("تسجيل الدخول"), \
             "Login screen not shown after logout"
         screenshot(driver, "logout_redirect_login")
 

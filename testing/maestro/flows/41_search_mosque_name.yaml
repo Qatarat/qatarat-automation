@@ -94,6 +94,15 @@ appId: com.qatarat.app
     text: "Back"
     optional: true
 - waitForAnimationToEnd:
+    timeout: 3000
+# Re-focus the search field before erasing (back nav may have lost focus)
+- tapOn:
+    text: "Search mosques, charities..."
+    optional: true
+- tapOn:
+    text: "Search"
+    optional: true
+- waitForAnimationToEnd:
     timeout: 2000
 - eraseText: 50
 - inputText: "مسجد"

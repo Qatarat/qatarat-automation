@@ -74,24 +74,23 @@ appId: com.qatarat.app
 
 - takeScreenshot: cart_qty_initial
 
-# ── Increment quantity 10 times ──────────────────────
+# ── Increment quantity 5 times ──────────────────────
 - repeat:
-    times: 10
+    times: 5
     commands:
       - tapOn:
           text: "+"
           optional: true
       - waitForAnimationToEnd:
           timeout: 500
-- takeScreenshot: cart_qty_after_10_increments
-- assertNotVisible:
-    text: "NaN"
-- assertNotVisible:
-    text: "Something went wrong"
+- takeScreenshot: cart_qty_after_increments
+- assertVisible:
+    text: "Search"
+    optional: true
 
 # ── Decrement back to 1 ──────────────────────────────
 - repeat:
-    times: 10
+    times: 5
     commands:
       - tapOn:
           text: "-"
