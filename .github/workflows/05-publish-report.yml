@@ -198,10 +198,22 @@ jobs:
           find raw-artifacts/ -name "*.xml" -exec cp {} allure-results/ \; 2>/dev/null || true
           echo "JUnit files in allure-results: $(ls allure-results/*.xml 2>/dev/null | wc -l)"
 
+      - name: Fetch previous Allure history
+        run: |
+          # Pull history from the previously deployed gh-pages so trend graphs persist
+          mkdir -p allure-results/history
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          BASE="https://${OWNER}.github.io/${REPO}/allure-report/history"
+          for f in categories.json environment.json history.json history-trend.json; do
+            curl -sf "${BASE}/${f}" -o "allure-results/history/${f}" 2>/dev/null \
+              && echo "  fetched ${f}" || echo "  ${f} not available yet (first run?)"
+          done
+
       - name: Generate Allure HTML report
         run: |
           mkdir -p allure-report
-          if [ "$(ls -A allure-results/*.xml 2>/dev/null)" ]; then
+          if ls allure-results/*.xml allure-results/*.json 2>/dev/null | grep -q .; then
             allure generate allure-results/ --clean -o allure-report/
           else
             echo "No allure results — skipping"
@@ -219,6 +231,57 @@ jobs:
             raw-artifacts/ \
             gh-pages/data.js \
             gh-pages/screenshots/
+
+      - name: Append run to history log
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_STARTED_AT: ${{ github.event.head_commit.timestamp || github.event.workflow_run.updated_at || '' }}
+        run: |
+          # Fetch previous run-history.json from gh-pages (if exists)
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          curl -sf "https://${OWNER}.github.io/${REPO}/run-history.json" \
+            -o gh-pages/run-history.json 2>/dev/null || echo "[]" > gh-pages/run-history.json
+
+          python3 - <<'EOF'
+          import json, os, glob, xml.etree.ElementTree as ET
+
+          # Aggregate results from all XMLs in this run
+          total = passed = failed = 0
+          xmls = glob.glob("raw-artifacts/**/*.xml", recursive=True)
+          for xml_path in xmls:
+              try:
+                  root = ET.parse(xml_path).getroot()
+                  for tc in root.iter("testcase"):
+                      total += 1
+                      if tc.find("failure") is not None or tc.find("error") is not None:
+                          failed += 1
+                      else:
+                          passed += 1
+              except Exception:
+                  pass
+
+          entry = {
+              "run_number": int(os.environ.get("GITHUB_RUN_NUMBER", 0)),
+              "run_id":     os.environ.get("GITHUB_RUN_ID", ""),
+              "sha":        os.environ.get("GITHUB_SHA", "")[:7],
+              "date":       os.environ.get("GITHUB_RUN_STARTED_AT", ""),
+              "total":      total,
+              "passed":     passed,
+              "failed":     failed,
+              "pass_rate":  round(passed / total * 100, 1) if total else 0,
+          }
+
+          history_file = "gh-pages/run-history.json"
+          history = json.loads(open(history_file).read()) if os.path.exists(history_file) else []
+          history.append(entry)
+          history = history[-50:]          # keep last 50 runs
+          open(history_file, "w").write(json.dumps(history, indent=2))
+          print(f"Run #{entry['run_number']}: {passed}/{total} passed ({entry['pass_rate']}%)")
+          EOF
 
       - name: Copy self-contained dashboard to gh-pages
         run: |
@@ -254,7 +317,22 @@ jobs:
                   print(f"Warning: {xml_path}: {e}")
           pct = int(passed/total*100) if total else 0
           bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
-          summary = f"""## 📊 Qatarat Test Report
+
+          # Load run history for trend table
+          import json
+          history_rows = ""
+          try:
+              history = json.loads(open("gh-pages/run-history.json").read())
+              for r in reversed(history[-10:]):   # last 10 runs, newest first
+                  icon = "🟢" if r["failed"] == 0 else "🔴"
+                  history_rows += (
+                      f"| {icon} #{r['run_number']} | {r.get('date','')[:10]} | "
+                      f"{r['passed']}/{r['total']} | {r['pass_rate']}% |\n"
+                  )
+          except Exception:
+              history_rows = "| — | No history yet |\n"
+
+          summary = f"""## 📊 Qatarat Test Report — Run #${{ github.run_number }}
           {bar}
           | Metric | Value |
           |--------|-------|
@@ -263,6 +341,11 @@ jobs:
           | ⏭️ Skipped | {skipped} |
           | 📊 Total   | {total} |
           | 📈 Pass rate | {pct}% |
+
+          ### 📅 Run History (last 10)
+          | Run | Date | Passed/Total | Rate |
+          |-----|------|-------------|------|
+          {history_rows}
 
           ### Test Details
           | Status | Test |

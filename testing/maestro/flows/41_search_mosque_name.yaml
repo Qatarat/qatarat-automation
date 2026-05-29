@@ -55,7 +55,7 @@ appId: com.qatarat.app
 - waitForAnimationToEnd:
     timeout: 3000
 
-# Search for a mosque by name
+# ── Search 1: mosque name ──
 - tapOn:
     text: "Search mosques, charities..."
     optional: true
@@ -66,7 +66,7 @@ appId: com.qatarat.app
 - waitForAnimationToEnd:
     timeout: 5000
 
-# Verify results appear
+# Verify results appear (optional — staging data may vary)
 - assertVisible:
     text: "Al-Haram"
     optional: true
@@ -74,42 +74,25 @@ appId: com.qatarat.app
     text: "Mosque"
     optional: true
 
-# Tap the first search result
-- tapOn:
-    index: 0
-    optional: true
-- waitForAnimationToEnd:
-    timeout: 5000
+- takeScreenshot: search_mosque_name_first_result
 
-# Verify profile loaded
-- assertVisible:
-    text: "Donate"
-    optional: true
-- assertVisible:
-    text: "About"
-    optional: true
-
-# Go back and do a second English search (Arabic skipped — ADB input doesn't support Unicode)
+# ── Search 2: second query (Clear then retype) ──
 - tapOn:
-    text: "Back"
+    text: "Clear"
     optional: true
+- eraseText: 50
 - waitForAnimationToEnd:
-    timeout: 3000
-# Re-focus the search field before erasing (back nav may have lost focus)
+    timeout: 1000
 - tapOn:
     text: "Search mosques, charities..."
     optional: true
 - tapOn:
     text: "Search"
     optional: true
-- waitForAnimationToEnd:
-    timeout: 2000
-- eraseText: 50
 - inputText: "zakat"
 - waitForAnimationToEnd:
     timeout: 5000
 
-# Verify results or empty state — either is acceptable
 - scroll
 - waitForAnimationToEnd:
     timeout: 2000

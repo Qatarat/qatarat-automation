@@ -73,6 +73,9 @@ jobs:
         env:
           PLATFORM: android
           DEVICE_MODE: emulator
+          # Evaluate marker here (single-line expression) so the script field
+          # never contains ${{ }} syntax that bash would misinterpret
+          TEST_MARKER: ${{ github.event_name == 'push' && 'account' || github.event.inputs.marker || '' }}
         with:
           api-level: 33
           arch: x86_64
@@ -82,12 +85,7 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: >-
-            adb install -r "Qatarat (Lambda-Stage).apk" &&
-            bash testing/run_appium_ci.sh "${{
-              github.event_name == 'push' && 'account' ||
-              github.event.inputs.marker || ''
-            }}"
+          script: adb install -r "Qatarat (Lambda-Stage).apk" && bash testing/run_appium_ci.sh "$TEST_MARKER"
 
       - name: Publish step summary
         if: always()

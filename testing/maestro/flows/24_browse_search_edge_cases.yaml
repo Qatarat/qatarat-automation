@@ -1,7 +1,7 @@
 appId: com.qatarat.app
 ---
 # Flow 24: Browse & Search edge cases
-# Tests: single char, Arabic query, uppercase, gibberish (no-results), XSS, SQL injection, clear
+# Pattern mirrors flows 42/43: tap Clear before eraseText to maintain keyboard focus
 
 - launchApp:
     clearState: true
@@ -51,7 +51,7 @@ appId: com.qatarat.app
 - waitForAnimationToEnd:
     timeout: 8000
 
-# ── Navigate to Search (same pattern as flows 42/43) ──
+# ── Navigate to Search ──
 - tapOn:
     text: "Search"
     optional: true
@@ -66,62 +66,104 @@ appId: com.qatarat.app
 - waitForAnimationToEnd:
     timeout: 2000
 
-# ── Test 1: Single character search ──
+# ── Test 1: Single character ──
 - inputText: "a"
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible:
+- tapOn:
+    text: "Clear"
+    optional: true
+- eraseText: 50
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# ── Test 2: Short word (non-Arabic proxy) ──
+- tapOn:
+    text: "Search mosques, charities..."
+    optional: true
+- tapOn:
     text: "Search"
     optional: true
-
-# ── Test 2: Non-ASCII query (Arabic skipped — ADB input doesn't support Unicode on emulator)
-- eraseText: 100
 - inputText: "mosque"
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible:
+- tapOn:
+    text: "Clear"
+    optional: true
+- eraseText: 50
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# ── Test 3: All-uppercase ──
+- tapOn:
+    text: "Search mosques, charities..."
+    optional: true
+- tapOn:
     text: "Search"
     optional: true
-
-# ── Test 3: All-uppercase search ──
-- eraseText: 100
 - inputText: "MOSQUE"
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible:
+- tapOn:
+    text: "Clear"
+    optional: true
+- eraseText: 50
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# ── Test 4: Gibberish ──
+- tapOn:
+    text: "Search mosques, charities..."
+    optional: true
+- tapOn:
     text: "Search"
     optional: true
-
-# ── Test 4: Gibberish — must show empty state ──
-- eraseText: 100
 - inputText: "zzzzzzzzz"
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible:
-    text: "Search"
+- tapOn:
+    text: "Clear"
     optional: true
+- eraseText: 50
+- waitForAnimationToEnd:
+    timeout: 1000
 
 # ── Test 5: XSS attempt ──
-- eraseText: 100
+- tapOn:
+    text: "Search mosques, charities..."
+    optional: true
+- tapOn:
+    text: "Search"
+    optional: true
 - inputText: "<script>alert('xss')</script>"
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible:
-    text: "Search"
+- tapOn:
+    text: "Clear"
     optional: true
+- eraseText: 50
+- waitForAnimationToEnd:
+    timeout: 1000
 
 # ── Test 6: SQL injection ──
-- eraseText: 100
+- tapOn:
+    text: "Search mosques, charities..."
+    optional: true
+- tapOn:
+    text: "Search"
+    optional: true
 - inputText: "' OR '1'='1"
 - waitForAnimationToEnd:
     timeout: 5000
-- assertVisible:
-    text: "Search"
+- tapOn:
+    text: "Clear"
     optional: true
-
-# ── Test 7: Clear search ──
-- eraseText: 100
+- eraseText: 50
 - waitForAnimationToEnd:
-    timeout: 3000
+    timeout: 2000
+
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2000
 
 - takeScreenshot: browse_search_edge_cases_complete
