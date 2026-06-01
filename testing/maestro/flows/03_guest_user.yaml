@@ -32,7 +32,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Skip"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Select guest mode
 - tapOn:

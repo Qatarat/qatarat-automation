@@ -7,10 +7,14 @@ FLOWS_DIR="$SCRIPT_DIR/maestro/flows"
 REPORTS_DIR="$SCRIPT_DIR/maestro/reports"
 mkdir -p "$REPORTS_DIR"
 
-FLOW_TIMEOUT=300   # 5 min hard cap per flow — prevents a stuck flow from eating the budget
+FLOW_TIMEOUT=180   # 3 min cap per flow for smoke — keeps suite within 90 min budget
+
+# Smoke runs only the first 20 flows (happy-path + core negatives).
+# Full 50-flow suite is handled by the nightly regression workflow.
+SMOKE_FLOWS=$(ls "$FLOWS_DIR"/[0-9][0-9]_*.yaml 2>/dev/null | sort | head -20)
 
 FAIL=0
-for flow_yaml in "$FLOWS_DIR"/[0-9][0-9]_*.yaml; do
+for flow_yaml in $SMOKE_FLOWS; do
   flow="$(basename "$flow_yaml" .yaml)"
   echo "▶  Running flow: $flow"
   timeout "$FLOW_TIMEOUT" maestro test --format junit \

@@ -23,7 +23,7 @@ jobs:
   regression:
     name: Full Regression (Android API 33)
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 240
 
     steps:
       - name: Checkout
@@ -69,15 +69,25 @@ jobs:
             bash testing/run_regression_ci.sh "${{ github.event.inputs.flow }}"
             TEST_RC=$?
             rm -f /tmp/android_rec_on
+            sleep 3
             wait "$REC_PID" 2>/dev/null || true
-            if ls /tmp/adb_segs/seg_*.mp4 2>/dev/null | grep -q .; then
-              find /tmp/adb_segs -name "seg_*.mp4" | sort -V | awk '{print "file \x27" $0 "\x27"}' > /tmp/adb_segs/list.txt
-              mkdir -p testing/maestro/reports
-              ffmpeg -f concat -safe 0 -i /tmp/adb_segs/list.txt \
-                -vf "scale=480:-2,setsar=1" -r 15 -crf 35 -preset fast \
-                -movflags +faststart -y testing/maestro/reports/android-maestro.mp4 2>&1 | tail -3 || true
-            fi
             exit $TEST_RC
+
+      - name: Concat Android recording
+        if: always()
+        run: |
+          if ls /tmp/adb_segs/seg_*.mp4 2>/dev/null | grep -q .; then
+            find /tmp/adb_segs -name "seg_*.mp4" | sort -V | \
+              awk '{print "file \x27" $0 "\x27"}' > /tmp/adb_segs/list.txt
+            mkdir -p testing/maestro/reports
+            ffmpeg -f concat -safe 0 -i /tmp/adb_segs/list.txt \
+              -vf "scale=480:-2,setsar=1" -r 15 -crf 35 -preset fast \
+              -movflags +faststart -y testing/maestro/reports/android-maestro.mp4 \
+              2>&1 | tail -3 || true
+            echo "Recording: $(du -sh testing/maestro/reports/android-maestro.mp4 2>/dev/null || echo 'failed')"
+          else
+            echo "No recording segments — nothing to concat"
+          fi
 
       - name: Publish step summary
         if: always()

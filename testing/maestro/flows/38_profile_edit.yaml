@@ -72,10 +72,14 @@ appId: com.qatarat.app
 - tapOn:
     text: "Enter first name"
     optional: true
-- eraseText: 50
+- waitForAnimationToEnd:
+    timeout: 1500
+- eraseText: 20
+- waitForAnimationToEnd:
+    timeout: 500
 - inputText: "Ahmad"
 - waitForAnimationToEnd:
-    timeout: 2000
+    timeout: 1500
 
 # Edit last name
 - tapOn:
@@ -84,10 +88,14 @@ appId: com.qatarat.app
 - tapOn:
     text: "Enter last name"
     optional: true
-- eraseText: 50
+- waitForAnimationToEnd:
+    timeout: 1500
+- eraseText: 20
+- waitForAnimationToEnd:
+    timeout: 500
 - inputText: "Al-Rashid"
 - waitForAnimationToEnd:
-    timeout: 2000
+    timeout: 1500
 
 # Edit email
 - tapOn:
@@ -96,10 +104,14 @@ appId: com.qatarat.app
 - tapOn:
     text: "Enter email"
     optional: true
-- eraseText: 50
-- inputText: "ahmad.alrashid@example.com"
 - waitForAnimationToEnd:
-    timeout: 2000
+    timeout: 1500
+- eraseText: 30
+- waitForAnimationToEnd:
+    timeout: 500
+- inputText: "ahmad@example.com"
+- waitForAnimationToEnd:
+    timeout: 1500
 
 # Save changes
 - tapOn:

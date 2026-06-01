@@ -85,6 +85,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Enter card number"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 1500
 - inputText: "4111111111111111"
 - waitForAnimationToEnd:
     timeout: 2000
@@ -96,6 +98,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "MM/YY"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 1500
 - inputText: "12/26"
 - waitForAnimationToEnd:
     timeout: 2000
@@ -107,6 +111,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Enter CVV"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 1500
 - inputText: "123"
 - waitForAnimationToEnd:
     timeout: 2000
@@ -118,6 +124,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Name on Card"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 1500
 - inputText: "Ahmed Al-Rashid"
 - waitForAnimationToEnd:
     timeout: 2000

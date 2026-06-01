@@ -12,18 +12,23 @@ appId: com.qatarat.app
 - tapOn:
     text: "Login to your account"
     optional: true
+- tapOn:
+    text: "Enter phone number"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 1500
 - inputText: "8801685220417"
 - tapOn:
     text: "Continue"
     optional: true
 - waitForAnimationToEnd:
-    timeout: 5000
+    timeout: 4000
 - inputText: "1234"
 - tapOn:
     text: "Verify"
     optional: true
 - waitForAnimationToEnd:
-    timeout: 8000
+    timeout: 6000
 
 # Add item to cart
 - tapOn:
