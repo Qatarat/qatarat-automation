@@ -17,9 +17,9 @@ ANDROID_CAPS = {
     "appium:skipDeviceInitialization": False,
     "appium:uiautomator2ServerInstallTimeout": 90000,
     "appium:adbExecTimeout": 60000,
-    # Skip reinstalling UiAutomator2 server if already present — saves ~60s per session
-    "appium:skipServerInstallation": True,
-    "appium:skipServerInstallationCheck": False,
+    # First session installs the UiAutomator2 server; subsequent sessions skip the
+    # version-check round-trip (fast pm-list check only) since the emulator is fresh.
+    "appium:skipServerInstallationCheck": True,
 }
 
 # Caps for running on a real device (override UDID)

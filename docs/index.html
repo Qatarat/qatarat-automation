@@ -241,6 +241,18 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
 .mt-24{margin-top:24px;}
 .text-mono{font-family:'JetBrains Mono',monospace;font-size:12px;}
 .hidden{display:none;}
+
+/* ── RUN HISTORY ── */
+.run-hist-table{width:100%;border-collapse:collapse;}
+.run-hist-table th{text-align:left;padding:8px 14px;font-size:12px;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;}
+.run-hist-table td{padding:8px 14px;font-size:13px;border-bottom:1px solid var(--border);}
+.run-hist-table tr:hover td{background:var(--surface2);}
+.run-link{color:var(--teal);}
+.hist-pass{color:var(--green);font-weight:600;}
+.hist-fail{color:var(--red);font-weight:600;}
+.live-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-dim);border:1px solid rgba(63,185,80,.3);color:var(--green);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;margin-left:10px;vertical-align:middle;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.8s ease-in-out infinite;}
 </style>
 </head>
 <body>
@@ -257,6 +269,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
       <a href="#maestro">Maestro <span class="nav-badge">50</span></a>
       <a href="#appium">Appium <span class="nav-badge">191</span></a>
       <a href="#scenarios">Scenarios</a>
+      <a href="#history">History</a>
       <a href="#pipeline">Pipeline</a>
     </div>
   </div>
@@ -432,6 +445,20 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
   </div>
 </div>
 
+<!-- RUN HISTORY -->
+<div class="section" id="history">
+  <div class="section-header">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Run History
+    </div>
+    <div class="section-sub" id="history-sub">Last CI runs — showing real results per date from GitHub Actions</div>
+  </div>
+  <div id="history-table-wrap">
+    <p style="color:var(--text2);font-size:14px;padding:12px 0;" id="history-empty">No run history yet — results will appear here after the first CI run completes.</p>
+  </div>
+</div>
+
 <!-- MAESTRO FLOWS -->
 <div class="section" id="maestro">
   <div class="section-header">
@@ -551,6 +578,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
   </div>
 </footer>
 
+<script src="data.js"></script>
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
 
@@ -1003,6 +1031,64 @@ var PIPELINES = [
   }
 ];
 
+// ── APPLY LIVE CI DATA ────────────────────────────────────────────────────────
+(function(){
+  if(!window.QATARAT_LIVE) return;
+  var live=window.QATARAT_LIVE;
+
+  if(live.testResults && Object.keys(live.testResults).length>0){
+    APPIUM_GROUPS.forEach(function(g){
+      g.tests.forEach(function(t){
+        if(Object.prototype.hasOwnProperty.call(live.testResults,t.name)){
+          t.status=live.testResults[t.name];
+        }
+      });
+    });
+  }
+
+  if(live.maestroStatuses && Object.keys(live.maestroStatuses).length>0){
+    MAESTRO_FLOWS.forEach(function(f){
+      var s=live.maestroStatuses[f.n];
+      if(s&&s!=='idle') f.status=s;
+    });
+  }
+})();
+
+function renderHistory(){
+  var wrap=document.getElementById('history-table-wrap');
+  var empty=document.getElementById('history-empty');
+  if(!window.QATARAT_LIVE||!window.QATARAT_LIVE.runHistory||window.QATARAT_LIVE.runHistory.length===0){return;}
+  var hist=window.QATARAT_LIVE.runHistory;
+  var rows='';
+  var start=Math.max(0,hist.length-10);
+  for(var i=hist.length-1;i>=start;i--){
+    var r=hist[i];
+    var icon=r.failed===0?'🟢':'🔴';
+    var date=(r.date||'').substring(0,10)||'—';
+    var pct=r.pass_rate!=null?r.pass_rate.toFixed(1):(r.total>0?(r.passed/r.total*100).toFixed(1):'0.0');
+    var runRef=r.run_id?'<a class="run-link" href="https://github.com/Qatarat/qatarat-automation/actions/runs/'+r.run_id+'" target="_blank" rel="noopener">#'+escH(String(r.run_number))+'</a>':'#'+escH(String(r.run_number));
+    rows+='<tr>'
+      +'<td>'+icon+' '+runRef+'</td>'
+      +'<td style="color:var(--text2)">'+escH(date)+'</td>'
+      +'<td class="hist-pass">'+escH(String(r.passed))+'</td>'
+      +'<td class="hist-fail">'+escH(String(r.failed))+'</td>'
+      +'<td style="color:var(--text2)">'+escH(String(r.total))+'</td>'
+      +'<td style="font-weight:600;color:'+(r.failed===0?'var(--green)':'var(--red)')+'">'+escH(pct)+'%</td>'
+      +'</tr>';
+  }
+  if(rows){
+    if(empty) empty.style.display='none';
+    wrap.innerHTML='<div style="overflow-x:auto"><table class="run-hist-table">'
+      +'<thead><tr><th>Run</th><th>Date</th><th>Passed</th><th>Failed</th><th>Total</th><th>Pass Rate</th></tr></thead>'
+      +'<tbody>'+rows+'</tbody></table></div>';
+    var sub=document.getElementById('history-sub');
+    if(sub&&window.QATARAT_LIVE.currentRun&&window.QATARAT_LIVE.currentRun.ran){
+      sub.innerHTML='Last '+Math.min(10,hist.length)+' CI runs — real results per date'
+        +'<span class="live-badge"><span class="live-dot"></span>LIVE</span>';
+    }
+  }
+}
+
 // ── RENDER MAESTRO ────────────────────────────────────────────────────────────
 
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1150,7 +1236,7 @@ function renderPipeline(){
 // ── NAV ACTIVE STATE ──────────────────────────────────────────────────────────
 
 function updateNavActive(){
-  var sections=['overview','maestro','appium','scenarios','pipeline'];
+  var sections=['overview','history','maestro','appium','scenarios','pipeline'];
   var links=document.querySelectorAll('.nav-links a');
   var scrollY=window.scrollY+80;
   var active='overview';
@@ -1174,6 +1260,7 @@ document.querySelectorAll('.nav-links a').forEach(function(a){
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 
+renderHistory();
 renderMaestro();
 renderAppium();
 renderScenarios();

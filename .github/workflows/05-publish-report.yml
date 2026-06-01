@@ -59,7 +59,7 @@ jobs:
             echo "Triggered by Maestro workflow_run: ${{ github.event.workflow_run.id }}"
           else
             echo "Searching for latest successful Maestro run..."
-            ID=$(gh api "repos/${{ github.repository }}/actions/runs?status=success&per_page=50" \
+            ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
               --jq '[.workflow_runs[] | select(.name | test("Maestro"))] | first | .id // ""' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
             echo "Latest Maestro run ID: ${ID:-none found}"
@@ -77,7 +77,7 @@ jobs:
             echo "Triggered by Appium workflow_run: ${{ github.event.workflow_run.id }}"
           else
             echo "Searching for latest successful Appium run..."
-            ID=$(gh api "repos/${{ github.repository }}/actions/runs?status=success&per_page=50" \
+            ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
               --jq '[.workflow_runs[] | select(.name | test("Appium"))] | first | .id // ""' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
             echo "Latest Appium run ID: ${ID:-none found}"
@@ -157,7 +157,7 @@ jobs:
              echo "${{ github.event.workflow_run.name }}" | grep -qi "ios"; then
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
           else
-            ID=$(gh api "repos/${{ github.repository }}/actions/runs?status=success&per_page=50" \
+            ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
               --jq '[.workflow_runs[] | select(.name | test("iOS"))] | first | .id // ""' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
             echo "Latest iOS run ID: ${ID:-none found}"
@@ -225,13 +225,6 @@ jobs:
           find raw-screenshots/ -name "*.png" -exec cp {} gh-pages/screenshots/ \; 2>/dev/null || true
           echo "Screenshots copied: $(ls gh-pages/screenshots/*.png 2>/dev/null | wc -l)"
 
-      - name: Generate data.js from real test results
-        run: |
-          python3 testing/generate_data_js.py \
-            raw-artifacts/ \
-            gh-pages/data.js \
-            gh-pages/screenshots/
-
       - name: Append run to history log
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -282,6 +275,14 @@ jobs:
           open(history_file, "w").write(json.dumps(history, indent=2))
           print(f"Run #{entry['run_number']}: {passed}/{total} passed ({entry['pass_rate']}%)")
           EOF
+
+      - name: Generate data.js from real test results
+        run: |
+          python3 testing/generate_data_js.py \
+            raw-artifacts/ \
+            gh-pages/data.js \
+            gh-pages/screenshots/ \
+            gh-pages/run-history.json
 
       - name: Copy self-contained dashboard to gh-pages
         run: |
