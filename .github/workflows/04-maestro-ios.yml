@@ -79,6 +79,15 @@ jobs:
         run: |
           xcrun simctl get_app_container "$SIM_ID" com.qatarat.app 2>/dev/null && echo "App verified" || echo "Warning: could not verify"
 
+      - name: Start iOS screen recording
+        run: |
+          mkdir -p testing/maestro/reports
+          xcrun simctl io "$SIM_ID" recordVideo \
+            testing/maestro/reports/ios-maestro-raw.mp4 \
+            --codec h264 &
+          echo $! > /tmp/ios_rec_pid
+          echo "iOS recorder started (PID: $(cat /tmp/ios_rec_pid))"
+
       - name: Run Maestro Suite
         run: |
           SUITE="${{ github.event.inputs.suite || 'smoke' }}"
@@ -90,6 +99,27 @@ jobs:
             || true
         env:
           MAESTRO_DRIVER: xctest
+
+      - name: Stop and compress iOS recording
+        if: always()
+        run: |
+          RPID=$(cat /tmp/ios_rec_pid 2>/dev/null || echo "")
+          if [ -n "$RPID" ]; then
+            kill -INT "$RPID" 2>/dev/null || true
+            sleep 3
+            wait "$RPID" 2>/dev/null || true
+          fi
+          RAW="testing/maestro/reports/ios-maestro-raw.mp4"
+          OUT="testing/maestro/reports/ios-maestro.mp4"
+          if [ -f "$RAW" ]; then
+            ffmpeg -i "$RAW" \
+              -vf "scale=480:-2,setsar=1" -r 15 -crf 35 -preset fast \
+              -movflags +faststart -y "$OUT" 2>&1 | tail -3 || cp "$RAW" "$OUT"
+            rm -f "$RAW"
+            echo "Recording: $(du -sh "$OUT")"
+          else
+            echo "No raw recording found"
+          fi
 
       - name: Publish step summary
         if: always()
@@ -149,3 +179,12 @@ jobs:
           name: maestro-ios-screenshots-${{ github.run_number }}
           path: ~/.maestro/tests/
           retention-days: 14
+
+      - name: Upload iOS Maestro recording
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-maestro-recording-${{ github.run_number }}
+          path: testing/maestro/reports/ios-maestro.mp4
+          retention-days: 7
+          if-no-files-found: warn

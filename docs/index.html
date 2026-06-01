@@ -253,6 +253,20 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
 .live-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-dim);border:1px solid rgba(63,185,80,.3);color:var(--green);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:600;margin-left:10px;vertical-align:middle;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.8s ease-in-out infinite;}
+
+/* ── RECORDINGS ── */
+.rec-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.rec-tab{padding:8px 18px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text2);cursor:pointer;font-size:13px;font-weight:500;transition:all .18s;}
+.rec-tab.active{background:var(--teal-dim);border-color:rgba(0,212,170,.4);color:var(--teal);}
+.rec-tab:hover:not(.active){background:var(--surface3);color:var(--text);}
+.rec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;}
+.rec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.rec-card-label{padding:12px 16px;font-size:13px;font-weight:600;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.rec-card-label svg{width:15px;height:15px;color:var(--teal);}
+.rec-video{width:100%;display:block;background:#000;max-height:380px;aspect-ratio:9/16;object-fit:contain;}
+.rec-placeholder{padding:32px;text-align:center;color:var(--text3);font-size:13px;}
+.rec-placeholder svg{width:40px;height:40px;margin:0 auto 12px;display:block;color:var(--border);}
+.rec-panel.hidden{display:none;}
 </style>
 </head>
 <body>
@@ -270,6 +284,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
       <a href="#appium">Appium <span class="nav-badge">191</span></a>
       <a href="#scenarios">Scenarios</a>
       <a href="#history">History</a>
+      <a href="#recordings">Recordings</a>
       <a href="#pipeline">Pipeline</a>
     </div>
   </div>
@@ -456,6 +471,78 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
   </div>
   <div id="history-table-wrap">
     <p style="color:var(--text2);font-size:14px;padding:12px 0;" id="history-empty">No run history yet — results will appear here after the first CI run completes.</p>
+  </div>
+</div>
+
+<!-- RECORDINGS -->
+<div class="section" id="recordings">
+  <div class="section-header">
+    <div class="section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      Test Recordings
+    </div>
+    <div class="section-sub">Full session screen recordings — watch exactly how each CI run tested the app</div>
+  </div>
+
+  <div class="rec-tabs">
+    <button class="rec-tab active" data-target="rec-android">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;margin-right:5px"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-width="3"/></svg>
+      Android
+    </button>
+    <button class="rec-tab" data-target="rec-ios">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;margin-right:5px"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-width="3"/></svg>
+      iOS
+    </button>
+  </div>
+
+  <div id="rec-android" class="rec-panel">
+    <div class="rec-grid">
+      <div class="rec-card">
+        <div class="rec-card-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Appium Deep Tests — Android
+        </div>
+        <video class="rec-video" controls preload="none">
+          <source src="videos/android-appium.mp4" type="video/mp4">
+          <div class="rec-placeholder">Recording not available yet</div>
+        </video>
+      </div>
+      <div class="rec-card">
+        <div class="rec-card-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Maestro Flows — Android
+        </div>
+        <video class="rec-video" controls preload="none">
+          <source src="videos/android-maestro.mp4" type="video/mp4">
+          <div class="rec-placeholder">Recording not available yet</div>
+        </video>
+      </div>
+    </div>
+  </div>
+
+  <div id="rec-ios" class="rec-panel hidden">
+    <div class="rec-grid">
+      <div class="rec-card">
+        <div class="rec-card-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Appium Deep Tests — iOS
+        </div>
+        <video class="rec-video" controls preload="none">
+          <source src="videos/ios-appium.mp4" type="video/mp4">
+          <div class="rec-placeholder">Recording not available yet</div>
+        </video>
+      </div>
+      <div class="rec-card">
+        <div class="rec-card-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Maestro Flows — iOS
+        </div>
+        <video class="rec-video" controls preload="none">
+          <source src="videos/ios-maestro.mp4" type="video/mp4">
+          <div class="rec-placeholder">Recording not available yet</div>
+        </video>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1089,6 +1176,32 @@ function renderHistory(){
   }
 }
 
+// ── RECORDINGS ───────────────────────────────────────────────────────────────
+
+function initRecordings(){
+  var tabsEl=document.querySelector('.rec-tabs');
+  if(!tabsEl) return;
+  tabsEl.addEventListener('click',function(e){
+    var btn=e.target.closest('.rec-tab');
+    if(!btn) return;
+    document.querySelectorAll('.rec-tab').forEach(function(t){t.classList.remove('active');});
+    document.querySelectorAll('.rec-panel').forEach(function(p){p.classList.add('hidden');});
+    btn.classList.add('active');
+    var panel=document.getElementById(btn.dataset.target);
+    if(panel) panel.classList.remove('hidden');
+  });
+
+  // Hide video elements that fail to load (no file yet) and show placeholder text
+  document.querySelectorAll('.rec-video').forEach(function(v){
+    v.addEventListener('error',function(){
+      var ph=document.createElement('div');
+      ph.className='rec-placeholder';
+      ph.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Recording will appear here after the next CI run';
+      v.parentNode.replaceChild(ph,v);
+    },true);
+  });
+}
+
 // ── RENDER MAESTRO ────────────────────────────────────────────────────────────
 
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1236,7 +1349,7 @@ function renderPipeline(){
 // ── NAV ACTIVE STATE ──────────────────────────────────────────────────────────
 
 function updateNavActive(){
-  var sections=['overview','history','maestro','appium','scenarios','pipeline'];
+  var sections=['overview','history','recordings','maestro','appium','scenarios','pipeline'];
   var links=document.querySelectorAll('.nav-links a');
   var scrollY=window.scrollY+80;
   var active='overview';
@@ -1260,6 +1373,7 @@ document.querySelectorAll('.nav-links a').forEach(function(a){
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 
+initRecordings();
 renderHistory();
 renderMaestro();
 renderAppium();

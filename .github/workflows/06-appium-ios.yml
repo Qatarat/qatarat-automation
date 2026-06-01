@@ -87,6 +87,15 @@ jobs:
           xcrun simctl install "$SIM_ID" "$IOS_APP_PATH"
           echo "Installed com.qatarat.app"
 
+      - name: Start iOS screen recording
+        run: |
+          mkdir -p testing/appium/reports
+          xcrun simctl io "$SIM_ID" recordVideo \
+            testing/appium/reports/ios-appium-raw.mp4 \
+            --codec h264 &
+          echo $! > /tmp/ios_rec_pid
+          echo "iOS recorder started (PID: $(cat /tmp/ios_rec_pid))"
+
       - name: Start Appium server
         run: |
           appium --port 4723 --log /tmp/appium-ios.log &
@@ -109,6 +118,27 @@ jobs:
           IOS_APP_PATH: ${{ env.IOS_APP_PATH }}
           APPIUM_HOST: localhost
           APPIUM_PORT: "4723"
+
+      - name: Stop and compress iOS recording
+        if: always()
+        run: |
+          RPID=$(cat /tmp/ios_rec_pid 2>/dev/null || echo "")
+          if [ -n "$RPID" ]; then
+            kill -INT "$RPID" 2>/dev/null || true
+            sleep 3
+            wait "$RPID" 2>/dev/null || true
+          fi
+          RAW="testing/appium/reports/ios-appium-raw.mp4"
+          OUT="testing/appium/reports/ios-appium.mp4"
+          if [ -f "$RAW" ]; then
+            ffmpeg -i "$RAW" \
+              -vf "scale=480:-2,setsar=1" -r 15 -crf 35 -preset fast \
+              -movflags +faststart -y "$OUT" 2>&1 | tail -3 || cp "$RAW" "$OUT"
+            rm -f "$RAW"
+            echo "Recording: $(du -sh "$OUT")"
+          else
+            echo "No raw recording found"
+          fi
 
       - name: Publish step summary
         if: always()
@@ -182,3 +212,12 @@ jobs:
           name: appium-ios-server-log-${{ github.run_number }}
           path: /tmp/appium-ios.log
           retention-days: 7
+
+      - name: Upload iOS Appium recording
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-appium-recording-${{ github.run_number }}
+          path: testing/appium/reports/ios-appium.mp4
+          retention-days: 7
+          if-no-files-found: warn

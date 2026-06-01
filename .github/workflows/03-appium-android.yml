@@ -85,7 +85,27 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: adb install -r "Qatarat (Lambda-Stage).apk" && bash testing/run_appium_ci.sh "$TEST_MARKER"
+          script: |
+            set -e
+            adb install -r "Qatarat (Lambda-Stage).apk"
+            touch /tmp/android_rec_on
+            mkdir -p /tmp/adb_segs
+            bash testing/record_android.sh /tmp/adb_segs &
+            REC_PID=$!
+            set +e
+            bash testing/run_appium_ci.sh "$TEST_MARKER"
+            TEST_RC=$?
+            rm -f /tmp/android_rec_on
+            wait "$REC_PID" 2>/dev/null || true
+            if ls /tmp/adb_segs/seg_*.mp4 2>/dev/null | grep -q .; then
+              find /tmp/adb_segs -name "seg_*.mp4" | sort -V | awk '{print "file \x27" $0 "\x27"}' > /tmp/adb_segs/list.txt
+              mkdir -p testing/appium/reports
+              ffmpeg -f concat -safe 0 -i /tmp/adb_segs/list.txt \
+                -vf "scale=480:-2,setsar=1" -r 15 -crf 35 -preset fast \
+                -movflags +faststart -y testing/appium/reports/android-appium.mp4 2>&1 | tail -3 || true
+              echo "Recording: $(du -sh testing/appium/reports/android-appium.mp4 2>/dev/null || echo 'n/a')"
+            fi
+            exit $TEST_RC
 
       - name: Publish step summary
         if: always()
@@ -169,3 +189,12 @@ jobs:
           name: appium-server-log-${{ github.run_number }}
           path: /tmp/appium.log
           retention-days: 7
+
+      - name: Upload Android recording
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-appium-recording-${{ github.run_number }}
+          path: testing/appium/reports/android-appium.mp4
+          retention-days: 7
+          if-no-files-found: warn

@@ -185,6 +185,51 @@ jobs:
           merge-multiple: true
         continue-on-error: true
 
+      # ── Recording videos ─────────────────────────────────────────────────────
+      - name: Download Android Appium recording
+        if: steps.appium-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.appium-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-recordings/
+          pattern: "android-appium-recording-*"
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Download Android Maestro recording
+        if: steps.source-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.source-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-recordings/
+          pattern: "android-maestro-recording-*"
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Download iOS Appium recording
+        if: steps.appium-ios-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.appium-ios-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-recordings/
+          pattern: "ios-appium-recording-*"
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Download iOS Maestro recording
+        if: steps.appium-ios-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.appium-ios-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-recordings/
+          pattern: "ios-maestro-recording-*"
+          merge-multiple: true
+        continue-on-error: true
+
       - name: Show downloaded artifacts
         run: |
           echo "=== raw-artifacts/ ==="
@@ -224,6 +269,13 @@ jobs:
           mkdir -p gh-pages/screenshots
           find raw-screenshots/ -name "*.png" -exec cp {} gh-pages/screenshots/ \; 2>/dev/null || true
           echo "Screenshots copied: $(ls gh-pages/screenshots/*.png 2>/dev/null | wc -l)"
+
+      - name: Copy recordings to gh-pages/videos/
+        run: |
+          mkdir -p gh-pages/videos
+          find raw-recordings/ -name "*.mp4" -exec cp {} gh-pages/videos/ \; 2>/dev/null || true
+          echo "Videos: $(ls gh-pages/videos/*.mp4 2>/dev/null | wc -l) file(s)"
+          ls -lh gh-pages/videos/*.mp4 2>/dev/null || echo "(none yet)"
 
       - name: Append run to history log
         env:
