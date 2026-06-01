@@ -161,7 +161,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(13,17,23,0.92);backdrop-fi
 .acc-header.open .acc-arrow{transform:rotate(180deg);}
 .acc-body{background:var(--surface);border-top:1px solid var(--border);display:none;padding:0;}
 .acc-body.open{display:block;}
-.test-row{border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;padding:10px 20px;}
+.test-row{border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;padding:10px 20px;cursor:pointer;}
+.test-row:hover{background:var(--surface2);}
 .test-row:last-child{border-bottom:none;}
 .test-row[data-hidden="true"]{display:none;}
 .test-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
@@ -267,6 +268,32 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
 .rec-placeholder{padding:32px;text-align:center;color:var(--text3);font-size:13px;}
 .rec-placeholder svg{width:40px;height:40px;margin:0 auto 12px;display:block;color:var(--border);}
 .rec-panel.hidden{display:none;}
+
+/* ── DETAIL MODAL ── */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:32px 16px;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);max-width:680px;width:100%;padding:32px;position:relative;margin:auto;}
+.modal-close{position:absolute;top:16px;right:16px;background:var(--surface3);border:1px solid var(--border);border-radius:6px;color:var(--text2);cursor:pointer;font-size:18px;line-height:1;width:30px;height:30px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.modal-close:hover{background:var(--red-dim);border-color:var(--red);color:var(--red);}
+.modal-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:20px;padding:4px 12px;margin-bottom:10px;}
+.modal-status.pass{background:var(--green-dim);color:var(--green);}
+.modal-status.fail{background:var(--red-dim);color:var(--red);}
+.modal-status.idle{background:var(--surface3);color:var(--text3);}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:6px;line-height:1.3;}
+.modal-file{color:var(--text2);font-size:12px;font-family:'JetBrains Mono',monospace;}
+.modal-section{margin-bottom:20px;}
+.modal-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:8px;}
+.modal-section-body{font-size:13px;color:var(--text2);line-height:1.6;}
+.modal-steps{list-style:none;display:flex;flex-direction:column;gap:6px;padding:0;}
+.modal-step{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text2);}
+.modal-step-num{background:var(--surface2);border:1px solid var(--border);border-radius:50%;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--teal);flex-shrink:0;margin-top:1px;}
+.modal-error-box{background:var(--red-dim);border:1px solid rgba(248,81,73,.25);border-radius:8px;padding:14px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--red);word-break:break-word;white-space:pre-wrap;line-height:1.5;}
+.modal-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.modal-poc{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+.modal-poc-btn{display:inline-flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;padding:8px 14px;text-decoration:none;transition:all .15s;cursor:pointer;}
+.modal-poc-btn:hover{border-color:var(--teal);color:var(--teal);text-decoration:none;}
+.modal-divider{border:none;border-top:1px solid var(--border);margin:20px 0;}
+.clickable-row{cursor:pointer;}
+.clickable-row:hover td{background:var(--surface2);}
 </style>
 </head>
 <body>
@@ -664,6 +691,14 @@ footer{background:var(--surface);border-top:1px solid var(--border);margin-top:0
     </div>
   </div>
 </footer>
+
+<!-- DETAIL MODAL -->
+<div id="detail-modal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
 
 <script src="data.js"></script>
 <script>
@@ -1127,7 +1162,14 @@ var PIPELINES = [
     APPIUM_GROUPS.forEach(function(g){
       g.tests.forEach(function(t){
         if(Object.prototype.hasOwnProperty.call(live.testResults,t.name)){
-          t.status=live.testResults[t.name];
+          var info=live.testResults[t.name];
+          if(info&&typeof info==='object'){
+            t.status=info.status||t.status;
+            if(info.duration) t.duration=info.duration;
+            if(info.error) t.error=info.error;
+          } else {
+            t.status=info;
+          }
         }
       });
     });
@@ -1202,6 +1244,245 @@ function initRecordings(){
   });
 }
 
+// ── DETAIL MODAL ──────────────────────────────────────────────────────────────
+
+function humanizeName(n){
+  return n.replace(/^test_/,'').split('_').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(' ');
+}
+
+function inferExpected(n){
+  n=n.toLowerCase();
+  if(n.includes('success')) return 'Operation completes successfully with a confirmation or updated UI state';
+  if(n.includes('rejected')||n.includes('reject')) return 'Input is rejected and a clear validation error message is shown';
+  if(n.includes('blocked')) return 'Action is blocked — user cannot proceed without valid input';
+  if(n.includes('shows_error')||n.includes('show_error')||n.includes('_error')) return 'An appropriate error message is displayed to the user';
+  if(n.includes('visible')||n.includes('shown')||n.includes('loads')||n.includes('load')) return 'The element or screen is visible and renders correctly';
+  if(n.includes('crash')||n.includes('does_not_crash')) return 'App remains stable — no crash, ANR, or force-close dialog appears';
+  if(n.includes('accepted')) return 'Input is accepted and the user can proceed to the next step';
+  if(n.includes('safe')) return 'Security payload is safely handled — no crash, injection, or script execution occurs';
+  if(n.includes('handled')) return 'Edge case is handled gracefully without errors or unexpected behavior';
+  if(n.includes('navigate')||n.includes('opens')||n.includes('open')) return 'Navigation succeeds and the target screen appears';
+  return 'All test assertions pass and the expected UI state is present';
+}
+
+function parseActualResult(err){
+  if(!err) return 'Test failed — see CI logs for details';
+  var m;
+  if((m=err.match(/AssertionError:\s*(.{1,120})/i))) return m[1].trim();
+  if((m=err.match(/TimeoutException:\s*(.{1,100})/i))) return 'Timeout — '+m[1].trim();
+  if(err.includes('StaleElementReferenceException')) return 'Element became stale (re-rendered by Flutter) during the interaction';
+  if(err.includes('NoSuchElementException')||err.toLowerCase().includes('not found')) return 'Expected UI element was not found in the current view hierarchy';
+  if((m=err.match(/WebDriverException:\s*(.{1,100})/i))) return m[1].trim();
+  return err.substring(0,120);
+}
+
+function inferAppiumSteps(t,g){
+  var steps=[];
+  var n=(t.name||'').toLowerCase();
+  var tags=t.tags||[];
+  var hasTag=function(tag){return tags.indexOf(tag)>=0;};
+  if(hasTag('auth')||n.includes('login')||n.includes('otp')||n.includes('phone')){
+    steps.push('Open Qatarat app — login screen appears');
+    if(n.includes('phone')) steps.push('Enter phone number in the phone input field');
+    if(n.includes('otp')||n.includes('resend')) steps.push('Tap "Continue" → OTP verification screen appears');
+    if(n.includes('otp')&&!n.includes('resend')) steps.push('Enter OTP code (valid: 1234 / per test-case input)');
+  } else if(hasTag('payment')||n.includes('card')||n.includes('tabby')||n.includes('bank_transfer')){
+    steps.push('Login with phone 8801685220417 + OTP 1234');
+    steps.push('Add a service to cart and proceed to checkout');
+    if(n.includes('card')) steps.push('Select credit/debit card and open the HyperPay payment form');
+    else if(n.includes('tabby')) steps.push('Select Tabby BNPL payment option');
+    else if(n.includes('bank')) steps.push('Select Bank Transfer payment option');
+  } else if(hasTag('donation')||n.includes('donation')||n.includes('sadaqah')||n.includes('zakat')){
+    steps.push('Login with phone 8801685220417 + OTP 1234');
+    steps.push('Navigate to mosque profile and select donation type');
+    steps.push('Enter donation amount as per test case');
+  } else if(hasTag('subscription')||n.includes('subscription')){
+    steps.push('Login and navigate to a mosque that supports subscriptions');
+    steps.push('Select recurring donation and choose frequency (weekly/monthly)');
+  } else if(hasTag('gift')||n.includes('gift')){
+    steps.push('Login and navigate to Gift Cards section');
+    steps.push('Fill in recipient name, phone number, and amount');
+  } else if(hasTag('browse')||hasTag('mosque')||n.includes('search')||n.includes('browse')||n.includes('mosque')){
+    steps.push('Open Qatarat app — home / browse screen');
+    steps.push('Tap the search bar');
+    steps.push('Enter query string as per test case (normal / edge-case input)');
+  } else if(hasTag('profile')||hasTag('account')||n.includes('profile')||n.includes('logout')){
+    steps.push('Login and navigate to Profile / Settings via the bottom tab bar');
+  } else if(hasTag('streaming')||n.includes('broadcast')){
+    steps.push('Login and navigate to the Live Broadcast section');
+  } else {
+    steps.push('Open the Qatarat app');
+    steps.push('Navigate to the relevant section for this test');
+  }
+  if(n.includes('sql')||n.includes('injection')) steps.push("Enter SQL injection payload (e.g. ' OR 1=1 --) in the input field");
+  else if(n.includes('xss')) steps.push('Enter XSS payload (<script>alert(1)</script>) in the input field');
+  else if(n.includes('empty')||n.includes('blank')) steps.push('Leave the required field empty without entering any value');
+  else if(n.includes('special_char')||n.includes('special char')) steps.push('Enter special characters (@#$%^&*) in the input field');
+  else if(n.includes('emoji')) steps.push('Enter emoji characters (😀🎁) in the input field');
+  else if(n.includes('arabic')) steps.push('Enter Arabic text (محمد أحمد) in the input field');
+  else if(n.includes('unicode')) steps.push('Enter Unicode characters in the input field');
+  else if(n.includes('max_length')||n.includes('50_chars')||n.includes('100_char')) steps.push('Enter text at the maximum allowed character length');
+  if(n.includes('rejected')||n.includes('blocked')||n.includes('shows_error')||n.includes('invalid')){
+    steps.push('Tap submit / confirm button to trigger validation');
+    steps.push('Observe and capture the error or blocking behavior');
+  } else if(n.includes('crash')||n.includes('does_not_crash')){
+    steps.push('Perform the action that could potentially trigger a crash');
+    steps.push('Verify app remains stable — no ANR, no force-close dialog');
+  } else {
+    steps.push('Complete the action and observe the resulting UI state');
+    steps.push('Assert the expected element or message is visible');
+  }
+  return steps;
+}
+
+function inferMaestroSteps(flow){
+  var steps=[];
+  var platform=flow.platform==='ios'?'iOS Simulator':(flow.platform==='android'?'Android emulator':'Android emulator / iOS Simulator');
+  steps.push('Maestro boots '+platform+' and launches com.qatarat.app via XCUITest/UiAutomator2');
+  if(flow.type==='happy'){
+    steps.push('Execute happy-path YAML flow: '+flow.covers);
+    steps.push('Each assertVisible / tapOn command checks for expected UI elements');
+    steps.push('Screenshots captured at key checkpoints (takeScreenshot)');
+    steps.push('Flow exits 0 — all assertions confirmed');
+  } else if(flow.type==='negative'){
+    steps.push('Set up the negative/error input condition: '+flow.covers);
+    steps.push('Each assertion verifies the app shows appropriate error or blocks progression');
+    steps.push('Confirm the user cannot bypass the validation gate');
+  } else if(flow.type==='boundary'){
+    steps.push('Set up boundary test condition: '+flow.covers);
+    steps.push('Push inputs to the edge of the valid range (min / max values)');
+    steps.push('Verify the app handles the boundary gracefully — no crash or corrupted state');
+  } else if(flow.type==='post-login'){
+    steps.push('Login with phone 8801685220417 and OTP 1234');
+    steps.push('Navigate to the target section: '+flow.covers);
+    steps.push('Execute post-login assertions and screenshot captures');
+    steps.push('Verify all UI states are consistent with the authenticated session');
+  }
+  return steps;
+}
+
+function openModal(cfg){
+  var modal=document.getElementById('detail-modal');
+  var content=document.getElementById('modal-content');
+  var statusLabel=cfg.status==='pass'?'✓ Pass':(cfg.status==='fail'?'✗ Fail':'◌ Not Run');
+  var statusClass=cfg.status==='pass'?'pass':(cfg.status==='fail'?'fail':'idle');
+  var html='<div class="modal-header">'
+    +'<div class="modal-status '+statusClass+'">'+escH(statusLabel)+'</div>'
+    +'<div class="modal-title">'+escH(cfg.title)+'</div>'
+    +'<div class="modal-file">'+escH(cfg.file||'')+'</div>';
+  if(cfg.tags&&cfg.tags.length){
+    html+='<div class="modal-tags">';
+    cfg.tags.forEach(function(tag){html+='<span class="test-tag">'+escH(tag)+'</span>';});
+    html+='</div>';
+  }
+  if(cfg.duration){html+='<div style="color:var(--text3);font-size:12px;margin-top:6px;">⏱ Duration: '+escH(String(cfg.duration))+'s</div>';}
+  html+='</div>';
+
+  if(cfg.status==='pass'){
+    html+='<div class="modal-section">'
+      +'<div class="modal-section-label">What Was Tested</div>'
+      +'<div class="modal-section-body">'+escH(cfg.coverage||cfg.title)+'</div></div>';
+    html+='<div class="modal-section"><div class="modal-section-label">How It Was Tested</div>'
+      +'<ol class="modal-steps">';
+    (cfg.steps||[]).forEach(function(s,i){
+      html+='<li class="modal-step"><div class="modal-step-num">'+(i+1)+'</div><div>'+escH(s)+'</div></li>';
+    });
+    html+='</ol></div>';
+    html+='<div class="modal-section"><div class="modal-section-label">Result</div>'
+      +'<div class="modal-section-body" style="color:var(--green)">✓ All assertions passed — test completed successfully.</div></div>';
+    if(cfg.screenshots&&cfg.screenshots.length){
+      html+='<hr class="modal-divider"/><div class="modal-section"><div class="modal-section-label">Screenshots</div><div style="display:flex;gap:8px;flex-wrap:wrap;">';
+      cfg.screenshots.forEach(function(src){
+        html+='<a href="'+escH(src)+'" target="_blank" rel="noopener"><img src="'+escH(src)+'" alt="screenshot" style="max-width:200px;border-radius:8px;border:1px solid var(--border);"/></a>';
+      });
+      html+='</div></div>';
+    }
+  } else {
+    html+='<div class="modal-section"><div class="modal-section-label">Why It Failed</div>'
+      +'<div class="modal-error-box">'+escH(cfg.error||'No error message captured — check CI logs for full stack trace')+'</div></div>';
+    html+='<div class="modal-section"><div class="modal-section-label">Steps to Reproduce</div>'
+      +'<ol class="modal-steps">';
+    (cfg.steps||[]).forEach(function(s,i){
+      html+='<li class="modal-step"><div class="modal-step-num">'+(i+1)+'</div><div>'+escH(s)+'</div></li>';
+    });
+    html+='</ol></div>';
+    html+='<div class="modal-section"><div class="modal-section-label">Actual Result</div>'
+      +'<div class="modal-section-body" style="color:var(--red)">'+escH(cfg.actualResult||'Test failed — see error above')+'</div></div>';
+    html+='<div class="modal-section"><div class="modal-section-label">Expected Result</div>'
+      +'<div class="modal-section-body">'+escH(cfg.expectedResult||'Test should have passed with all assertions confirmed')+'</div></div>';
+    html+='<hr class="modal-divider"/><div class="modal-section"><div class="modal-section-label">Proof of Concept (PoC)</div>'
+      +'<div class="modal-poc">'
+      +'<a class="modal-poc-btn" href="#recordings" onclick="document.getElementById(\'detail-modal\').style.display=\'none\';document.body.style.overflow=\'\';">🎥 View Test Recording</a>';
+    if(cfg.screenshots&&cfg.screenshots.length){
+      cfg.screenshots.forEach(function(src){
+        html+='<a class="modal-poc-btn" href="'+escH(src)+'" target="_blank" rel="noopener">📷 Screenshot</a>';
+      });
+    }
+    html+='</div></div>';
+  }
+
+  content.innerHTML=html;
+  modal.style.display='flex';
+  document.body.style.overflow='hidden';
+}
+
+function initDetailModal(){
+  var modal=document.getElementById('detail-modal');
+  var closeBtn=document.getElementById('modal-close');
+  function closeModal(){modal.style.display='none';document.body.style.overflow='';}
+  closeBtn.addEventListener('click',closeModal);
+  modal.addEventListener('click',function(e){if(e.target===modal)closeModal();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modal.style.display!=='none')closeModal();});
+
+  document.getElementById('maestro-body').addEventListener('click',function(e){
+    var row=e.target.closest('tr[data-n]');
+    if(!row) return;
+    var n=row.dataset.n;
+    var flow=null;
+    for(var i=0;i<MAESTRO_FLOWS.length;i++){if(MAESTRO_FLOWS[i].n===n){flow=MAESTRO_FLOWS[i];break;}}
+    if(!flow) return;
+    var cfg={
+      title:flow.name,
+      file:'Maestro YAML · Flow '+n+' · '+flow.type+' · '+flow.platform,
+      status:flow.status,
+      coverage:flow.covers,
+      steps:inferMaestroSteps(flow),
+      error:flow.note||null,
+      actualResult:flow.status!=='pass'?parseActualResult(flow.note||''):null,
+      expectedResult:flow.status!=='pass'?inferExpected(flow.name):null,
+      screenshots:flow.screenshots||[]
+    };
+    openModal(cfg);
+  });
+
+  document.getElementById('appium-accordion').addEventListener('click',function(e){
+    var row=e.target.closest('.test-row[data-gi][data-ti]');
+    if(!row) return;
+    // Don't open if user is interacting with accordion header
+    if(e.target.closest('.acc-header')) return;
+    var gi=parseInt(row.dataset.gi,10);
+    var ti=parseInt(row.dataset.ti,10);
+    var g=APPIUM_GROUPS[gi];
+    if(!g) return;
+    var t=g.tests[ti];
+    if(!t) return;
+    var cfg={
+      title:humanizeName(t.name),
+      file:g.file+' · '+g.title,
+      tags:t.tags||[],
+      status:t.status,
+      duration:t.duration||null,
+      coverage:humanizeName(t.name),
+      steps:inferAppiumSteps(t,g),
+      error:t.error||null,
+      actualResult:t.status!=='pass'?parseActualResult(t.error||''):null,
+      expectedResult:inferExpected(t.name),
+      screenshots:[]
+    };
+    openModal(cfg);
+  });
+}
+
 // ── RENDER MAESTRO ────────────────────────────────────────────────────────────
 
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1220,7 +1501,7 @@ function renderMaestro(){
     else if(f.platform==='android') platBadge='<span class="badge badge-android">Android</span>';
     else platBadge='<span class="badge badge-ios">iOS</span>';
     var statusBadge=f.status==='pass'?'<span class="badge badge-pass">✓ Pass</span>':'<span class="badge badge-fail">✗ Fail</span>';
-    html+='<tr data-type="'+f.type+'" data-platform="'+f.platform+'"><td class="flow-num">'+escH(f.n)+'</td><td><strong>'+escH(f.name)+'</strong></td><td style="color:var(--text2);font-size:12px;">'+escH(f.covers)+'</td><td>'+typeBadge+'</td><td>'+platBadge+'</td><td>'+statusBadge+'</td></tr>';
+    html+='<tr class="clickable-row" data-n="'+escH(f.n)+'" data-type="'+f.type+'" data-platform="'+f.platform+'"><td class="flow-num">'+escH(f.n)+'</td><td><strong>'+escH(f.name)+'</strong></td><td style="color:var(--text2);font-size:12px;">'+escH(f.covers)+'</td><td>'+typeBadge+'</td><td>'+platBadge+'</td><td>'+statusBadge+'</td></tr>';
   });
   tbody.innerHTML=html;
 }
@@ -1374,6 +1655,7 @@ document.querySelectorAll('.nav-links a').forEach(function(a){
 // ── INIT ──────────────────────────────────────────────────────────────────────
 
 initRecordings();
+initDetailModal();
 renderHistory();
 renderMaestro();
 renderAppium();

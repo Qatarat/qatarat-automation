@@ -592,7 +592,10 @@ def main():
             history.append({"day": day, "total": 0, "pass": 0, "fail": 0, "flaky": 0, "duration": 0})
 
     # ── 9.5. LIVE_DATA — real-time overlay for index.html ────────────────
-    live_test_results = {name: info[0] for name, info in appium_map.items()}
+    live_test_results = {
+        name: {"status": info[0], "duration": round(info[1], 1), "error": info[2]}
+        for name, info in appium_map.items()
+    }
 
     live_maestro_statuses = {}
     for i, (fid, *_rest) in enumerate(FLOWS_DEF):
