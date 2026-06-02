@@ -91,14 +91,36 @@ jobs:
           sudo ln -s /opt/allure/bin/allure /usr/local/bin/allure
 
       # ── Maestro artifacts (flow XMLs + screenshots) ──────────────────
-      - name: Download Maestro JUnit XMLs
+      - name: Download Android Maestro Smoke JUnit XMLs
         if: steps.source-run.outputs.id != ''
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ steps.source-run.outputs.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-artifacts/maestro/
-          pattern: "maestro-*junit*"
+          pattern: "maestro-smoke-junit*"
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Download Android Maestro Regression JUnit XMLs
+        if: steps.source-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.source-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-artifacts/maestro/
+          pattern: "maestro-regression-junit*"
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Download iOS Maestro JUnit XMLs
+        if: steps.appium-ios-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.appium-ios-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-artifacts/maestro-ios/
+          pattern: "maestro-ios-junit*"
           merge-multiple: true
         continue-on-error: true
 

@@ -601,6 +601,35 @@ def main():
     for i, (fid, *_rest) in enumerate(FLOWS_DEF):
         live_maestro_statuses[f"{fid:02d}"] = flow_statuses.get(i, "idle")
 
+    # ── iOS artifact parsing ──────────────────────────────────────────────
+    ios_appium_map = {}
+    ios_appium_dir = os.path.join(artifacts_dir, "appium-ios")
+    if os.path.isdir(ios_appium_dir):
+        for xml_path in glob.glob(os.path.join(ios_appium_dir, "**/*.xml"), recursive=True):
+            ios_appium_map.update(xml_test_map(xml_path))
+
+    ios_flow_statuses = {}
+    ios_maestro_dir = os.path.join(artifacts_dir, "maestro-ios")
+    if os.path.isdir(ios_maestro_dir):
+        for xml_path in sorted(glob.glob(os.path.join(ios_maestro_dir, "**/*.xml"), recursive=True)):
+            try:
+                root = ET.parse(xml_path).getroot()
+                for tc in root.iter("testcase"):
+                    name = tc.get("name", "").lower()
+                    for i, (fid, *_) in enumerate(FLOWS_DEF):
+                        fname = FLOW_FILE_NAMES[i] if i < len(FLOW_FILE_NAMES) else ""
+                        if fname in name or f"{fid:02d}_" in name:
+                            is_fail = tc.find("failure") is not None or tc.find("error") is not None
+                            ios_flow_statuses[f"{fid:02d}"] = "fail" if is_fail else "pass"
+                            break
+            except Exception:
+                pass
+
+    ios_test_results = {
+        name: {"status": info[0], "duration": round(info[1], 1), "error": info[2]}
+        for name, info in ios_appium_map.items()
+    }
+
     run_history_list = []
     if history_file and os.path.exists(history_file):
         try:
@@ -619,7 +648,9 @@ def main():
     live_data_js = f"""
 const LIVE_DATA = {{
   testResults: {json.dumps(live_test_results)},
+  iosTestResults: {json.dumps(ios_test_results)},
   maestroStatuses: {json.dumps(live_maestro_statuses)},
+  iosMaestroStatuses: {json.dumps(ios_flow_statuses)},
   runHistory: {json.dumps(run_history_list, indent=2)},
   currentRun: {json.dumps(live_current_run)}
 }};
