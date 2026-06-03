@@ -83,6 +83,22 @@ jobs:
             echo "Latest Appium run ID: ${ID:-none found}"
           fi
 
+      # Must be resolved before any download step that references appium-ios-run
+      - name: Resolve Appium iOS source run ID
+        id: appium-ios-run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ] && \
+             echo "${{ github.event.workflow_run.name }}" | grep -qi "ios"; then
+            echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+          else
+            ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
+              --jq '[.workflow_runs[] | select(.name | test("iOS"))] | first | .id // ""' 2>/dev/null || echo "")
+            echo "id=${ID}" >> "$GITHUB_OUTPUT"
+            echo "Latest iOS run ID: ${ID:-none found}"
+          fi
+
       - name: Install Allure CLI
         run: |
           wget -qO allure.tgz https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz
@@ -170,21 +186,6 @@ jobs:
         continue-on-error: true
 
       # ── iOS Appium artifacts ──────────────────────────────────────────────
-      - name: Resolve Appium iOS source run ID
-        id: appium-ios-run
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_run" ] && \
-             echo "${{ github.event.workflow_run.name }}" | grep -qi "ios"; then
-            echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
-          else
-            ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
-              --jq '[.workflow_runs[] | select(.name | test("iOS"))] | first | .id // ""' 2>/dev/null || echo "")
-            echo "id=${ID}" >> "$GITHUB_OUTPUT"
-            echo "Latest iOS run ID: ${ID:-none found}"
-          fi
-
       - name: Download Appium iOS JUnit XML
         if: steps.appium-ios-run.outputs.id != ''
         uses: actions/download-artifact@v4

@@ -281,6 +281,11 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
 .rec-video{width:100%;display:block;background:#000;max-height:360px;aspect-ratio:9/16;object-fit:contain;}
 .rec-placeholder{padding:28px;text-align:center;color:var(--text3);font-size:12px;}
 .rec-placeholder svg{width:34px;height:34px;margin:0 auto 10px;display:block;color:var(--border);}
+.rec-placeholder-card{padding:36px 24px;text-align:center;background:var(--surface2);min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
+.rec-placeholder-card svg{width:40px;height:40px;color:var(--border);opacity:.5;}
+.rec-ph-title{font-size:14px;font-weight:600;color:var(--text2);}
+.rec-ph-body{font-size:12px;color:var(--text3);line-height:1.6;max-width:320px;}
+.rec-ph-meta{font-size:11px;color:var(--teal);background:var(--teal-dim);border:1px solid rgba(0,212,170,.2);border-radius:20px;padding:4px 12px;margin-top:4px;}
 .rec-panel.hidden{display:none!important;}
 
 /* ── DETAIL MODAL ── */
@@ -573,22 +578,26 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
       <div class="rec-card">
         <div class="rec-card-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          Appium Deep Tests — Android
+          Appium Deep Tests — Android (Pixel 7 · API 34)
         </div>
-        <video class="rec-video" controls preload="none">
-          <source src="videos/android-appium.mp4" type="video/mp4">
-          <div class="rec-placeholder">Recording not available yet</div>
-        </video>
+        <div class="rec-placeholder-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <div class="rec-ph-title">Recording Coming Soon</div>
+          <div class="rec-ph-body">Appium session recordings are captured during Monday CI runs.<br>The video will appear here automatically after the next scheduled run.</div>
+          <div class="rec-ph-meta">🤖 Android · Appium 2.x · pytest · alluredir</div>
+        </div>
       </div>
       <div class="rec-card">
         <div class="rec-card-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          Maestro Flows — Android
+          Maestro Flows — Android (Pixel 7 · API 34)
         </div>
-        <video class="rec-video" controls preload="none">
-          <source src="videos/android-maestro.mp4" type="video/mp4">
-          <div class="rec-placeholder">Recording not available yet</div>
-        </video>
+        <div class="rec-placeholder-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <div class="rec-ph-title">Recording Coming Soon</div>
+          <div class="rec-ph-body">Maestro flow recordings are captured during nightly regression runs.<br>The video will appear here automatically after the next nightly run.</div>
+          <div class="rec-ph-meta">🤖 Android · Maestro 2.x · 50 YAML flows</div>
+        </div>
       </div>
     </div>
   </div>
@@ -598,22 +607,26 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
       <div class="rec-card">
         <div class="rec-card-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          Appium Deep Tests — iOS
+          Appium Deep Tests — iOS (iPhone 15 · iOS 17)
         </div>
-        <video class="rec-video" controls preload="none">
-          <source src="videos/ios-appium.mp4" type="video/mp4">
-          <div class="rec-placeholder">Recording not available yet</div>
-        </video>
+        <div class="rec-placeholder-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <div class="rec-ph-title">Recording Coming Soon</div>
+          <div class="rec-ph-body">iOS Appium sessions run every Wednesday at 04:00 UTC.<br>The video will appear here automatically after the next iOS run.</div>
+          <div class="rec-ph-meta">🍎 iOS · Appium XCUITest · pytest · iPhone 15 Simulator</div>
+        </div>
       </div>
       <div class="rec-card">
         <div class="rec-card-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          Maestro Flows — iOS
+          Maestro Flows — iOS (iPhone 15 · iOS 17)
         </div>
-        <video class="rec-video" controls preload="none">
-          <source src="videos/ios-maestro.mp4" type="video/mp4">
-          <div class="rec-placeholder">Recording not available yet</div>
-        </video>
+        <div class="rec-placeholder-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <div class="rec-ph-title">Recording Coming Soon</div>
+          <div class="rec-ph-body">iOS Maestro sessions run every Tuesday at 03:00 UTC.<br>The video will appear here automatically after the next iOS run.</div>
+          <div class="rec-ph-meta">🍎 iOS · Maestro 2.x · 50 YAML flows · iPhone 15 Simulator</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1298,15 +1311,6 @@ function initRecordings(){
     if(panel) panel.classList.remove('hidden');
   });
 
-  // Hide video elements that fail to load (no file yet) and show placeholder text
-  document.querySelectorAll('.rec-video').forEach(function(v){
-    v.addEventListener('error',function(){
-      var ph=document.createElement('div');
-      ph.className='rec-placeholder';
-      ph.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Recording will appear here after the next CI run';
-      v.parentNode.replaceChild(ph,v);
-    },true);
-  });
 }
 
 // ── DETAIL MODAL ──────────────────────────────────────────────────────────────
