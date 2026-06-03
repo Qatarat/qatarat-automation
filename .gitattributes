@@ -2,7 +2,6 @@
 *.sh text eol=lf
 *.bash text eol=lf
 Makefile text eol=lf
-
 # Track APK and IPA files via Git LFS (they can be up to 400MB)
 *.apk filter=lfs diff=lfs merge=lfs -text
 *.ipa filter=lfs diff=lfs merge=lfs -text

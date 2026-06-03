@@ -57,16 +57,19 @@ jobs:
 
       - name: Extract .app from IPA
         run: |
-          IPA_ZIP="Qatarat (Lambda-Stage-IOS-1.8.2).ipa.zip"
+          IPA_FILE="qatarat-stage-ios.ipa"
           IPA_DIR="Qatarat (Lambda-Stage-IOS-1.8.2).ipa"
-          # Use unzipped IPA if already extracted
+          # Use pre-extracted directory if present (local dev)
           if [ -d "$IPA_DIR/Payload/Runner.app" ]; then
             echo "APP_PATH=$IPA_DIR/Payload/Runner.app" >> $GITHUB_ENV
             echo "Using pre-extracted Runner.app"
-          else
-            echo "Extracting IPA..."
-            unzip -q "$IPA_ZIP" -d ipa_extracted/
+          elif [ -f "$IPA_FILE" ]; then
+            echo "Extracting IPA from $IPA_FILE..."
+            unzip -q "$IPA_FILE" -d ipa_extracted/
             echo "APP_PATH=ipa_extracted/Payload/Runner.app" >> $GITHUB_ENV
+          else
+            echo "ERROR: No IPA found. Expected $IPA_FILE or $IPA_DIR/Payload/Runner.app"
+            exit 1
           fi
 
       - name: Install app on Simulator
