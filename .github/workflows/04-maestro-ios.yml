@@ -91,17 +91,23 @@ jobs:
           echo $! > /tmp/ios_rec_pid
           echo "iOS recorder started (PID: $(cat /tmp/ios_rec_pid))"
 
+      - name: Verify app can launch on Simulator
+        run: |
+          echo "Attempting direct simctl launch..."
+          xcrun simctl launch --console "$SIM_ID" com.qatarat.app 2>&1 | head -5 || true
+          sleep 3
+          xcrun simctl terminate "$SIM_ID" com.qatarat.app 2>/dev/null || true
+
       - name: Run Maestro Suite
         run: |
           SUITE="${{ github.event.inputs.suite || 'smoke' }}"
           mkdir -p testing/maestro/reports
+          # Try without xctest driver first (better compat with ad-hoc/distribution IPAs)
           maestro test \
             "testing/maestro/flows/suites/${SUITE}.yaml" \
             --format junit \
             --output "testing/maestro/reports/ios-${SUITE}-results.xml" \
             || true
-        env:
-          MAESTRO_DRIVER: xctest
 
       - name: Stop and compress iOS recording
         if: always()

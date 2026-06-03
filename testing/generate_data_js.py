@@ -628,15 +628,21 @@ def main():
     ios_flow_errors   = {}
     ios_maestro_dir = os.path.join(artifacts_dir, "maestro-ios")
     if os.path.isdir(ios_maestro_dir):
+        # Track which flows the iOS smoke suite covers
+        SMOKE_FLOW_IDS = {1, 2, 3, 5, 6, 26, 28, 39}  # from suites/smoke.yaml
         for xml_path in sorted(glob.glob(os.path.join(ios_maestro_dir, "**/*.xml"), recursive=True)):
             try:
                 root = ET.parse(xml_path).getroot()
+                # Detect suite-level failure (e.g. Maestro reports suite name not individual flows)
+                suite_fail_msg = None
                 for tc in root.iter("testcase"):
                     name = tc.get("name", "").lower()
+                    fail_el = tc.find("failure") or tc.find("error")
+                    # Check if this is a per-flow testcase match
+                    matched = False
                     for i, (fid, *_) in enumerate(FLOWS_DEF):
                         fname = FLOW_FILE_NAMES[i] if i < len(FLOW_FILE_NAMES) else ""
                         if fname in name or f"{fid:02d}_" in name:
-                            fail_el = tc.find("failure") or tc.find("error")
                             if fail_el is not None:
                                 ios_flow_statuses[f"{fid:02d}"] = "fail"
                                 raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
@@ -645,7 +651,21 @@ def main():
                                     ios_flow_errors[f"{fid:02d}"] = err
                             else:
                                 ios_flow_statuses[f"{fid:02d}"] = "pass"
+                            matched = True
                             break
+                    # Suite-level failure: testcase name is a suite name like "smoke", "regression"
+                    if not matched and fail_el is not None:
+                        raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
+                        if raw:
+                            suite_fail_msg = " ".join(raw.split())[:500]
+                # If suite failed as a whole and no per-flow results, propagate to expected flows
+                if suite_fail_msg and not ios_flow_statuses:
+                    suite_name = os.path.basename(xml_path).replace(".xml", "").replace("ios-", "").replace("-results", "")
+                    flow_ids_to_fail = SMOKE_FLOW_IDS if "smoke" in suite_name else {fid for fid, *_ in FLOWS_DEF}
+                    for fid in flow_ids_to_fail:
+                        if fid <= 25:  # only flows defined in FLOWS_DEF
+                            ios_flow_statuses[f"{fid:02d}"] = "fail"
+                            ios_flow_errors[f"{fid:02d}"] = suite_fail_msg
             except Exception:
                 pass
 
