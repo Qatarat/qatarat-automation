@@ -271,13 +271,21 @@ CI_WORKFLOWS_DEF = [
 
 # ─── XML helpers ──────────────────────────────────────────────────────────
 def xml_flow_status(xml_path):
-    """'pass'|'fail' from a single-flow JUnit XML."""
+    """Return (status, error_msg) from a single-flow JUnit XML.
+    status is 'pass'|'fail'. error_msg is '' when passing."""
     try:
         root = ET.parse(xml_path).getroot()
         failures = root.findall(".//failure") + root.findall(".//error")
-        return "fail" if failures else "pass"
+        if failures:
+            el = failures[0]
+            # Prefer message attribute; fall back to element text
+            raw = (el.get("message") or "").strip() or (el.text or "").strip()
+            # Collapse whitespace, trim to 500 chars
+            msg = " ".join(raw.split())[:500]
+            return "fail", msg
+        return "pass", ""
     except Exception:
-        return None
+        return None, ""
 
 def xml_test_map(xml_path):
     """Return {test_name: (status, duration_s, error_msg)} from a JUnit XML."""
@@ -289,7 +297,8 @@ def xml_test_map(xml_path):
             dur  = float(tc.get("time", "0") or "0")
             fail_el = tc.find("failure") or tc.find("error")
             if fail_el is not None:
-                msg = (fail_el.get("message") or (fail_el.text or ""))[:160].strip()
+                raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
+                msg = " ".join(raw.split())[:400]
                 out[name] = ("fail", dur, msg)
             elif tc.find("skipped") is not None:
                 out[name] = ("skip", dur, "")
@@ -411,12 +420,15 @@ def main():
 
     # ── 1. Maestro flow statuses from per-flow XML files ──────────────────
     flow_statuses = {}   # index → 'pass'|'fail'
+    flow_errors   = {}   # index → failure message string
     flow_durations = {}  # index → seconds from XML (if available)
     for i, file_name in enumerate(FLOW_FILE_NAMES):
         for xml_path in glob.glob(f"{artifacts_dir}/**/{file_name}*.xml", recursive=True):
-            st = xml_flow_status(xml_path)
+            st, err = xml_flow_status(xml_path)
             if st:
                 flow_statuses[i] = st
+                if err:
+                    flow_errors[i] = err
                 # Try to read duration from testsuite time attribute
                 try:
                     root = ET.parse(xml_path).getroot()
@@ -598,8 +610,12 @@ def main():
     }
 
     live_maestro_statuses = {}
+    live_maestro_errors   = {}
     for i, (fid, *_rest) in enumerate(FLOWS_DEF):
         live_maestro_statuses[f"{fid:02d}"] = flow_statuses.get(i, "idle")
+        err = flow_errors.get(i, "")
+        if err:
+            live_maestro_errors[f"{fid:02d}"] = err
 
     # ── iOS artifact parsing ──────────────────────────────────────────────
     ios_appium_map = {}
@@ -609,6 +625,7 @@ def main():
             ios_appium_map.update(xml_test_map(xml_path))
 
     ios_flow_statuses = {}
+    ios_flow_errors   = {}
     ios_maestro_dir = os.path.join(artifacts_dir, "maestro-ios")
     if os.path.isdir(ios_maestro_dir):
         for xml_path in sorted(glob.glob(os.path.join(ios_maestro_dir, "**/*.xml"), recursive=True)):
@@ -619,8 +636,15 @@ def main():
                     for i, (fid, *_) in enumerate(FLOWS_DEF):
                         fname = FLOW_FILE_NAMES[i] if i < len(FLOW_FILE_NAMES) else ""
                         if fname in name or f"{fid:02d}_" in name:
-                            is_fail = tc.find("failure") is not None or tc.find("error") is not None
-                            ios_flow_statuses[f"{fid:02d}"] = "fail" if is_fail else "pass"
+                            fail_el = tc.find("failure") or tc.find("error")
+                            if fail_el is not None:
+                                ios_flow_statuses[f"{fid:02d}"] = "fail"
+                                raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
+                                err = " ".join(raw.split())[:500]
+                                if err:
+                                    ios_flow_errors[f"{fid:02d}"] = err
+                            else:
+                                ios_flow_statuses[f"{fid:02d}"] = "pass"
                             break
             except Exception:
                 pass
@@ -674,7 +698,9 @@ const LIVE_DATA = {{
   testResults: {json.dumps(live_test_results)},
   iosTestResults: {json.dumps(ios_test_results)},
   maestroStatuses: {json.dumps(live_maestro_statuses)},
+  maestroErrors: {json.dumps(live_maestro_errors)},
   iosMaestroStatuses: {json.dumps(ios_flow_statuses)},
+  iosMaestroErrors: {json.dumps(ios_flow_errors)},
   runHistory: {json.dumps(run_history_list, indent=2)},
   currentRun: {json.dumps(live_current_run)}
 }};

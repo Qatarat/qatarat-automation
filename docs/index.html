@@ -197,6 +197,8 @@ code,pre{font-family:'JetBrains Mono',monospace;}
 .test-icon{font-size:13px;flex-shrink:0;margin-top:1px;}
 .test-name{font-size:12px;font-weight:500;flex:1;}
 .test-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;}
+.test-err-snippet{font-size:10px;color:var(--red);background:var(--red-dim);border-radius:4px;padding:3px 7px;margin-top:5px;font-family:'JetBrains Mono',monospace;line-height:1.4;word-break:break-word;}
+.test-dur{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;flex-shrink:0;margin-top:2px;}
 .test-tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:9px;font-weight:600;padding:1px 5px;}
 
 /* ── IOS PENDING BOX ── */
@@ -1257,6 +1259,9 @@ var PIPELINES = [
     MAESTRO_FLOWS.forEach(function(f){
       var s=live.maestroStatuses[f.n];
       if(s&&s!=='idle') f.status=s;
+      // Attach real CI error message for failed flows
+      var err=(live.maestroErrors||{})[f.n];
+      if(err) f.ciError=err;
     });
   }
 })();
@@ -1467,21 +1472,27 @@ function openModal(cfg){
       html+='</div></div>';
     }
   } else {
-    html+='<div class="modal-section"><div class="modal-section-label">Why It Failed</div>'
-      +'<div class="modal-error-box">'+escH(cfg.error||'No error message captured — check CI logs for full stack trace')+'</div></div>';
+    // ── Failure section — real CI error is shown prominently ──
+    var hasRealError=cfg.error&&cfg.error.length>0;
+    html+='<div class="modal-section">'
+      +'<div class="modal-section-label">❌ Failure Reason'+(hasRealError?' <span style="font-size:10px;color:var(--teal);font-weight:400;margin-left:6px;">from CI log</span>':'')+'</div>'
+      +'<div class="modal-error-box">'
+      +(hasRealError?escH(cfg.error):'No error message captured in JUnit XML — check the full CI log for the stack trace.')
+      +'</div></div>';
+    html+='<div class="modal-section"><div class="modal-section-label">What Actually Happened</div>'
+      +'<div class="modal-section-body" style="color:var(--red)">'+escH(cfg.actualResult||'Test failed — see failure reason above')+'</div></div>';
+    html+='<div class="modal-section"><div class="modal-section-label">What Should Have Happened</div>'
+      +'<div class="modal-section-body" style="color:var(--text2)">'+escH(cfg.expectedResult||'All assertions should pass and test should exit cleanly')+'</div></div>';
     html+='<div class="modal-section"><div class="modal-section-label">Steps to Reproduce</div>'
       +'<ol class="modal-steps">';
     (cfg.steps||[]).forEach(function(s,i){
       html+='<li class="modal-step"><div class="modal-step-num">'+(i+1)+'</div><div>'+escH(s)+'</div></li>';
     });
     html+='</ol></div>';
-    html+='<div class="modal-section"><div class="modal-section-label">Actual Result</div>'
-      +'<div class="modal-section-body" style="color:var(--red)">'+escH(cfg.actualResult||'Test failed — see error above')+'</div></div>';
-    html+='<div class="modal-section"><div class="modal-section-label">Expected Result</div>'
-      +'<div class="modal-section-body">'+escH(cfg.expectedResult||'Test should have passed with all assertions confirmed')+'</div></div>';
-    html+='<hr class="modal-divider"/><div class="modal-section"><div class="modal-section-label">Proof of Concept (PoC)</div>'
+    html+='<hr class="modal-divider"/><div class="modal-section"><div class="modal-section-label">Debug Resources</div>'
       +'<div class="modal-poc">'
-      +'<a class="modal-poc-btn" href="#recordings" onclick="document.getElementById(\'detail-modal\').style.display=\'none\';document.body.style.overflow=\'\';">🎥 View Test Recording</a>';
+      +'<a class="modal-poc-btn" href="https://github.com/Qatarat/qatarat-automation/actions" target="_blank" rel="noopener">📋 View CI Logs</a>'
+      +'<a class="modal-poc-btn" href="#recordings" onclick="document.getElementById(\'detail-modal\').style.display=\'none\';document.body.style.overflow=\'\';">🎥 Test Recording</a>';
     if(cfg.screenshots&&cfg.screenshots.length){
       cfg.screenshots.forEach(function(src){
         html+='<a class="modal-poc-btn" href="'+escH(src)+'" target="_blank" rel="noopener">📷 Screenshot</a>';
@@ -1510,14 +1521,16 @@ function initDetailModal(){
     var flow=null;
     for(var i=0;i<MAESTRO_FLOWS.length;i++){if(MAESTRO_FLOWS[i].n===n){flow=MAESTRO_FLOWS[i];break;}}
     if(!flow) return;
+    // Real CI error takes priority; fall back to note
+    var errorMsg=flow.ciError||flow.note||null;
     var cfg={
       title:flow.name,
       file:'Maestro YAML · Flow '+n+' · '+flow.type+' · '+flow.platform,
       status:flow.status,
       coverage:flow.covers,
       steps:inferMaestroSteps(flow),
-      error:flow.note||null,
-      actualResult:flow.status!=='pass'?parseActualResult(flow.note||''):null,
+      error:errorMsg,
+      actualResult:flow.status!=='pass'?parseActualResult(errorMsg||''):null,
       expectedResult:flow.status!=='pass'?inferExpected(flow.name):null,
       screenshots:flow.screenshots||[]
     };
@@ -1628,10 +1641,16 @@ function renderAppium(){
     var rows='';
     g.tests.forEach(function(t,ti){
       var tags=t.tags.map(function(tag){return '<span class="test-tag">'+escH(tag)+'</span>';}).join('');
-      var icon=t.status==='pass'?'✅':'❌';
-      rows+='<div class="test-row" data-gi="'+gi+'" data-ti="'+ti+'"><div class="test-icon">'+icon+'</div><div><div class="test-name text-mono">'+escH(t.name)+'</div><div class="test-tags">'+tags+'</div></div></div>';
+      var icon=t.status==='pass'?'✅':(t.status==='fail'?'❌':(t.status==='skip'?'⏭':'⏳'));
+      var errSnippet=t.status==='fail'&&t.error?'<div class="test-err-snippet">'+escH(t.error.substring(0,120)+(t.error.length>120?'…':''))+'</div>':'';
+      rows+='<div class="test-row" data-gi="'+gi+'" data-ti="'+ti+'"><div class="test-icon">'+icon+'</div><div style="flex:1;min-width:0"><div class="test-name text-mono">'+escH(t.name)+'</div><div class="test-tags">'+tags+'</div>'+errSnippet+'</div>'+(t.duration?'<div class="test-dur">'+t.duration+'s</div>':'')+'</div>';
     });
-    html+='<div class="accordion"><div class="acc-header" data-gi="'+gi+'"><div class="acc-left"><div class="acc-icon" style="background:'+g.iconBg+'">'+g.icon+'</div><div><div class="acc-title">'+escH(g.title)+'</div><div class="acc-meta">'+escH(g.file)+'</div></div></div><div class="acc-right"><span class="acc-count">'+g.tests.length+' tests</span><svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div></div><div class="acc-body" id="acc-body-'+gi+'">'+rows+'</div></div>';
+    var passCount=g.tests.filter(function(t){return t.status==='pass';}).length;
+    var failCount=g.tests.filter(function(t){return t.status==='fail';}).length;
+    var hasRan=g.tests.some(function(t){return t.status!=='pass'||failCount>0;});
+    var countColor=failCount>0?'var(--red)':(passCount===g.tests.length?'var(--green)':'var(--text3)');
+    var countLabel=failCount>0?(passCount+'/'+g.tests.length+' <span style="color:var(--red)">'+failCount+' fail</span>'):passCount+'/'+g.tests.length;
+    html+='<div class="accordion"><div class="acc-header" data-gi="'+gi+'"><div class="acc-left"><div class="acc-icon" style="background:'+g.iconBg+'">'+g.icon+'</div><div><div class="acc-title">'+escH(g.title)+'</div><div class="acc-meta">'+escH(g.file)+'</div></div></div><div class="acc-right"><span class="acc-count" style="color:'+countColor+'">'+countLabel+'</span><svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div></div><div class="acc-body" id="acc-body-'+gi+'">'+rows+'</div></div>';
   });
   container.innerHTML=html;
   document.querySelectorAll('.acc-header').forEach(function(h){
@@ -1806,9 +1825,14 @@ function renderAppiumIOS(){
       })
     };
   });
-  // iOS Maestro statuses
+  // iOS Maestro statuses + errors
   if(live.iosMaestroStatuses&&Object.keys(live.iosMaestroStatuses).length>0){
-    MAESTRO_FLOWS.forEach(function(f){var s=live.iosMaestroStatuses[f.n];if(s)f.iosStatus=s;});
+    MAESTRO_FLOWS.forEach(function(f){
+      var s=live.iosMaestroStatuses[f.n];
+      if(s) f.iosStatus=s;
+      var iosErr=(live.iosMaestroErrors||{})[f.n];
+      if(iosErr) f.iosCiError=iosErr;
+    });
   }
   // Platform banner counts
   var andPass=APPIUM_GROUPS.reduce(function(acc,g){return acc+g.tests.filter(function(t){return t.status==='pass';}).length;},0);
