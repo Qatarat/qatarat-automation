@@ -295,7 +295,7 @@ def xml_test_map(xml_path):
         for tc in root.iter("testcase"):
             name = tc.get("name", "")
             dur  = float(tc.get("time", "0") or "0")
-            fail_el = tc.find("failure") or tc.find("error")
+            _fe = tc.find("failure"); fail_el = _fe if _fe is not None else tc.find("error")
             if fail_el is not None:
                 raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
                 msg = " ".join(raw.split())[:400]
@@ -637,7 +637,7 @@ def main():
                 suite_fail_msg = None
                 for tc in root.iter("testcase"):
                     name = tc.get("name", "").lower()
-                    fail_el = tc.find("failure") or tc.find("error")
+                    _fe = tc.find("failure"); fail_el = _fe if _fe is not None else tc.find("error")
                     # Check if this is a per-flow testcase match
                     matched = False
                     for i, (fid, *_) in enumerate(FLOWS_DEF):
