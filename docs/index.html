@@ -577,27 +577,27 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
 
   <div id="rec-android" class="rec-panel">
     <div class="rec-grid">
-      <div class="rec-card">
+      <div class="rec-card" id="rec-card-android-appium">
         <div class="rec-card-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
           Appium Deep Tests — Android (Pixel 7 · API 34)
         </div>
-        <div class="rec-placeholder-card">
+        <div class="rec-placeholder-card" id="rec-ph-android-appium">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-          <div class="rec-ph-title">Recording Coming Soon</div>
-          <div class="rec-ph-body">Appium session recordings are captured during Monday CI runs.<br>The video will appear here automatically after the next scheduled run.</div>
+          <div class="rec-ph-title">Loading recording…</div>
+          <div class="rec-ph-body">Appium session recordings are captured during Monday CI runs.</div>
           <div class="rec-ph-meta">🤖 Android · Appium 2.x · pytest · alluredir</div>
         </div>
       </div>
-      <div class="rec-card">
+      <div class="rec-card" id="rec-card-android-maestro">
         <div class="rec-card-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
           Maestro Flows — Android (Pixel 7 · API 34)
         </div>
-        <div class="rec-placeholder-card">
+        <div class="rec-placeholder-card" id="rec-ph-android-maestro">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-          <div class="rec-ph-title">Recording Coming Soon</div>
-          <div class="rec-ph-body">Maestro flow recordings are captured during nightly regression runs.<br>The video will appear here automatically after the next nightly run.</div>
+          <div class="rec-ph-title">Loading recording…</div>
+          <div class="rec-ph-body">Maestro flow recordings are captured during nightly regression runs.</div>
           <div class="rec-ph-meta">🤖 Android · Maestro 2.x · 50 YAML flows</div>
         </div>
       </div>
@@ -606,28 +606,28 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
 
   <div id="rec-ios" class="rec-panel hidden">
     <div class="rec-grid">
-      <div class="rec-card">
+      <div class="rec-card" id="rec-card-ios-appium">
         <div class="rec-card-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
           Appium Deep Tests — iOS (iPhone 15 · iOS 17)
         </div>
-        <div class="rec-placeholder-card">
+        <div class="rec-placeholder-card" id="rec-ph-ios-appium">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-          <div class="rec-ph-title">Recording Coming Soon</div>
-          <div class="rec-ph-body">iOS Appium sessions run every Wednesday at 04:00 UTC.<br>The video will appear here automatically after the next iOS run.</div>
+          <div class="rec-ph-title">Loading recording…</div>
+          <div class="rec-ph-body">iOS Appium sessions run every Wednesday at 04:00 UTC.</div>
           <div class="rec-ph-meta">🍎 iOS · Appium XCUITest · pytest · iPhone 15 Simulator</div>
         </div>
       </div>
-      <div class="rec-card">
+      <div class="rec-card" id="rec-card-ios-maestro">
         <div class="rec-card-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
           Maestro Flows — iOS (iPhone 15 · iOS 17)
         </div>
-        <div class="rec-placeholder-card">
+        <div class="rec-placeholder-card" id="rec-ph-ios-maestro">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-          <div class="rec-ph-title">Recording Coming Soon</div>
-          <div class="rec-ph-body">iOS Maestro sessions run every Tuesday at 03:00 UTC.<br>The video will appear here automatically after the next iOS run.</div>
-          <div class="rec-ph-meta">🍎 iOS · Maestro 2.x · 50 YAML flows · iPhone 15 Simulator</div>
+          <div class="rec-ph-title">Loading recording…</div>
+          <div class="rec-ph-body">iOS Maestro sessions run every Tuesday at 03:00 UTC.</div>
+          <div class="rec-ph-meta">🍎 iOS · Maestro 2.x · regression suite · iPhone 15 Simulator</div>
         </div>
       </div>
     </div>
@@ -1316,6 +1316,40 @@ function initRecordings(){
     if(panel) panel.classList.remove('hidden');
   });
 
+  // Dynamically probe for video files; show <video> if found, placeholder otherwise
+  var base=window.location.origin+window.location.pathname.replace(/\/[^/]*$/,'/');
+  var videos=[
+    {id:'android-appium', url:base+'videos/android-appium.mp4',   ph:'rec-ph-android-appium', label:'Android Appium · Pixel 7 · API 34'},
+    {id:'android-maestro',url:base+'videos/android-maestro.mp4',  ph:'rec-ph-android-maestro',label:'Android Maestro · 50 flows · Pixel 7'},
+    {id:'ios-appium',     url:base+'videos/ios-appium.mp4',        ph:'rec-ph-ios-appium',     label:'iOS Appium · iPhone 15 · iOS 17'},
+    {id:'ios-maestro',    url:base+'videos/ios-maestro.mp4',       ph:'rec-ph-ios-maestro',    label:'iOS Maestro · regression · iPhone 15'},
+  ];
+  var PHsvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;color:var(--border);opacity:.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>';
+  videos.forEach(function(v){
+    var ph=document.getElementById(v.ph);
+    if(!ph) return;
+    fetch(v.url,{method:'HEAD'})
+      .then(function(r){
+        if(r.ok){
+          var card=ph.parentElement;
+          var videoEl=document.createElement('video');
+          videoEl.className='rec-video';
+          videoEl.controls=true;
+          videoEl.preload='metadata';
+          videoEl.innerHTML='<source src="'+v.url+'" type="video/mp4">Your browser does not support video playback.';
+          var lbl=document.createElement('div');
+          lbl.style.cssText='font-size:11px;color:var(--text3);text-align:center;padding:6px 0 2px;';
+          lbl.textContent=v.label;
+          card.replaceChild(videoEl,ph);
+          card.appendChild(lbl);
+        } else {
+          ph.querySelector('.rec-ph-title').textContent='Recording Coming Soon';
+        }
+      })
+      .catch(function(){
+        ph.querySelector('.rec-ph-title').textContent='Recording Coming Soon';
+      });
+  });
 }
 
 // ── DETAIL MODAL ──────────────────────────────────────────────────────────────
@@ -1879,15 +1913,6 @@ function renderAppiumIOS(){
     var iosMHasFail=iosMaestroRan&&Object.values(live.iosMaestroStatuses).some(function(s){return s==='fail';});
     iosDot.className='status-dot '+(iosMHasFail?'fail':'pass');
   }
-  // Update ios-pending box in the recordings section if no iOS video
-  document.querySelectorAll('.rec-video').forEach(function(v){
-    v.addEventListener('error',function(){
-      var ph=document.createElement('div');
-      ph.className='rec-placeholder';
-      ph.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Recording will appear after the next CI run';
-      v.parentNode.replaceChild(ph,v);
-    },true);
-  });
 })();
 
 // ── INIT ──────────────────────────────────────────────────────────────────────

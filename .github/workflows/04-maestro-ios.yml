@@ -6,7 +6,7 @@ on:
       suite:
         description: "Suite to run: smoke | regression | negative"
         required: false
-        default: "smoke"
+        default: "regression"
       ios_version:
         description: "iOS simulator version"
         required: false

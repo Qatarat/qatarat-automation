@@ -72,12 +72,17 @@ jobs:
 
       - name: Extract .app bundle from IPA
         run: |
+          IPA_FILE="qatarat-stage-ios.ipa"
           IPA_DIR="Qatarat (Lambda-Stage-IOS-1.8.2).ipa"
           if [ -d "$IPA_DIR/Payload/Runner.app" ]; then
             APP_PATH="$(pwd)/$IPA_DIR/Payload/Runner.app"
-          else
-            unzip -q "Qatarat (Lambda-Stage-IOS-1.8.2).ipa.zip" -d ipa_extracted/
+            echo "Using pre-extracted Runner.app"
+          elif [ -f "$IPA_FILE" ]; then
+            echo "Extracting from $IPA_FILE..."
+            unzip -q "$IPA_FILE" -d ipa_extracted/
             APP_PATH="$(pwd)/ipa_extracted/Payload/Runner.app"
+          else
+            echo "ERROR: No IPA found"; exit 1
           fi
           echo "IOS_APP_PATH=$APP_PATH" >> $GITHUB_ENV
           echo "App path: $APP_PATH"
