@@ -83,20 +83,40 @@ jobs:
             echo "Latest Appium run ID: ${ID:-none found}"
           fi
 
-      # Must be resolved before any download step that references appium-ios-run
+      # Resolve iOS Maestro run (Maestro iOS Simulator workflow)
+      - name: Resolve Maestro iOS source run ID
+        id: maestro-ios-run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ] && \
+             echo "${{ github.event.workflow_run.name }}" | grep -qi "maestro" && \
+             echo "${{ github.event.workflow_run.name }}" | grep -qi "ios"; then
+            echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+            echo "Triggered by Maestro iOS workflow_run: ${{ github.event.workflow_run.id }}"
+          else
+            ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
+              --jq '[.workflow_runs[] | select(.name | test("Maestro") and test("iOS"))] | first | .id // ""' 2>/dev/null || echo "")
+            echo "id=${ID}" >> "$GITHUB_OUTPUT"
+            echo "Latest Maestro iOS run ID: ${ID:-none found}"
+          fi
+
+      # Resolve iOS Appium run (Appium Deep Tests iOS Simulator workflow)
       - name: Resolve Appium iOS source run ID
         id: appium-ios-run
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ] && \
+             echo "${{ github.event.workflow_run.name }}" | grep -qi "appium" && \
              echo "${{ github.event.workflow_run.name }}" | grep -qi "ios"; then
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+            echo "Triggered by Appium iOS workflow_run: ${{ github.event.workflow_run.id }}"
           else
             ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
-              --jq '[.workflow_runs[] | select(.name | test("iOS"))] | first | .id // ""' 2>/dev/null || echo "")
+              --jq '[.workflow_runs[] | select(.name | test("Appium") and test("iOS"))] | first | .id // ""' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
-            echo "Latest iOS run ID: ${ID:-none found}"
+            echo "Latest Appium iOS run ID: ${ID:-none found}"
           fi
 
       - name: Install Allure CLI
@@ -130,10 +150,10 @@ jobs:
         continue-on-error: true
 
       - name: Download iOS Maestro JUnit XMLs
-        if: steps.appium-ios-run.outputs.id != ''
+        if: steps.maestro-ios-run.outputs.id != ''
         uses: actions/download-artifact@v4
         with:
-          run-id: ${{ steps.appium-ios-run.outputs.id }}
+          run-id: ${{ steps.maestro-ios-run.outputs.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-artifacts/maestro-ios/
           pattern: "maestro-ios-junit*"
@@ -148,6 +168,17 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-screenshots/
           pattern: "maestro-*screenshots*"
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Download iOS Maestro screenshots
+        if: steps.maestro-ios-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.maestro-ios-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-screenshots/
+          pattern: "maestro-ios-screenshots*"
           merge-multiple: true
         continue-on-error: true
 
@@ -243,10 +274,10 @@ jobs:
         continue-on-error: true
 
       - name: Download iOS Maestro recording
-        if: steps.appium-ios-run.outputs.id != ''
+        if: steps.maestro-ios-run.outputs.id != ''
         uses: actions/download-artifact@v4
         with:
-          run-id: ${{ steps.appium-ios-run.outputs.id }}
+          run-id: ${{ steps.maestro-ios-run.outputs.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-recordings/
           pattern: "ios-maestro-recording-*"
