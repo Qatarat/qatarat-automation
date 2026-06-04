@@ -47,40 +47,42 @@ jobs:
       # Resolve which run's artifacts to download:
       #   workflow_run  → use the triggering run's ID (has the test XMLs/screenshots)
       #   push / dispatch → find the most recent successful smoke or regression run
-      # Resolve the latest Maestro run (smoke or regression) for flow results
+      # Resolve the latest Android Maestro run (smoke or regression) for flow results
       - name: Resolve Maestro source run ID
         id: source-run
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ] && \
-             echo "${{ github.event.workflow_run.name }}" | grep -qi "maestro"; then
+             echo "${{ github.event.workflow_run.name }}" | grep -qi "maestro" && \
+             echo "${{ github.event.workflow_run.name }}" | grep -qvi "ios"; then
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
-            echo "Triggered by Maestro workflow_run: ${{ github.event.workflow_run.id }}"
+            echo "Triggered by Android Maestro workflow_run: ${{ github.event.workflow_run.id }}"
           else
-            echo "Searching for latest successful Maestro run..."
+            echo "Searching for latest Android Maestro run..."
             ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
-              --jq '[.workflow_runs[] | select(.name | test("Maestro"))] | first | .id // ""' 2>/dev/null || echo "")
+              --jq '[.workflow_runs[] | select(.name | test("Maestro") and (test("iOS") | not))] | first | .id // ""' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
-            echo "Latest Maestro run ID: ${ID:-none found}"
+            echo "Latest Android Maestro run ID: ${ID:-none found}"
           fi
 
-      # Separately resolve the latest Appium run — it runs on a different schedule
+      # Separately resolve the latest Android Appium run — it runs on a different schedule
       - name: Resolve Appium source run ID
         id: appium-run
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ] && \
-             echo "${{ github.event.workflow_run.name }}" | grep -qi "appium"; then
+             echo "${{ github.event.workflow_run.name }}" | grep -qi "appium" && \
+             echo "${{ github.event.workflow_run.name }}" | grep -qvi "ios"; then
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
-            echo "Triggered by Appium workflow_run: ${{ github.event.workflow_run.id }}"
+            echo "Triggered by Android Appium workflow_run: ${{ github.event.workflow_run.id }}"
           else
-            echo "Searching for latest successful Appium run..."
+            echo "Searching for latest Android Appium run..."
             ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
-              --jq '[.workflow_runs[] | select(.name | test("Appium"))] | first | .id // ""' 2>/dev/null || echo "")
+              --jq '[.workflow_runs[] | select(.name | test("Appium") and (test("iOS") | not))] | first | .id // ""' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
-            echo "Latest Appium run ID: ${ID:-none found}"
+            echo "Latest Android Appium run ID: ${ID:-none found}"
           fi
 
       # Resolve iOS Maestro run (Maestro iOS Simulator workflow)
