@@ -32,10 +32,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Install Maestro
+      - name: Install Maestro + ffmpeg
         run: |
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+          brew install ffmpeg --quiet 2>/dev/null || true
 
       - name: List available simulators
         run: xcrun simctl list devices available | grep -i iphone | head -15
