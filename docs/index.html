@@ -1521,17 +1521,32 @@ function initDetailModal(){
     var flow=null;
     for(var i=0;i<MAESTRO_FLOWS.length;i++){if(MAESTRO_FLOWS[i].n===n){flow=MAESTRO_FLOWS[i];break;}}
     if(!flow) return;
-    // Real CI error takes priority; fall back to note
+    // Determine which status to show: prefer showing failure (either platform)
+    var andStatus=flow.status||'idle';
+    var iosStatus=flow.iosStatus||null;
+    var displayStatus=andStatus;
     var errorMsg=flow.ciError||flow.note||null;
+    var iosPlatLabel='';
+    // If iOS failed, show iOS failure prominently; note Android result separately
+    if(iosStatus==='fail'&&andStatus!=='fail'){
+      displayStatus='fail';
+      errorMsg=flow.iosCiError||errorMsg||null;
+      iosPlatLabel=' 🍎 iOS failed';
+    } else if(iosStatus==='fail'){
+      errorMsg=flow.iosCiError||flow.ciError||flow.note||null;
+      iosPlatLabel=' 🍎 iOS + 🤖 Android';
+    } else if(iosStatus==='pass'&&andStatus==='fail'){
+      iosPlatLabel=' (🍎 iOS passed)';
+    }
     var cfg={
-      title:flow.name,
+      title:flow.name+(iosPlatLabel?' — '+iosPlatLabel:''),
       file:'Maestro YAML · Flow '+n+' · '+flow.type+' · '+flow.platform,
-      status:flow.status,
+      status:displayStatus,
       coverage:flow.covers,
       steps:inferMaestroSteps(flow),
       error:errorMsg,
-      actualResult:flow.status!=='pass'?parseActualResult(errorMsg||''):null,
-      expectedResult:flow.status!=='pass'?inferExpected(flow.name):null,
+      actualResult:displayStatus!=='pass'?parseActualResult(errorMsg||''):null,
+      expectedResult:displayStatus!=='pass'?inferExpected(flow.name):null,
       screenshots:flow.screenshots||[]
     };
     openModal(cfg);
@@ -1838,6 +1853,8 @@ function renderAppiumIOS(){
   var andPass=APPIUM_GROUPS.reduce(function(acc,g){return acc+g.tests.filter(function(t){return t.status==='pass';}).length;},0);
   var iosHasData=live.iosTestResults&&Object.keys(live.iosTestResults).length>0;
   var iosPass=iosHasData?(window.IOS_APPIUM_GROUPS||[]).reduce(function(acc,g){return acc+g.tests.filter(function(t){return t.status==='pass';}).length;},0):null;
+  // Also check iOS Maestro results if Appium data unavailable
+  var iosMaestroRan=live.iosMaestroStatuses&&Object.keys(live.iosMaestroStatuses).length>0;
   var andEl=document.getElementById('android-pass-count');
   var iosEl=document.getElementById('ios-pass-count');
   var sbAnd=document.getElementById('sb-android-status');
@@ -1846,8 +1863,22 @@ function renderAppiumIOS(){
   if(andEl){andEl.textContent=andPass+'/191';andEl.style.color='var(--green)';}
   if(sbAnd) sbAnd.textContent=andPass+'/191';
   if(iosEl&&iosPass!==null){iosEl.textContent=iosPass+'/191';iosEl.style.color='var(--green)';}
+  else if(iosEl&&iosMaestroRan){
+    var iosMPass=Object.values(live.iosMaestroStatuses).filter(function(s){return s==='pass';}).length;
+    var iosMFail=Object.values(live.iosMaestroStatuses).filter(function(s){return s==='fail';}).length;
+    var iosTotal=Object.keys(live.iosMaestroStatuses).length;
+    iosEl.textContent=iosMPass+'/'+iosTotal+' Maestro flows';
+    iosEl.style.color=iosMFail>0?'var(--red)':'var(--green)';
+  }
   if(sbIos&&iosPass!==null){sbIos.textContent=iosPass+'/191';}
-  if(iosDot&&iosPass!==null){iosDot.className='status-dot pass';}
+  else if(sbIos&&iosMaestroRan){
+    var iosMF=Object.values(live.iosMaestroStatuses).filter(function(s){return s==='fail';}).length;
+    sbIos.textContent=iosMF>0?'CI ran — app launch failed':'Smoke passed';
+  }
+  if(iosDot&&(iosPass!==null||iosMaestroRan)){
+    var iosMHasFail=iosMaestroRan&&Object.values(live.iosMaestroStatuses).some(function(s){return s==='fail';});
+    iosDot.className='status-dot '+(iosMHasFail?'fail':'pass');
+  }
   // Update ios-pending box in the recordings section if no iOS video
   document.querySelectorAll('.rec-video').forEach(function(v){
     v.addEventListener('error',function(){
