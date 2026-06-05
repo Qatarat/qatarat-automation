@@ -347,7 +347,7 @@ def xml_test_map(xml_path):
             _fe = tc.find("failure"); fail_el = _fe if _fe is not None else tc.find("error")
             if fail_el is not None:
                 raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
-                msg = _humanize_error(raw) or " ".join(raw.split())[:400]
+                msg = _humanize_error(raw) or " ".join(raw.split())[:400] or "Test failed — the app or driver did not behave as expected. Check the screenshot or recording for what happened on screen."
                 out[name] = ("fail", dur, msg)
             elif tc.find("skipped") is not None:
                 skip_el = tc.find("skipped")

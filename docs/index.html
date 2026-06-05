@@ -1550,7 +1550,7 @@ function openModal(cfg){
     html+='<div class="modal-section">'
       +'<div class="modal-section-label">❌ Failure Reason'+(hasRealError?' <span style="font-size:10px;color:var(--teal);font-weight:400;margin-left:6px;">from CI log</span>':'')+'</div>'
       +'<div class="modal-error-box">'
-      +(hasRealError?escH(cfg.error):'No error message captured in JUnit XML — check the full CI log for the stack trace.')
+      +(hasRealError?escH(cfg.error):'Test failed — the app or driver did not behave as expected. Check the screenshot or recording below for what happened on screen.')
       +'</div></div>';
     html+='<div class="modal-section"><div class="modal-section-label">What Actually Happened</div>'
       +'<div class="modal-section-body" style="color:var(--red)">'+escH(cfg.actualResult||'Test failed — see failure reason above')+'</div></div>';

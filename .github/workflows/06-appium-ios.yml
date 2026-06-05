@@ -12,7 +12,7 @@ on:
         required: false
         default: "17.5"
   schedule:
-    - cron: "0 4 * * 3"   # Every Wednesday 04:00 UTC
+    - cron: "0 16 * * *"  # Daily 16:00 UTC = 10:00 PM BDT (UTC+6)
 
 concurrency:
   group: appium-ios-${{ github.ref }}
