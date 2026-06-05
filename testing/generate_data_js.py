@@ -287,6 +287,55 @@ def xml_flow_status(xml_path):
     except Exception:
         return None, ""
 
+def _humanize_error(raw: str) -> str:
+    """Convert raw Appium/Selenium stack traces into short, readable messages."""
+    if not raw:
+        return ""
+    r = raw.lower()
+
+    # iOS Simulator architecture mismatch
+    if "simulator architecture" in r or "architecture is not supported" in r:
+        return (
+            "Device build on Simulator — Runner.app is a real-device binary "
+            "(arm64-apple-ios) and cannot run on the iOS Simulator. "
+            "Fix: rebuild with flutter build ios --simulator --debug."
+        )
+    # App install failures
+    if "could not install" in r or "failed to install" in r:
+        return "App install failed — check IOS_APP_PATH points to a valid .app bundle."
+    # WebDriverAgent failures
+    if "webdriveragent" in r or ("wda" in r and ("fail" in r or "error" in r)):
+        return "WebDriverAgent (WDA) failed to start — simulator may not be booted."
+    # Connection refused
+    if "connection refused" in r or "could not connect" in r:
+        return "Cannot connect to Appium server — check Appium is running."
+    # Selenium TimeoutException
+    if "timeoutexception" in r:
+        import re
+        m = re.search(r"timeoutexception[:\s]+([^\n]{1,120})", raw, re.I)
+        return "Timeout — " + (m.group(1).strip() if m else "element not visible in time")
+    # StaleElementReferenceException
+    if "staleelementreferenceexception" in r:
+        return "Stale element — Flutter re-rendered the widget during interaction. Add a wait."
+    # NoSuchElementException / not found
+    if "nosuchelementexception" in r or "element not found" in r:
+        return "Element not found — expected UI element was not present in the view hierarchy."
+    # AssertionError — extract the message
+    if "assertionerror" in r:
+        import re
+        m = re.search(r"assertionerror[:\s]+([^\n]{1,150})", raw, re.I)
+        if m:
+            return "Assertion failed: " + m.group(1).strip()
+    # WebDriverException (generic)
+    if "webdriverexception" in r:
+        import re
+        m = re.search(r"message:\s*([^\n]{1,150})", raw, re.I)
+        if m:
+            return "Driver error: " + m.group(1).strip()
+    # Fallback — collapse whitespace, trim
+    return " ".join(raw.split())[:300]
+
+
 def xml_test_map(xml_path):
     """Return {test_name: (status, duration_s, error_msg)} from a JUnit XML."""
     out = {}
@@ -298,10 +347,14 @@ def xml_test_map(xml_path):
             _fe = tc.find("failure"); fail_el = _fe if _fe is not None else tc.find("error")
             if fail_el is not None:
                 raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
-                msg = " ".join(raw.split())[:400]
+                msg = _humanize_error(raw) or " ".join(raw.split())[:400]
                 out[name] = ("fail", dur, msg)
             elif tc.find("skipped") is not None:
-                out[name] = ("skip", dur, "")
+                skip_el = tc.find("skipped")
+                skip_msg = ""
+                if skip_el is not None:
+                    skip_msg = (skip_el.get("message") or "").strip()[:300]
+                out[name] = ("skip", dur, skip_msg)
             else:
                 out[name] = ("pass", dur, "")
     except Exception:

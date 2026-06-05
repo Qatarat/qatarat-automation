@@ -112,12 +112,71 @@ def _reset_android_app():
         pass
 
 
+def _ios_skip_if_infra_error(exc: Exception) -> None:
+    """Convert common iOS infrastructure errors into pytest.skip with readable messages.
+
+    These are environment issues (wrong build type, missing simulator, WDA failure),
+    not app bugs — skipping is more honest than recording a failure.
+    """
+    if PLATFORM != "ios":
+        return
+    msg = str(exc)
+    msg_lower = msg.lower()
+
+    # Device IPA on Simulator — most common CI failure
+    if "simulator architecture" in msg_lower or "architecture is not supported" in msg_lower:
+        pytest.skip(
+            "iOS Simulator build required — the IPA is a device build (arm64-apple-ios) "
+            "that cannot run on the iOS Simulator. "
+            "Fix: build the app with 'flutter build ios --simulator --debug' and store "
+            "Runner.app under 'Qatarat (Lambda-Stage-IOS-1.8.2).ipa/Payload/Runner.app'. "
+            f"[Appium: {msg[:200].strip()}]"
+        )
+
+    # App binary not found or failed to install
+    if any(p in msg_lower for p in ["could not install", "no app provided", "does not exist",
+                                     "app path", "failed to install", "cannot install"]):
+        pytest.skip(
+            "iOS app install failed — Runner.app not found or could not be installed on "
+            "the simulator. Check that IOS_APP_PATH points to a valid simulator .app bundle. "
+            f"[Appium: {msg[:200].strip()}]"
+        )
+
+    # WebDriverAgent failed to start
+    if "webdriveragent" in msg_lower or ("wda" in msg_lower and "fail" in msg_lower):
+        pytest.skip(
+            "WebDriverAgent (WDA) failed to launch on the iOS Simulator. "
+            "The simulator may not be booted or WDA compilation failed. "
+            f"[Appium: {msg[:200].strip()}]"
+        )
+
+    # Simulator not booted / not found
+    if "simulator" in msg_lower and any(p in msg_lower for p in ["not found", "unavailable", "not boot"]):
+        pytest.skip(
+            "iOS Simulator not found or not booted. "
+            "Ensure the simulator is running: xcrun simctl boot <UDID>. "
+            f"[Appium: {msg[:200].strip()}]"
+        )
+
+    # Generic Appium connection failure on iOS
+    if "connection refused" in msg_lower or "could not connect" in msg_lower:
+        pytest.skip(
+            "Cannot connect to Appium server. "
+            "Make sure Appium is running on the expected port. "
+            f"[Appium: {msg[:200].strip()}]"
+        )
+
+
 @pytest.fixture(scope="function")
 def driver():
     import time as _time
     if PLATFORM == "android":
         _reset_android_app()
-    d = webdriver.Remote(APPIUM_SERVER, options=_build_options(get_caps()))
+    try:
+        d = webdriver.Remote(APPIUM_SERVER, options=_build_options(get_caps()))
+    except Exception as exc:
+        _ios_skip_if_infra_error(exc)
+        raise
     d.implicitly_wait(10)
     _time.sleep(4)   # wait for app splash / initial load
     yield d

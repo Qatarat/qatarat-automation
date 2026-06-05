@@ -198,6 +198,8 @@ code,pre{font-family:'JetBrains Mono',monospace;}
 .test-name{font-size:12px;font-weight:500;flex:1;}
 .test-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px;}
 .test-err-snippet{font-size:10px;color:var(--red);background:var(--red-dim);border-radius:4px;padding:3px 7px;margin-top:5px;font-family:'JetBrains Mono',monospace;line-height:1.4;word-break:break-word;}
+.test-error-snippet{font-size:10.5px;color:var(--red);background:var(--red-dim);border:1px solid rgba(239,68,68,.2);border-radius:5px;padding:4px 8px;margin-top:5px;font-family:'JetBrains Mono',monospace;line-height:1.45;word-break:break-word;max-width:520px;}
+.test-skip-snippet{font-size:10.5px;color:var(--amber);background:var(--amber-dim);border:1px solid rgba(245,158,11,.2);border-radius:5px;padding:4px 8px;margin-top:5px;font-family:'JetBrains Mono',monospace;line-height:1.45;word-break:break-word;max-width:520px;}
 .test-dur{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;flex-shrink:0;margin-top:2px;}
 .test-tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:9px;font-weight:600;padding:1px 5px;}
 
@@ -701,6 +703,10 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
       <div class="ios-pending-icon">🍎</div>
       <h3>iOS Appium results pending</h3>
       <p>The iOS Appium suite (191 tests) runs every Wednesday 04:00 UTC on an iPhone 15 Pro simulator. Results appear here automatically after the first CI run completes.</p>
+      <p style="font-size:12px;color:var(--amber);margin-top:10px;max-width:480px;">
+        <strong>If tests show as skipped:</strong> the IPA is a device build (arm64-apple-ios).
+        Run <code>flutter build ios --simulator --debug</code> in the app repo and update Runner.app to fix.
+      </p>
       <span class="badge badge-ios">191 tests · same suite as Android · XCUITest driver</span>
     </div>
   </div>
@@ -1375,13 +1381,46 @@ function inferExpected(n){
 
 function parseActualResult(err){
   if(!err) return 'Test failed — see CI logs for details';
+  var r=err.toLowerCase();
   var m;
-  if((m=err.match(/AssertionError:\s*(.{1,120})/i))) return m[1].trim();
-  if((m=err.match(/TimeoutException:\s*(.{1,100})/i))) return 'Timeout — '+m[1].trim();
-  if(err.includes('StaleElementReferenceException')) return 'Element became stale (re-rendered by Flutter) during the interaction';
-  if(err.includes('NoSuchElementException')||err.toLowerCase().includes('not found')) return 'Expected UI element was not found in the current view hierarchy';
-  if((m=err.match(/WebDriverException:\s*(.{1,100})/i))) return m[1].trim();
-  return err.substring(0,120);
+
+  // iOS infrastructure errors — most common
+  if(r.includes('simulator architecture')||r.includes('architecture is not supported')){
+    return 'Device build on iOS Simulator — the app IPA is compiled for a real device '
+      +'(arm64-apple-ios) and cannot run on the Simulator. '
+      +'Fix: rebuild with flutter build ios --simulator --debug.';
+  }
+  if(r.includes('could not install')||r.includes('failed to install')){
+    return 'App install failed on iOS Simulator — Runner.app may be missing or have wrong architecture.';
+  }
+  if(r.includes('webdriveragent')||(r.includes('wda')&&(r.includes('fail')||r.includes('error')))){
+    return 'WebDriverAgent (WDA) failed to start on the simulator — the simulator may not be booted.';
+  }
+  if(r.includes('simulator')&&(r.includes('not found')||r.includes('unavailable')||r.includes('not boot'))){
+    return 'iOS Simulator not found or not booted — check that the simulator was started before tests ran.';
+  }
+
+  // General Appium/Selenium errors
+  if((m=err.match(/AssertionError:\s*(.{1,120})/i))) return 'Assertion failed: '+m[1].trim();
+  if((m=err.match(/TimeoutException:\s*(.{1,100})/i))) return 'Timeout — element not visible after wait. '+m[1].trim();
+  if(r.includes('staleelementreferenceexception')) return 'Element went stale — Flutter re-rendered the widget mid-interaction. Add a wait.';
+  if(r.includes('nosuchelementexception')||r.includes('element not found')||r.includes('not found')) return 'Expected UI element was not found in the current view hierarchy.';
+  if(r.includes('connection refused')||r.includes('could not connect')) return 'Cannot connect to Appium server — check Appium is running.';
+  if((m=err.match(/WebDriverException[^:]*:\s*(?:Message:\s*)?(.{1,150})/i))) return 'Driver error: '+m[1].trim();
+  if((m=err.match(/failed on setup with[^"]*"([^"]{1,200})/i))) return m[1].trim();
+  return err.substring(0,200);
+}
+
+function friendlySkipReason(msg){
+  if(!msg) return '';
+  var r=msg.toLowerCase();
+  if(r.includes('simulator build required')||r.includes('simulator architecture')||r.includes('device build')){
+    return '⚠️ Skipped — device IPA cannot run on Simulator. Needs simulator build.';
+  }
+  if(r.includes('install failed')) return '⚠️ Skipped — app install failed on Simulator.';
+  if(r.includes('webdriveragent')||r.includes('wda')) return '⚠️ Skipped — WebDriverAgent failed to start.';
+  if(r.includes('simulator not found')||r.includes('not booted')) return '⚠️ Skipped — Simulator not booted.';
+  return msg.substring(0,120);
 }
 
 function inferAppiumSteps(t,g){
@@ -1472,8 +1511,8 @@ function inferMaestroSteps(flow){
 function openModal(cfg){
   var modal=document.getElementById('detail-modal');
   var content=document.getElementById('modal-content');
-  var statusLabel=cfg.status==='pass'?'✓ Pass':(cfg.status==='fail'?'✗ Fail':'◌ Not Run');
-  var statusClass=cfg.status==='pass'?'pass':(cfg.status==='fail'?'fail':'idle');
+  var statusLabel=cfg.status==='pass'?'✓ Pass':(cfg.status==='fail'?'✗ Fail':(cfg.status==='skip'?'⏭ Skipped':'◌ Not Run'));
+  var statusClass=cfg.status==='pass'?'pass':(cfg.status==='fail'?'fail':(cfg.status==='skip'?'fail':'idle'));
   var html='<div class="modal-header">'
     +'<div class="modal-status '+statusClass+'">'+escH(statusLabel)+'</div>'
     +'<div class="modal-title">'+escH(cfg.title)+'</div>'
@@ -1691,7 +1730,7 @@ function renderAppium(){
     g.tests.forEach(function(t,ti){
       var tags=t.tags.map(function(tag){return '<span class="test-tag">'+escH(tag)+'</span>';}).join('');
       var icon=t.status==='pass'?'✅':(t.status==='fail'?'❌':(t.status==='skip'?'⏭':'⏳'));
-      var errSnippet=t.status==='fail'&&t.error?'<div class="test-err-snippet">'+escH(t.error.substring(0,120)+(t.error.length>120?'…':''))+'</div>':'';
+      var errSnippet=t.status==='fail'&&t.error?'<div class="test-err-snippet">'+escH(parseActualResult(t.error))+'</div>':'';
       rows+='<div class="test-row" data-gi="'+gi+'" data-ti="'+ti+'"><div class="test-icon">'+icon+'</div><div style="flex:1;min-width:0"><div class="test-name text-mono">'+escH(t.name)+'</div><div class="test-tags">'+tags+'</div>'+errSnippet+'</div>'+(t.duration?'<div class="test-dur">'+t.duration+'s</div>':'')+'</div>';
     });
     var passCount=g.tests.filter(function(t){return t.status==='pass';}).length;
@@ -1837,16 +1876,44 @@ function renderAppiumIOS(){
   var html='';
   groups.forEach(function(g,gi){
     var rows='';
+    var failCnt=g.tests.filter(function(t){return t.status==='fail';}).length;
+    var skipCnt=g.tests.filter(function(t){return t.status==='skip';}).length;
     g.tests.forEach(function(t,ti){
       var tags=t.tags.map(function(tag){return '<span class="test-tag">'+escH(tag)+'</span>';}).join('');
-      var icon=t.status==='pass'?'✅':(t.status==='fail'?'❌':'⏳');
-      rows+='<div class="test-row" data-gi="ios-'+gi+'" data-ti="'+ti+'"><div class="test-icon">'+icon+'</div><div><div class="test-name text-mono">'+escH(t.name)+'</div><div class="test-tags">'+tags+'</div></div></div>';
+      var icon=t.status==='pass'?'✅':(t.status==='fail'?'❌':(t.status==='skip'?'⏭️':'⏳'));
+      var errSnippet='';
+      if(t.status==='fail'&&t.error){
+        errSnippet='<div class="test-error-snippet">'+escH(parseActualResult(t.error))+'</div>';
+      } else if(t.status==='skip'&&t.error){
+        errSnippet='<div class="test-skip-snippet">'+escH(friendlySkipReason(t.error))+'</div>';
+      }
+      var dur=t.duration?('<span class="test-dur">'+Number(t.duration).toFixed(1)+'s</span>'):'';
+      rows+='<div class="test-row" data-gi="ios-'+gi+'" data-ti="'+ti+'" style="cursor:pointer;">'
+        +'<div class="test-icon">'+icon+'</div>'
+        +'<div style="flex:1;min-width:0;">'
+          +'<div class="test-name text-mono">'+escH(t.name)+'</div>'
+          +'<div class="test-tags">'+tags+'</div>'
+          +errSnippet
+        +'</div>'
+        +dur
+        +'</div>';
     });
     var passCnt=g.tests.filter(function(t){return t.status==='pass';}).length;
-    var allPass=passCnt===g.tests.length;
-    html+='<div class="accordion"><div class="acc-header" data-gi="ios-'+gi+'"><div class="acc-left"><div class="acc-icon" style="background:'+g.iconBg+'">'+g.icon+'</div><div><div class="acc-title">'+escH(g.title)+' <span style="font-size:10px;color:var(--text3)">iOS</span></div><div class="acc-meta">'+escH(g.file)+'</div></div></div><div class="acc-right"><span class="acc-count" style="color:'+(allPass?'var(--green)':'var(--red)')+'">'+passCnt+'/'+g.tests.length+'</span><svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div></div><div class="acc-body" id="acc-body-ios-'+gi+'">'+rows+'</div></div>';
+    var countColor=failCnt>0?'var(--red)':(skipCnt>0?'var(--amber)':(passCnt===g.tests.length?'var(--green)':'var(--text3)'));
+    var countLabel=failCnt>0?(passCnt+'/'+g.tests.length+' <span style="color:var(--red)">'+failCnt+' fail</span>')
+      :(skipCnt>0?(passCnt+'/'+g.tests.length+' <span style="color:var(--amber)">'+skipCnt+' skipped</span>')
+      :(passCnt+'/'+g.tests.length));
+    html+='<div class="accordion"><div class="acc-header" data-gi="ios-'+gi+'">'
+      +'<div class="acc-left"><div class="acc-icon" style="background:'+g.iconBg+'">'+g.icon+'</div>'
+      +'<div><div class="acc-title">'+escH(g.title)+' <span style="font-size:10px;color:var(--text3)">🍎 iOS</span></div>'
+      +'<div class="acc-meta">'+escH(g.file)+'</div></div></div>'
+      +'<div class="acc-right"><span class="acc-count" style="color:'+countColor+'">'+countLabel+'</span>'
+      +'<svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>'
+      +'</div><div class="acc-body" id="acc-body-ios-'+gi+'">'+rows+'</div></div>';
   });
   accEl.innerHTML=html;
+
+  // Accordion toggle
   accEl.querySelectorAll('.acc-header').forEach(function(h){
     h.addEventListener('click',function(){
       var gi=h.dataset.gi;var body=document.getElementById('acc-body-'+gi);
@@ -1854,6 +1921,37 @@ function renderAppiumIOS(){
       if(open){body.classList.remove('open');h.classList.remove('open');}
       else{body.classList.add('open');h.classList.add('open');}
     });
+  });
+
+  // Test row click → open detail modal
+  accEl.addEventListener('click',function(e){
+    var row=e.target.closest('.test-row[data-gi][data-ti]');
+    if(!row||e.target.closest('.acc-header')) return;
+    var gi=parseInt((row.dataset.gi||'').replace('ios-',''),10);
+    var ti=parseInt(row.dataset.ti,10);
+    var groups=window.IOS_APPIUM_GROUPS||[];
+    var g=groups[gi]; if(!g) return;
+    var t=g.tests[ti]; if(!t) return;
+    var cfg={
+      title:humanizeName(t.name)+' 🍎',
+      file:g.file+' · '+g.title+' · iOS Simulator',
+      tags:t.tags||[],
+      status:t.status==='skip'?'fail':t.status,
+      duration:t.duration||null,
+      coverage:humanizeName(t.name),
+      steps:inferAppiumSteps(t,g),
+      error:t.status==='skip'
+        ? friendlySkipReason(t.error||'')
+        : (t.error?parseActualResult(t.error):null),
+      actualResult:(t.status!=='pass'&&t.status!=='idle')
+        ? (t.status==='skip'
+            ? 'Test was SKIPPED — infrastructure issue, not an app bug.\n'+friendlySkipReason(t.error||'')
+            : parseActualResult(t.error||''))
+        : null,
+      expectedResult:inferExpected(t.name),
+      screenshots:[]
+    };
+    openModal(cfg);
   });
 }
 

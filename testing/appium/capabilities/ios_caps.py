@@ -15,13 +15,17 @@ _IPA_PATH = os.path.join(_ROOT, "Qatarat (Lambda-Stage-IOS-1.8.2).ipa.zip")
 
 IOS_CAPS = {
     "platformName": "iOS",
-    "appium:automationName": "Flutter",
+    # XCUITest works with any build (debug OR distribution/staging IPA).
+    # Flutter driver requires a debug build with Observatory running — not available
+    # in Lambda/BrowserStack staging IPAs, causing "architecture not supported" failures.
+    "appium:automationName": "XCUITest",
     "appium:bundleId": "com.qatarat.app",
     "appium:noReset": False,
     "appium:newCommandTimeout": 120,
     "appium:autoAcceptAlerts": True,
     "appium:retryBackoffTime": 500,
     "appium:maxRetryCount": 3,
+    "appium:forceSimulatorSoftwareKeyboardPresence": True,
 }
 
 # ── Simulator (default for local dev + CI) ────────────────────────────────────

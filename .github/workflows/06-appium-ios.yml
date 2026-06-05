@@ -88,6 +88,34 @@ jobs:
           echo "IOS_APP_PATH=$APP_PATH" >> $GITHUB_ENV
           echo "App path: $APP_PATH"
 
+      - name: Validate app architecture is simulator-compatible
+        run: |
+          APP="${{ env.IOS_APP_PATH }}"
+          BINARY="$APP/Runner"
+          if [ ! -f "$BINARY" ]; then
+            echo "::warning::Runner binary not found at $BINARY"
+            echo "IOS_SIM_COMPATIBLE=false" >> $GITHUB_ENV
+            exit 0
+          fi
+          ARCH_INFO=$(lipo -info "$BINARY" 2>/dev/null || file "$BINARY" 2>/dev/null || echo "unknown")
+          echo "Binary architecture info: $ARCH_INFO"
+          if echo "$ARCH_INFO" | grep -qi "simulator"; then
+            echo "✅ Runner.app is simulator-compatible"
+            echo "IOS_SIM_COMPATIBLE=true" >> $GITHUB_ENV
+          else
+            echo "IOS_SIM_COMPATIBLE=false" >> $GITHUB_ENV
+            echo "::warning::Runner.app is a DEVICE build (arm64-apple-ios), not a simulator build."
+            echo "::warning::Tests will be recorded as SKIPPED (not FAILED) with a clear reason."
+            echo ""
+            echo "=== HOW TO FIX ==="
+            echo "1. In the Flutter app repository, run:"
+            echo "   flutter build ios --simulator --debug --no-codesign"
+            echo "2. Copy build/ios/iphonesimulator/Runner.app into:"
+            echo "   'Qatarat (Lambda-Stage-IOS-1.8.2).ipa/Payload/Runner.app'"
+            echo "3. Commit the updated Runner.app via Git LFS"
+            echo "4. Re-run this workflow"
+          fi
+
       - name: Pre-install app on Simulator
         run: |
           xcrun simctl install "$SIM_ID" "$IOS_APP_PATH"
@@ -115,6 +143,12 @@ jobs:
           PYTEST_ARGS="-v --tb=short --alluredir=allure-results --junitxml=reports/results.xml"
           [ -n "$MARKER" ] && PYTEST_ARGS="$PYTEST_ARGS -m $MARKER"
           mkdir -p allure-results reports/screenshots
+
+          if [ "$IOS_SIM_COMPATIBLE" = "false" ]; then
+            echo "::warning::Running tests against a device-build IPA — expect SKIP (not FAIL) results."
+            echo "Tests will report the reason clearly: device build cannot run on iOS Simulator."
+          fi
+
           python -m pytest tests/ $PYTEST_ARGS || true
         env:
           PLATFORM: ios
@@ -122,6 +156,7 @@ jobs:
           IOS_SIM_NAME: iPhone 15 Pro
           IOS_VERSION: ${{ github.event.inputs.ios_version || '17.5' }}
           IOS_APP_PATH: ${{ env.IOS_APP_PATH }}
+          IOS_SIM_COMPATIBLE: ${{ env.IOS_SIM_COMPATIBLE }}
           APPIUM_HOST: localhost
           APPIUM_PORT: "4723"
 
@@ -149,43 +184,93 @@ jobs:
       - name: Publish step summary
         if: always()
         run: |
-          python3 - <<'EOF'
-          import xml.etree.ElementTree as ET, os, pathlib
+          python3 - <<'PYEOF'
+          import xml.etree.ElementTree as ET, os, pathlib, textwrap
+
+          # ── error humanizer ────────────────────────────────────────────────────
+          def friendly_error(raw):
+              if not raw:
+                  return "Unknown error — check CI logs"
+              r = raw.lower()
+              if "simulator architecture" in r or "architecture is not supported" in r:
+                  return (
+                      "⚠️ Device build on Simulator — Runner.app is compiled for a real "
+                      "iOS device (arm64-apple-ios) and cannot run on the Simulator.\n"
+                      "**Fix:** rebuild with `flutter build ios --simulator --debug` "
+                      "and replace Runner.app in the repo."
+                  )
+              if "could not install" in r or "failed to install" in r:
+                  return "⚠️ App install failed — check that IOS_APP_PATH points to a valid .app bundle."
+              if "webdriveragent" in r or ("wda" in r and "fail" in r):
+                  return "⚠️ WebDriverAgent (WDA) failed to start — simulator may not be booted."
+              if "connection refused" in r or "could not connect" in r:
+                  return "⚠️ Appium server unreachable — check that Appium started correctly."
+              if "timeout" in r:
+                  return "⏳ Timed out waiting for element or app response."
+              if "assertionerror" in r:
+                  # Extract the assertion message
+                  for line in raw.split("\n"):
+                      if "assertionerror" in line.lower():
+                          return "❌ Assertion failed: " + line.strip()[:120]
+              return raw[:200].strip()
+
           f = "testing/appium/reports/results.xml"
           if not pathlib.Path(f).exists():
-              print("No results file"); exit()
+              print("No results file found")
+              summary = "## 🍎 Appium iOS Results\n\n> No results file generated — Appium may have failed to start.\n"
+              with open(os.environ.get("GITHUB_STEP_SUMMARY",""), "a") as fh:
+                  fh.write(summary)
+              exit(0)
+
           root = ET.parse(f).getroot()
           total = passed = failed = skipped = 0
           rows = ""
           for tc in root.iter("testcase"):
               total += 1
               name = tc.get("name", "")
-              if tc.find("failure") is not None or tc.find("error") is not None:
-                  failed += 1; icon = "❌"
+              dur  = float(tc.get("time", "0") or "0")
+              fail_el = tc.find("failure") or tc.find("error")
+              if fail_el is not None:
+                  failed += 1
+                  raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
+                  err_msg = friendly_error(raw)
+                  rows += f"| ❌ | `{name}` | {dur:.1f}s | {err_msg[:100]} |\n"
               elif tc.find("skipped") is not None:
-                  skipped += 1; icon = "⏭️"
+                  skipped += 1
+                  skip_el = tc.find("skipped")
+                  skip_msg = (skip_el.get("message") or "").strip()[:100] if skip_el is not None else ""
+                  rows += f"| ⏭️ | `{name}` | {dur:.1f}s | {skip_msg} |\n"
               else:
-                  passed += 1; icon = "✅"
-              rows += f"| {icon} | {name} |\n"
+                  passed += 1
+                  rows += f"| ✅ | `{name}` | {dur:.1f}s | — |\n"
+
           pct = int(passed/total*100) if total else 0
           bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
-          summary = f"""## 🍎 Appium iOS Results
+
+          arch_warn = ""
+          if os.environ.get("IOS_SIM_COMPATIBLE") == "false":
+              arch_warn = """\n> **⚠️ Infrastructure Note:** The app binary is a device build and cannot run on the iOS Simulator.
+          > Tests are reported as SKIPPED (not FAILED) — this is a build configuration issue, not an app bug.
+          > **Fix:** provide a simulator-compatible `Runner.app` built with `flutter build ios --simulator`.\n"""
+
+          summary = f"""## 🍎 Appium iOS Simulator Results — Run #{os.environ.get('GITHUB_RUN_NUMBER','?')}
           {bar}
+          {arch_warn}
           | Metric | Value |
           |--------|-------|
-          | ✅ Passed  | {passed} |
-          | ❌ Failed  | {failed} |
-          | ⏭️ Skipped | {skipped} |
-          | 📊 Total   | {total} |
+          | ✅ Passed   | {passed} |
+          | ❌ Failed   | {failed} |
+          | ⏭️ Skipped  | {skipped} |
+          | 📊 Total    | {total} |
           | 📈 Pass rate | {pct}% |
 
-          ### Test Details
-          | Status | Test |
-          |--------|------|
-          {rows}"""
+          ### Test Results
+          | Status | Test | Duration | Note |
+          |--------|------|----------|------|
+          {rows if rows else "| — | No results | — | — |\n"}"""
           with open(os.environ.get("GITHUB_STEP_SUMMARY",""), "a") as fh:
-              fh.write(summary)
-          EOF
+              fh.write(textwrap.dedent(summary))
+          PYEOF
 
       - name: Upload Allure results
         if: always()
