@@ -35,7 +35,8 @@ jobs:
           gh release download ios-ipa-v1.8.2 \
             --repo Qatarat/qatarat-automation \
             --pattern "qatarat-stage-ios.ipa" \
-            --output qatarat-stage-ios.ipa
+            --output qatarat-stage-ios.ipa \
+            --clobber
           echo "✅ IPA downloaded ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
         env:
           GH_TOKEN: ${{ github.token }}
