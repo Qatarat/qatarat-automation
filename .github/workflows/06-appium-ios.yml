@@ -30,18 +30,15 @@ jobs:
         with:
           lfs: false
 
-      - name: Fetch IPA via Git LFS (best-effort)
-        continue-on-error: true
+      - name: Download IPA from GitHub Release
         run: |
-          git lfs install --skip-repo 2>/dev/null || true
-          git lfs pull --include="qatarat-stage-ios.ipa" 2>&1 | tail -5 || true
-          if [ -f "qatarat-stage-ios.ipa" ] && [ "$(wc -c < qatarat-stage-ios.ipa)" -gt 1000 ]; then
-            echo "✅ IPA fetched via LFS ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
-          else
-            echo "::warning::Git LFS fetch failed or returned a pointer file — IPA not available."
-            echo "Tests will be skipped with a clear infrastructure message."
-            rm -f qatarat-stage-ios.ipa
-          fi
+          gh release download ios-ipa-v1.8.2 \
+            --repo Qatarat/qatarat-automation \
+            --pattern "qatarat-stage-ios.ipa" \
+            --output qatarat-stage-ios.ipa
+          echo "✅ IPA downloaded ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
