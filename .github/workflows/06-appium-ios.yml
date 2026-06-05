@@ -25,10 +25,23 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      - name: Checkout (with LFS for IPA)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          lfs: true
+          lfs: false
+
+      - name: Fetch IPA via Git LFS (best-effort)
+        continue-on-error: true
+        run: |
+          git lfs install --skip-repo 2>/dev/null || true
+          git lfs pull --include="qatarat-stage-ios.ipa" 2>&1 | tail -5 || true
+          if [ -f "qatarat-stage-ios.ipa" ] && [ "$(wc -c < qatarat-stage-ios.ipa)" -gt 1000 ]; then
+            echo "✅ IPA fetched via LFS ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
+          else
+            echo "::warning::Git LFS fetch failed or returned a pointer file — IPA not available."
+            echo "Tests will be skipped with a clear infrastructure message."
+            rm -f qatarat-stage-ios.ipa
+          fi
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -83,12 +96,16 @@ jobs:
             unzip -q "$IPA_FILE" -d ipa_extracted/
             APP_PATH="$(pwd)/ipa_extracted/Payload/Runner.app"
           else
-            echo "ERROR: No IPA found"; exit 1
+            echo "::warning::No IPA found — Git LFS fetch likely failed. Tests will be reported as SKIPPED."
+            echo "IOS_APP_PATH=" >> $GITHUB_ENV
+            echo "IOS_SIM_COMPATIBLE=false" >> $GITHUB_ENV
+            exit 0
           fi
           echo "IOS_APP_PATH=$APP_PATH" >> $GITHUB_ENV
           echo "App path: $APP_PATH"
 
       - name: Validate app architecture is simulator-compatible
+        if: env.IOS_APP_PATH != ''
         run: |
           APP="${{ env.IOS_APP_PATH }}"
           BINARY="$APP/Runner"
@@ -117,6 +134,7 @@ jobs:
           fi
 
       - name: Pre-install app on Simulator
+        if: env.IOS_APP_PATH != ''
         run: |
           xcrun simctl install "$SIM_ID" "$IOS_APP_PATH"
           echo "Installed com.qatarat.app"
@@ -216,8 +234,22 @@ jobs:
 
           f = "testing/appium/reports/results.xml"
           if not pathlib.Path(f).exists():
-              print("No results file found")
-              summary = "## 🍎 Appium iOS Results\n\n> No results file generated — Appium may have failed to start.\n"
+              lfs_failed = os.environ.get("IOS_SIM_COMPATIBLE") == "false" and not os.environ.get("IOS_APP_PATH", "").strip()
+              if lfs_failed:
+                  reason = (
+                      "Git LFS fetch failed — the IPA binary (`qatarat-stage-ios.ipa`) could not be "
+                      "downloaded from LFS storage. This is a CI infrastructure issue.\n\n"
+                      "**Possible causes:**\n"
+                      "- GitHub LFS bandwidth or storage quota exceeded\n"
+                      "- LFS object was never pushed to remote\n\n"
+                      "**Fix options:**\n"
+                      "1. Check LFS quota: *repo Settings → Storage*\n"
+                      "2. Re-push the IPA: `git lfs push --all origin`\n"
+                      "3. Upload the IPA to a GitHub Release and update the workflow to download it"
+                  )
+                  summary = f"## 🍎 Appium iOS Results\n\n> ⚠️ **IPA not available — {reason}\n"
+              else:
+                  summary = "## 🍎 Appium iOS Results\n\n> No results file generated — Appium may have failed to start.\n"
               with open(os.environ.get("GITHUB_STEP_SUMMARY",""), "a") as fh:
                   fh.write(summary)
               exit(0)
