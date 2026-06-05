@@ -140,6 +140,7 @@ jobs:
           echo "Installed com.qatarat.app"
 
       - name: Start iOS screen recording
+        if: env.IOS_APP_PATH != ''
         run: |
           mkdir -p testing/appium/reports
           xcrun simctl io "$SIM_ID" recordVideo \
@@ -149,12 +150,20 @@ jobs:
           echo "iOS recorder started (PID: $(cat /tmp/ios_rec_pid))"
 
       - name: Start Appium server
+        if: env.IOS_APP_PATH != ''
         run: |
           appium --port 4723 --log /tmp/appium-ios.log &
-          sleep 8
-          curl -s http://localhost:4723/status | python3 -c "import sys,json; d=json.load(sys.stdin); print('Appium ready:', d['value']['ready'])"
+          for i in $(seq 1 15); do
+            sleep 2
+            STATUS=$(curl -s http://localhost:4723/status 2>/dev/null || echo "")
+            if echo "$STATUS" | python3 -c "import sys,json; d=json.load(sys.stdin); print('Appium ready:', d['value']['ready'])" 2>/dev/null; then
+              break
+            fi
+            echo "Waiting for Appium... ($i/15)"
+          done
 
       - name: Run Appium Tests (iOS Simulator)
+        if: env.IOS_APP_PATH != ''
         run: |
           cd testing/appium
           MARKER="${{ github.event.inputs.marker }}"
