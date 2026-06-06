@@ -31,6 +31,9 @@ jobs:
             --pattern "*.apk" \
             --dir . \
             --clobber
+          if [ -f Qatarat.Lambda-Stage.apk ]; then
+            mv Qatarat.Lambda-Stage.apk "Qatarat (Lambda-Stage).apk"
+          fi
           echo "✅ APK downloaded ($(du -sh 'Qatarat (Lambda-Stage).apk' | cut -f1))"
         env:
           GH_TOKEN: ${{ github.token }}
