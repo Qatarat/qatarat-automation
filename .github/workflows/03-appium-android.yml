@@ -29,7 +29,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          lfs: true
+          lfs: false
+
+      - name: Download APK from GitHub Release
+        run: |
+          gh release download android-apk-v1.8.2 \
+            --repo Qatarat/qatarat-automation \
+            --pattern "*.apk" \
+            --dir . \
+            --clobber
+          echo "✅ APK downloaded ($(du -sh 'Qatarat (Lambda-Stage).apk' | cut -f1))"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Set up Java 17
         uses: actions/setup-java@v4

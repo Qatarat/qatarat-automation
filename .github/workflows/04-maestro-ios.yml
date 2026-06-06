@@ -21,10 +21,21 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout (with LFS for IPA)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          lfs: true
+          lfs: false
+
+      - name: Download IPA from GitHub Release
+        run: |
+          gh release download ios-ipa-v1.8.2 \
+            --repo Qatarat/qatarat-automation \
+            --pattern "qatarat-stage-ios.ipa" \
+            --output qatarat-stage-ios.ipa \
+            --clobber
+          echo "✅ IPA downloaded ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
