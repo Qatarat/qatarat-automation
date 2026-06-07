@@ -60,8 +60,12 @@ jobs:
             echo "Triggered by Android Maestro workflow_run: ${{ github.event.workflow_run.id }}"
           else
             echo "Searching for latest Android Maestro run..."
-            ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
-              --jq '[.workflow_runs[] | select(.name | test("Maestro") and (test("iOS") | not))] | first | .id // ""' 2>/dev/null || echo "")
+            pick_run() {
+              gh api "repos/${{ github.repository }}/actions/workflows/$1/runs?per_page=15" \
+                --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "cancelled")] | first | .id // empty' 2>/dev/null || true
+            }
+            ID=$(pick_run "02-maestro-regression.yml")
+            [ -z "$ID" ] && ID=$(pick_run "01-maestro-smoke.yml")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
             echo "Latest Android Maestro run ID: ${ID:-none found}"
           fi
@@ -79,8 +83,8 @@ jobs:
             echo "Triggered by Android Appium workflow_run: ${{ github.event.workflow_run.id }}"
           else
             echo "Searching for latest Android Appium run..."
-            ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
-              --jq '[.workflow_runs[] | select(.name | test("Appium") and (test("iOS") | not))] | first | .id // ""' 2>/dev/null || echo "")
+            ID=$(gh api "repos/${{ github.repository }}/actions/workflows/03-appium-android.yml/runs?per_page=15" \
+              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "cancelled")] | first | .id // empty' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
             echo "Latest Android Appium run ID: ${ID:-none found}"
           fi
@@ -97,8 +101,8 @@ jobs:
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
             echo "Triggered by Maestro iOS workflow_run: ${{ github.event.workflow_run.id }}"
           else
-            ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
-              --jq '[.workflow_runs[] | select(.name | test("Maestro") and test("iOS"))] | first | .id // ""' 2>/dev/null || echo "")
+            ID=$(gh api "repos/${{ github.repository }}/actions/workflows/04-maestro-ios.yml/runs?per_page=15" \
+              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "cancelled")] | first | .id // empty' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
             echo "Latest Maestro iOS run ID: ${ID:-none found}"
           fi
@@ -115,8 +119,8 @@ jobs:
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
             echo "Triggered by Appium iOS workflow_run: ${{ github.event.workflow_run.id }}"
           else
-            ID=$(gh api "repos/${{ github.repository }}/actions/runs?per_page=50" \
-              --jq '[.workflow_runs[] | select(.name | test("Appium") and test("iOS"))] | first | .id // ""' 2>/dev/null || echo "")
+            ID=$(gh api "repos/${{ github.repository }}/actions/workflows/06-appium-ios.yml/runs?per_page=15" \
+              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "cancelled")] | first | .id // empty' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
             echo "Latest Appium iOS run ID: ${ID:-none found}"
           fi

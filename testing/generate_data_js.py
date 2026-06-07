@@ -265,7 +265,7 @@ CI_WORKFLOWS_DEF = [
     {"name": "Maestro Smoke",      "trigger": "Every push / PR",    "duration": "~10 min", "coverage": "Login, cart, checkout",                 "passRate": 0, "runs": 0},
     {"name": "Maestro Regression", "trigger": "Nightly 01:00 UTC",  "duration": "~30 min", "coverage": "All 16 flows",                          "passRate": 0, "runs": 0},
     {"name": "Appium Deep Tests",  "trigger": "Every Monday",       "duration": "~60 min", "coverage": "Payment, gift, subscriptions, account", "passRate": 0, "runs": 0},
-    {"name": "Maestro iOS",        "trigger": "Manual only",        "duration": "~20 min", "coverage": "Smoke on iOS Simulator",                "passRate": 0, "runs": 0},
+    {"name": "Maestro iOS",        "trigger": "Every Tuesday 03:00 UTC", "duration": "~30 min", "coverage": "Smoke on iOS Simulator",                "passRate": 0, "runs": 0},
     {"name": "Publish Report",     "trigger": "After any test run", "duration": "~3 min",  "coverage": "Deploys to GitHub Pages",               "passRate": 0, "runs": 0},
 ]
 
@@ -477,6 +477,8 @@ def main():
     flow_durations = {}  # index → seconds from XML (if available)
     for i, file_name in enumerate(FLOW_FILE_NAMES):
         for xml_path in glob.glob(f"{artifacts_dir}/**/{file_name}*.xml", recursive=True):
+            if f"{os.sep}maestro-ios{os.sep}" in xml_path:
+                continue
             st, err = xml_flow_status(xml_path)
             if st:
                 flow_statuses[i] = st
@@ -494,13 +496,88 @@ def main():
                     pass
             break
 
-    # ── 2. Appium test statuses from appium results.xml ───────────────────
+    # ── 2. Appium test statuses from Android appium results.xml ──────────
     appium_map = {}
     for xml_path in glob.glob(f"{artifacts_dir}/**/results.xml", recursive=True):
+        if f"{os.sep}appium-ios{os.sep}" in xml_path:
+            continue
         appium_map.update(xml_test_map(xml_path))
-    # Also check any appium-junit XML
     for xml_path in glob.glob(f"{artifacts_dir}/**/*appium*.xml", recursive=True):
+        if f"{os.sep}appium-ios{os.sep}" in xml_path:
+            continue
         appium_map.update(xml_test_map(xml_path))
+
+    # ── 2b. iOS artifact parsing ─────────────────────────────────────────
+    ios_appium_map = {}
+    ios_appium_dir = os.path.join(artifacts_dir, "appium-ios")
+    if os.path.isdir(ios_appium_dir):
+        for xml_path in glob.glob(os.path.join(ios_appium_dir, "**/*.xml"), recursive=True):
+            ios_appium_map.update(xml_test_map(xml_path))
+
+    ios_flow_statuses = {}
+    ios_flow_errors   = {}
+    ios_maestro_dir = os.path.join(artifacts_dir, "maestro-ios")
+    if os.path.isdir(ios_maestro_dir):
+        for i, file_name in enumerate(FLOW_FILE_NAMES):
+            fid = i + 1
+            key = f"{fid:02d}"
+            for xml_path in glob.glob(os.path.join(ios_maestro_dir, "**", f"{file_name}*.xml"), recursive=True):
+                st, err = xml_flow_status(xml_path)
+                if st:
+                    ios_flow_statuses[key] = st
+                    if err:
+                        ios_flow_errors[key] = err
+                break
+
+        SUITE_FLOW_IDS = {
+            "smoke":      {1, 2, 3, 5, 6, 26, 28, 39},
+            "regression": {fid for fid, *_ in FLOWS_DEF},
+            "negative":   {17, 18, 19, 20, 21, 22, 23},
+        }
+        for xml_path in sorted(glob.glob(os.path.join(ios_maestro_dir, "**/*.xml"), recursive=True)):
+            basename = os.path.basename(xml_path).replace(".xml", "").replace("ios-", "").replace("-results", "")
+            if any(fname in basename for fname in FLOW_FILE_NAMES):
+                continue
+            try:
+                root = ET.parse(xml_path).getroot()
+                suite_fail_msg = None
+                suite_pass = True
+                for tc in root.iter("testcase"):
+                    name = tc.get("name", "").lower()
+                    _fe = tc.find("failure"); fail_el = _fe if _fe is not None else tc.find("error")
+                    matched = False
+                    for i, (fid, *_) in enumerate(FLOWS_DEF):
+                        fname = FLOW_FILE_NAMES[i] if i < len(FLOW_FILE_NAMES) else ""
+                        key = f"{fid:02d}"
+                        if fname in name or f"{fid:02d}_" in name:
+                            if fail_el is not None:
+                                ios_flow_statuses[key] = "fail"
+                                raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
+                                err = " ".join(raw.split())[:500]
+                                if err:
+                                    ios_flow_errors[key] = err
+                                suite_pass = False
+                            else:
+                                ios_flow_statuses[key] = "pass"
+                            matched = True
+                            break
+                    if not matched and fail_el is not None:
+                        raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
+                        if raw:
+                            suite_fail_msg = " ".join(raw.split())[:500]
+                            suite_pass = False
+                matched_suite = next((s for s in SUITE_FLOW_IDS if s in basename), "regression")
+                if suite_fail_msg:
+                    for fid in SUITE_FLOW_IDS[matched_suite]:
+                        key = f"{fid:02d}"
+                        if key not in ios_flow_statuses:
+                            ios_flow_statuses[key] = "fail"
+                            ios_flow_errors[key] = suite_fail_msg
+                elif suite_pass and not ios_flow_statuses:
+                    for fid in SUITE_FLOW_IDS[matched_suite]:
+                        ios_flow_statuses[f"{fid:02d}"] = "pass"
+            except Exception:
+                pass
 
     # ── 3. Screenshot paths ───────────────────────────────────────────────
     # Build a flat lookup: basename_without_ext → relative URL
@@ -563,7 +640,7 @@ def main():
                 ok    = sum(1 for s in flow_statuses.values() if s == "pass")
                 row["passRate"] = round(ok / total * 100, 1) if total else 0
                 row["runs"] = 1
-        elif "Appium" in w["name"]:
+        elif "Appium" in w["name"] and "iOS" not in w["name"]:
             row["status"] = ("fail" if appium_fail else "pass") if appium_ran else "idle"
             if appium_ran:
                 total = len(appium_map)
@@ -571,7 +648,20 @@ def main():
                 row["passRate"] = round(ok / total * 100, 1) if total else 0
                 row["runs"] = 1
         elif "iOS" in w["name"]:
-            row["status"] = "idle"
+            ios_ran = bool(ios_flow_statuses) or bool(ios_appium_map)
+            ios_fail = (
+                any(s == "fail" for s in ios_flow_statuses.values())
+                or any(v[0] == "fail" for v in ios_appium_map.values())
+            )
+            row["status"] = ("fail" if ios_fail else "pass") if ios_ran else "idle"
+            if ios_ran:
+                ios_total = len(ios_flow_statuses) or len(ios_appium_map)
+                ios_ok = (
+                    sum(1 for s in ios_flow_statuses.values() if s == "pass")
+                    + sum(1 for v in ios_appium_map.values() if v[0] == "pass")
+                )
+                row["passRate"] = round(ios_ok / ios_total * 100, 1) if ios_total else 0
+                row["runs"] = 1
         else:
             # Publish Report — ran if anything else ran
             row["status"] = "pass" if (maestro_ran or appium_ran) else "idle"
@@ -670,59 +760,6 @@ def main():
         if err:
             live_maestro_errors[f"{fid:02d}"] = err
 
-    # ── iOS artifact parsing ──────────────────────────────────────────────
-    ios_appium_map = {}
-    ios_appium_dir = os.path.join(artifacts_dir, "appium-ios")
-    if os.path.isdir(ios_appium_dir):
-        for xml_path in glob.glob(os.path.join(ios_appium_dir, "**/*.xml"), recursive=True):
-            ios_appium_map.update(xml_test_map(xml_path))
-
-    ios_flow_statuses = {}
-    ios_flow_errors   = {}
-    ios_maestro_dir = os.path.join(artifacts_dir, "maestro-ios")
-    if os.path.isdir(ios_maestro_dir):
-        # Flows covered by each suite (only IDs 1-25 are in FLOWS_DEF)
-        SUITE_FLOW_IDS = {
-            "smoke":      {1, 2, 3, 5, 6},           # flows 1-25 from smoke.yaml
-            "regression": {fid for fid, *_ in FLOWS_DEF},  # all 25
-            "negative":   {17, 18, 19, 20, 21, 22, 23},
-        }
-        for xml_path in sorted(glob.glob(os.path.join(ios_maestro_dir, "**/*.xml"), recursive=True)):
-            try:
-                root = ET.parse(xml_path).getroot()
-                suite_fail_msg = None
-                for tc in root.iter("testcase"):
-                    name = tc.get("name", "").lower()
-                    _fe = tc.find("failure"); fail_el = _fe if _fe is not None else tc.find("error")
-                    matched = False
-                    for i, (fid, *_) in enumerate(FLOWS_DEF):
-                        fname = FLOW_FILE_NAMES[i] if i < len(FLOW_FILE_NAMES) else ""
-                        if fname in name or f"{fid:02d}_" in name:
-                            if fail_el is not None:
-                                ios_flow_statuses[f"{fid:02d}"] = "fail"
-                                raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
-                                err = " ".join(raw.split())[:500]
-                                if err:
-                                    ios_flow_errors[f"{fid:02d}"] = err
-                            else:
-                                ios_flow_statuses[f"{fid:02d}"] = "pass"
-                            matched = True
-                            break
-                    # Suite-level failure (Maestro reports whole suite as one testcase)
-                    if not matched and fail_el is not None:
-                        raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
-                        if raw:
-                            suite_fail_msg = " ".join(raw.split())[:500]
-                # Propagate suite-level failure to all expected flows for that suite
-                if suite_fail_msg and not ios_flow_statuses:
-                    basename = os.path.basename(xml_path).replace(".xml","").replace("ios-","").replace("-results","")
-                    matched_suite = next((s for s in SUITE_FLOW_IDS if s in basename), "regression")
-                    for fid in SUITE_FLOW_IDS[matched_suite]:
-                        ios_flow_statuses[f"{fid:02d}"] = "fail"
-                        ios_flow_errors[f"{fid:02d}"] = suite_fail_msg
-            except Exception:
-                pass
-
     ios_test_results = {
         name: {"status": info[0], "duration": round(info[1], 1), "error": info[2]}
         for name, info in ios_appium_map.items()
@@ -785,7 +822,10 @@ window.QATARAT_LIVE = LIVE_DATA;
         fh.write(js)
 
     ran = sum(1 for s in flow_statuses.values() if s in ("pass", "fail"))
-    print(f"data.js → {output_file}  ({ran} flows, {len(appium_map)} appium tests, {len(screenshot_lookup)} screenshots)")
+    ios_ran = len(ios_flow_statuses) + len(ios_appium_map)
+    print(f"data.js → {output_file}  ({ran} android flows, {len(appium_map)} android appium, "
+          f"{len(ios_flow_statuses)} ios flows, {len(ios_appium_map)} ios appium, "
+          f"{len(screenshot_lookup)} screenshots)")
 
 if __name__ == "__main__":
     main()

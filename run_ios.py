@@ -181,7 +181,7 @@ def step_maestro(mode):
         _die(f"Suite file not found: {suite}")
 
     print(f"── {label} ──")
-    r = run(["maestro", "test", suite], cwd=TESTING)
+    r = run(["bash", os.path.join(TESTING, "run_maestro_ios_ci.sh"), mode], cwd=ROOT)
     print(f"  Maestro exit: {r.returncode}\n")
     return r.returncode
 

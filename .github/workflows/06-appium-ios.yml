@@ -21,7 +21,7 @@ concurrency:
 jobs:
   appium-ios:
     name: Appium Deep Tests (iOS ${{ github.event.inputs.ios_version || '17.0' }} Simulator)
-    runs-on: macos-13
+    runs-on: macos-14
     timeout-minutes: 120
 
     steps:
@@ -32,11 +32,25 @@ jobs:
 
       - name: Download IPA from GitHub Release
         run: |
-          gh release download ios-ipa-v1.8.2 \
-            --repo Qatarat/qatarat-automation \
-            --pattern "qatarat-stage-ios.ipa" \
-            --output qatarat-stage-ios.ipa \
-            --clobber
+          set -e
+          for attempt in 1 2 3; do
+            echo "Download attempt $attempt/3..."
+            if gh release download ios-ipa-v1.8.2 \
+              --repo Qatarat/qatarat-automation \
+              --pattern "qatarat-stage-ios.ipa" \
+              --output qatarat-stage-ios.ipa \
+              --clobber; then
+              break
+            fi
+            [ "$attempt" -eq 3 ] && { echo "::error::Failed to download IPA after 3 attempts"; exit 1; }
+            sleep 10
+          done
+          SIZE=$(stat -f%z qatarat-stage-ios.ipa 2>/dev/null || stat -c%s qatarat-stage-ios.ipa)
+          if [ "$SIZE" -lt 1000000 ]; then
+            echo "::error::Downloaded file is too small ($SIZE bytes) — likely a Git LFS pointer"
+            head -5 qatarat-stage-ios.ipa
+            exit 1
+          fi
           echo "✅ IPA downloaded ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
         env:
           GH_TOKEN: ${{ github.token }}
@@ -63,6 +77,7 @@ jobs:
           appium driver install --source=npm appium-flutter-driver
           appium driver list --installed
           brew install ffmpeg --quiet 2>/dev/null || true
+          sudo softwareupdate --install-rosetta --agree-to-license 2>/dev/null || true
 
       - name: List available simulators
         run: xcrun simctl list devices available | grep -i iphone | head -15
@@ -76,11 +91,17 @@ jobs:
             SIM_ID=$(xcrun simctl list devices available \
               | grep "iPhone 15\"" | head -1 | grep -oE "[A-F0-9-]{36}")
           fi
+          if [ -z "$SIM_ID" ]; then
+            echo "::error::No iPhone 15 simulator found on this runner"
+            xcrun simctl list devices available
+            exit 1
+          fi
           echo "SIM_ID=$SIM_ID" >> $GITHUB_ENV
           echo "SIM_NAME=iPhone 15 Pro" >> $GITHUB_ENV
           echo "Booting: $SIM_ID"
           xcrun simctl boot "$SIM_ID" || true
           xcrun simctl bootstatus "$SIM_ID" -b
+          open -a Simulator || true
 
       - name: Extract .app bundle from IPA
         run: |
