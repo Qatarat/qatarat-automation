@@ -15,10 +15,9 @@ IPA_FILE="${1:-$ROOT/qatarat-stage-ios.ipa}"
 IPA_DIR="$ROOT/Qatarat (Lambda-Stage-IOS-1.8.2).ipa"
 
 export_env() {
+  export "$1=$2"
   if [ -n "${GITHUB_ENV:-}" ]; then
     echo "$1=$2" >> "$GITHUB_ENV"
-  else
-    export "$1=$2"
   fi
 }
 
