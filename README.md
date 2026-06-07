@@ -16,7 +16,8 @@ Qatarat (قطرات) means "Droplets" in Arabic. It is a mobile app for mosque d
 
 ## Quick start — one command
 
-**Requirements:** Python 3, Android Studio with a `Pixel_7_API_34` emulator created.
+**For Android (Any OS):**
+Requirements: Python 3, Android Studio with a `Pixel_7_API_34` emulator created.
 
 ```bash
 # macOS / Linux
@@ -25,26 +26,42 @@ Qatarat (قطرات) means "Droplets" in Arabic. It is a mobile app for mosque d
 # Windows
 run.bat
 
-# Any OS
+# Universal
 python run.py
 ```
 
-This single command starts the emulator, installs the app, and launches it. No manual steps needed.
+**For iOS (macOS only):**
+Requirements: Xcode with an `iPhone 15 Pro` simulator installed.
+
+```bash
+./run.sh ios
+```
+
+This single command starts the emulator/simulator, installs the app, and launches it. No manual steps needed.
 
 ---
 
 ## Run with tests
 
+**Android:**
 ```bash
 ./run.sh smoke         # app + 8 critical Maestro flows       (~8 min)
 ./run.sh regression    # app + all 50 Maestro flows            (~45 min)
 ./run.sh appium        # app + all 191 Appium deep tests       (~75 min)
 ./run.sh all           # app + Maestro regression + Appium     (~2 hrs)
 ```
+*(Windows: replace `./run.sh` with `run.bat`. Universal: use `python run.py <mode>`.)*
 
-Windows: replace `./run.sh` with `run.bat`. Any OS: use `python run.py <mode>`.
+**iOS (macOS only):**
+```bash
+./run.sh ios smoke         # iOS app + Maestro smoke tests
+./run.sh ios regression    # iOS app + Maestro regression tests
+./run.sh ios appium        # iOS app + Appium deep tests
+./run.sh ios all           # iOS app + Maestro regression + Appium
+```
+*(Alternatively, you can run `python3 run_ios.py <mode>`)*
 
-The script auto-detects your Android SDK on all operating systems, skips the emulator if one is already running, and saves HTML + JUnit + Allure reports to `testing/appium/reports/`.
+The scripts auto-detect your SDKs, skip booting an emulator/simulator if one is already running, and save HTML + JUnit + Allure reports to `testing/appium/reports/` (or `testing/maestro/reports/`).
 
 ---
 
@@ -128,6 +145,7 @@ To trigger manually: go to the **Actions** tab → pick a workflow → **Run wor
 ```
 Qatarat/
 ├── run.py                        ← universal launcher (macOS, Linux, Windows)
+├── run_ios.py                    ← iOS local runner (macOS only)
 ├── run.sh                        ← macOS / Linux shortcut
 ├── run.bat                       ← Windows shortcut
 ├── Qatarat (Lambda-Stage).apk    ← Android app
