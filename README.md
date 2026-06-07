@@ -134,7 +134,7 @@ Total: **50 Maestro flows + 191 Appium tests = 241 automated checks**
 | Regression (Android) | Nightly 1 AM UTC | ~45 min |
 | Appium Android | Every Monday | ~75 min |
 | Maestro iOS | Every Tuesday 3 AM UTC | ~30 min |
-| Appium iOS | Every Wednesday 4 AM UTC | ~90 min |
+| Appium iOS | Daily 12:00 UTC (6:00 PM BDT) | ~90 min |
 
 To trigger manually: go to the **Actions** tab → pick a workflow → **Run workflow**.
 

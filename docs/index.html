@@ -616,7 +616,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
         <div class="rec-placeholder-card" id="rec-ph-ios-appium">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
           <div class="rec-ph-title">Loading recording…</div>
-          <div class="rec-ph-body">iOS Appium sessions run every Wednesday at 04:00 UTC.</div>
+          <div class="rec-ph-body">iOS Appium sessions run daily at 12:00 UTC (6:00 PM BDT).</div>
           <div class="rec-ph-meta">🍎 iOS · Appium XCUITest · pytest · iPhone 15 Simulator</div>
         </div>
       </div>
@@ -702,7 +702,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
     <div id="appium-ios-pending" class="ios-pending-box">
       <div class="ios-pending-icon">🍎</div>
       <h3>iOS Appium results pending</h3>
-      <p>The iOS Appium suite (191 tests) runs every Wednesday 04:00 UTC on an iPhone 15 Pro simulator. Results appear here automatically after the first CI run completes.</p>
+      <p>The iOS Appium suite (191 tests) runs daily at 12:00 UTC (6:00 PM BDT) on an iPhone 15 Pro simulator. Results appear here automatically after the first CI run completes.</p>
       <p style="font-size:12px;color:var(--amber);margin-top:10px;max-width:480px;">
         <strong>If tests show as skipped:</strong> the IPA is a device build (arm64-apple-ios).
         Run <code>flutter build ios --simulator --debug</code> in the app repo and update Runner.app to fix.
@@ -1226,7 +1226,7 @@ var PIPELINES = [
   {
     icon:'🧪', bg:'rgba(188,140,255,.15)',
     name:'Appium iOS Simulator',
-    trigger:'Every Wednesday 04:00 UTC + manual',
+    trigger:'Daily 12:00 UTC (6:00 PM BDT) + manual',
     pills:['~90 min','iOS 17','191 tests'],
     steps:['Checkout repo (LFS)','Boot iPhone 15 Pro sim','Install XCUITest + Flutter drivers','Install Runner.app','Start Appium server','Run 191 pytest tests','Upload Allure + JUnit + screenshots']
   },
