@@ -17,7 +17,7 @@ on:
 jobs:
   ios-maestro:
     name: Maestro ${{ github.event.inputs.suite || 'smoke' }} — iOS ${{ github.event.inputs.ios_version || '17' }} Simulator
-    runs-on: macos-14
+    runs-on: macos-13
     timeout-minutes: 60
 
     steps:

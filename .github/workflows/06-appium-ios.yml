@@ -10,7 +10,7 @@ on:
       ios_version:
         description: "iOS simulator version"
         required: false
-        default: "17.5"
+        default: "17.0"
   schedule:
     - cron: "0 16 * * *"  # Daily 16:00 UTC = 10:00 PM BDT (UTC+6)
 
@@ -20,8 +20,8 @@ concurrency:
 
 jobs:
   appium-ios:
-    name: Appium Deep Tests (iOS ${{ github.event.inputs.ios_version || '17.5' }} Simulator)
-    runs-on: macos-14
+    name: Appium Deep Tests (iOS ${{ github.event.inputs.ios_version || '17.0' }} Simulator)
+    runs-on: macos-13
     timeout-minutes: 120
 
     steps:
@@ -114,7 +114,13 @@ jobs:
           fi
           ARCH_INFO=$(lipo -info "$BINARY" 2>/dev/null || file "$BINARY" 2>/dev/null || echo "unknown")
           echo "Binary architecture info: $ARCH_INFO"
-          if echo "$ARCH_INFO" | grep -qi "simulator"; then
+          IS_SIM=false
+          if echo "$ARCH_INFO" | grep -qiE "x86_64|simulator"; then
+            IS_SIM=true
+          elif otool -l "$BINARY" 2>/dev/null | grep -A 4 "LC_BUILD_VERSION" | grep -q "platform 7"; then
+            IS_SIM=true
+          fi
+          if [ "$IS_SIM" = "true" ]; then
             echo "✅ Runner.app is simulator-compatible"
             echo "IOS_SIM_COMPATIBLE=true" >> $GITHUB_ENV
           else
@@ -179,7 +185,7 @@ jobs:
           PLATFORM: ios
           DEVICE_MODE: simulator
           IOS_SIM_NAME: iPhone 15 Pro
-          IOS_VERSION: ${{ github.event.inputs.ios_version || '17.5' }}
+          IOS_VERSION: ${{ github.event.inputs.ios_version || '17.0' }}
           IOS_APP_PATH: ${{ env.IOS_APP_PATH }}
           IOS_SIM_COMPATIBLE: ${{ env.IOS_SIM_COMPATIBLE }}
           APPIUM_HOST: localhost
