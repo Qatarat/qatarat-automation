@@ -12,6 +12,18 @@ mkdir -p "$REPORTS_DIR"
 
 FLOW_TIMEOUT=240
 
+# macOS runners may lack GNU timeout — use gtimeout or perl alarm fallback
+run_with_timeout() {
+  local secs=$1; shift
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$secs" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$secs" "$@"
+  else
+    perl -e 'alarm shift; exec @ARGV' "$secs" "$@"
+  fi
+}
+
 flows_for_suite() {
   case "$SUITE" in
     smoke)
@@ -43,7 +55,7 @@ while IFS= read -r flow_yaml; do
   [ -f "$flow_yaml" ] || continue
   flow="$(basename "$flow_yaml" .yaml)"
   echo "▶  Running flow: $flow"
-  timeout "$FLOW_TIMEOUT" maestro test --format junit \
+  run_with_timeout "$FLOW_TIMEOUT" maestro test --format junit \
     --output "$REPORTS_DIR/${flow}-results.xml" \
     "$flow_yaml" \
     && echo "   ✓ $flow" \

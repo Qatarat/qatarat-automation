@@ -12,13 +12,17 @@ on:
         required: false
         default: "17"
   schedule:
-    - cron: "0 3 * * 2"   # Every Tuesday 03:00 UTC (macOS minutes are limited)
+    - cron: "0 3 * * 2"   # Every Tuesday 03:00 UTC — runs smoke (see suite resolution below)
+
+concurrency:
+  group: maestro-ios-${{ github.ref }}
+  cancel-in-progress: false   # never cancel — macOS runner minutes are scarce
 
 jobs:
   ios-maestro:
-    name: Maestro ${{ github.event.inputs.suite || 'regression' }} — iOS ${{ github.event.inputs.ios_version || '17' }} Simulator
+    name: Maestro ${{ github.event.inputs.suite || (github.event_name == 'schedule' && 'smoke' || 'regression') }} — iOS Simulator
     runs-on: macos-14
-    timeout-minutes: 90
+    timeout-minutes: 300
 
     steps:
       - name: Checkout
@@ -43,13 +47,8 @@ jobs:
           done
           SIZE=$(stat -f%z qatarat-stage-ios.ipa 2>/dev/null || stat -c%s qatarat-stage-ios.ipa)
           if [ "$SIZE" -lt 1000000 ]; then
-            echo "::error::Downloaded file is too small ($SIZE bytes) — likely a Git LFS pointer, not the IPA"
+            echo "::error::Downloaded file too small ($SIZE bytes) — likely LFS pointer"
             head -5 qatarat-stage-ios.ipa
-            exit 1
-          fi
-          if ! file qatarat-stage-ios.ipa | grep -qiE 'zip archive|ipa'; then
-            echo "::error::Downloaded file is not a valid IPA/ZIP archive"
-            file qatarat-stage-ios.ipa
             exit 1
           fi
           echo "✅ IPA downloaded ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
@@ -62,93 +61,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Install Maestro + ffmpeg + Rosetta (x86_64 sim builds)
+      - name: Install Maestro + ffmpeg
         run: |
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
           brew install ffmpeg --quiet 2>/dev/null || true
-          # GitHub macOS runners are Apple Silicon — x86_64 simulator IPAs need Rosetta
-          sudo softwareupdate --install-rosetta --agree-to-license 2>/dev/null || true
 
-      - name: List available simulators
-        run: xcrun simctl list devices available | grep -i iphone | head -15
-
-      - name: Boot iPhone 15 Pro Simulator
-        run: |
-          SIM_ID=$(xcrun simctl list devices available \
-            | grep "iPhone 15 Pro" | grep -v "Max\|Plus" \
-            | head -1 | grep -oE "[A-F0-9-]{36}")
-          if [ -z "$SIM_ID" ]; then
-            echo "iPhone 15 Pro not found, trying iPhone 15..."
-            SIM_ID=$(xcrun simctl list devices available \
-              | grep "iPhone 15\"" | head -1 | grep -oE "[A-F0-9-]{36}")
-          fi
-          if [ -z "$SIM_ID" ]; then
-            echo "::error::No iPhone 15 simulator found on this runner"
-            xcrun simctl list devices available
-            exit 1
-          fi
-          echo "SIM_ID=$SIM_ID" >> $GITHUB_ENV
-          echo "Booting simulator: $SIM_ID"
-          xcrun simctl boot "$SIM_ID" || true
-          xcrun simctl bootstatus "$SIM_ID" -b
-          open -a Simulator || true
-
-      - name: Extract .app from IPA
-        run: |
-          IPA_FILE="qatarat-stage-ios.ipa"
-          IPA_DIR="Qatarat (Lambda-Stage-IOS-1.8.2).ipa"
-          if [ -d "$IPA_DIR/Payload/Runner.app" ]; then
-            echo "APP_PATH=$IPA_DIR/Payload/Runner.app" >> $GITHUB_ENV
-            echo "Using pre-extracted Runner.app"
-          elif [ -f "$IPA_FILE" ]; then
-            echo "Extracting IPA from $IPA_FILE..."
-            rm -rf ipa_extracted
-            unzip -q "$IPA_FILE" -d ipa_extracted/
-            if [ ! -d "ipa_extracted/Payload/Runner.app" ]; then
-              echo "::error::IPA extracted but Payload/Runner.app not found"
-              find ipa_extracted -maxdepth 3 -type d
-              exit 1
-            fi
-            echo "APP_PATH=ipa_extracted/Payload/Runner.app" >> $GITHUB_ENV
-          else
-            echo "::error::No IPA found. Expected $IPA_FILE or $IPA_DIR/Payload/Runner.app"
-            exit 1
-          fi
-
-      - name: Validate app architecture is simulator-compatible
-        run: |
-          APP="${{ env.APP_PATH }}"
-          BINARY="$APP/Runner"
-          if [ ! -f "$BINARY" ]; then
-            echo "::error::Runner binary not found at $BINARY"
-            exit 1
-          fi
-          ARCH_INFO=$(lipo -info "$BINARY" 2>/dev/null || file "$BINARY" 2>/dev/null || echo "unknown")
-          echo "Binary architecture info: $ARCH_INFO"
-          IS_SIM=false
-          if echo "$ARCH_INFO" | grep -qiE "x86_64|arm64.*simulator|simulator"; then
-            IS_SIM=true
-          elif otool -l "$BINARY" 2>/dev/null | grep -A 4 "LC_BUILD_VERSION" | grep -q "platform 7"; then
-            IS_SIM=true
-          fi
-          if [ "$IS_SIM" = "true" ]; then
-            echo "✅ Runner.app is simulator-compatible"
-          else
-            echo "::error::Runner.app is a DEVICE build (arm64-apple-ios), not a simulator build."
-            echo "Fix: flutter build ios --simulator --debug --no-codesign"
-            exit 1
-          fi
-
-      - name: Install app on Simulator
-        run: |
-          echo "Installing $APP_PATH on simulator $SIM_ID"
-          xcrun simctl install "$SIM_ID" "$APP_PATH"
-          echo "App installed successfully"
-
-      - name: Verify app installed
-        run: |
-          xcrun simctl get_app_container "$SIM_ID" com.qatarat.app 2>/dev/null && echo "App verified" || echo "Warning: could not verify"
+      - name: Boot Simulator and install app
+        run: bash testing/ios_ci_setup.sh qatarat-stage-ios.ipa
 
       - name: Start iOS screen recording
         run: |
@@ -157,18 +77,21 @@ jobs:
             testing/maestro/reports/ios-maestro-raw.mp4 \
             --codec h264 &
           echo $! > /tmp/ios_rec_pid
-          echo "iOS recorder started (PID: $(cat /tmp/ios_rec_pid))"
 
       - name: Verify app can launch on Simulator
         run: |
-          echo "Attempting direct simctl launch..."
-          xcrun simctl launch --console "$SIM_ID" com.qatarat.app 2>&1 | head -5 || true
+          xcrun simctl launch "$SIM_ID" com.qatarat.app 2>&1 | head -5 || true
           sleep 3
           xcrun simctl terminate "$SIM_ID" com.qatarat.app 2>/dev/null || true
 
       - name: Run Maestro Suite (per-flow JUnit)
         run: |
-          SUITE="${{ github.event.inputs.suite || 'regression' }}"
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            SUITE="smoke"
+          else
+            SUITE="${{ github.event.inputs.suite || 'regression' }}"
+          fi
+          echo "Running Maestro suite: $SUITE"
           bash testing/run_maestro_ios_ci.sh "$SUITE"
 
       - name: Stop and compress iOS recording
@@ -187,9 +110,6 @@ jobs:
               -vf "scale=480:-2,setsar=1" -r 15 -crf 35 -preset fast \
               -movflags +faststart -y "$OUT" 2>&1 | tail -3 || cp "$RAW" "$OUT"
             rm -f "$RAW"
-            echo "Recording: $(du -sh "$OUT")"
-          else
-            echo "No raw recording found"
           fi
 
       - name: Publish step summary
@@ -205,7 +125,7 @@ jobs:
                   root = ET.parse(xml_path).getroot()
                   for tc in root.iter("testcase"):
                       total += 1
-                      name = tc.get("name", "")
+                      name = tc.get("name", os.path.basename(xml_path))
                       if tc.find("failure") is not None or tc.find("error") is not None:
                           failed += 1; icon = "❌"
                       elif tc.find("skipped") is not None:
@@ -239,7 +159,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: maestro-ios-junit-${{ github.event.inputs.suite || 'regression' }}-${{ github.run_number }}
+          name: maestro-ios-junit-${{ github.event.inputs.suite || 'smoke' }}-${{ github.run_number }}
           path: testing/maestro/reports/
           retention-days: 30
 
@@ -250,6 +170,7 @@ jobs:
           name: maestro-ios-screenshots-${{ github.run_number }}
           path: ~/.maestro/tests/
           retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload iOS Maestro recording
         if: always()

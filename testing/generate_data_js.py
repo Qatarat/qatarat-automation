@@ -9,7 +9,7 @@ All data is derived from actual CI artifacts.  Where no results exist,
 statuses are set to "idle" and counts to zero — no fabricated numbers.
 """
 import xml.etree.ElementTree as ET
-import os, glob, json, sys, subprocess
+import os, glob, json, sys, subprocess, re
 from datetime import datetime, timezone
 
 # ─── Static flow / test definitions (metadata only — no fake statuses) ────
@@ -518,26 +518,28 @@ def main():
     ios_flow_errors   = {}
     ios_maestro_dir = os.path.join(artifacts_dir, "maestro-ios")
     if os.path.isdir(ios_maestro_dir):
-        for i, file_name in enumerate(FLOW_FILE_NAMES):
-            fid = i + 1
-            key = f"{fid:02d}"
-            for xml_path in glob.glob(os.path.join(ios_maestro_dir, "**", f"{file_name}*.xml"), recursive=True):
-                st, err = xml_flow_status(xml_path)
-                if st:
-                    ios_flow_statuses[key] = st
-                    if err:
-                        ios_flow_errors[key] = err
-                break
+        # Per-flow JUnit XMLs: 01_splash_onboarding-results.xml … 50_session_handling-results.xml
+        for xml_path in glob.glob(os.path.join(ios_maestro_dir, "**", "*-results.xml"), recursive=True):
+            basename = os.path.basename(xml_path).replace("-results.xml", "")
+            m = re.match(r"^(\d{2})_", basename)
+            if not m:
+                continue
+            key = m.group(1)
+            st, err = xml_flow_status(xml_path)
+            if st:
+                ios_flow_statuses[key] = st
+                if err:
+                    ios_flow_errors[key] = err
 
         SUITE_FLOW_IDS = {
             "smoke":      {1, 2, 3, 5, 6, 26, 28, 39},
-            "regression": {fid for fid, *_ in FLOWS_DEF},
+            "regression": set(range(1, 51)),
             "negative":   {17, 18, 19, 20, 21, 22, 23},
         }
         for xml_path in sorted(glob.glob(os.path.join(ios_maestro_dir, "**/*.xml"), recursive=True)):
             basename = os.path.basename(xml_path).replace(".xml", "").replace("ios-", "").replace("-results", "")
-            if any(fname in basename for fname in FLOW_FILE_NAMES):
-                continue
+            if re.match(r"^\d{2}_", basename):
+                continue  # already handled as per-flow XML
             try:
                 root = ET.parse(xml_path).getroot()
                 suite_fail_msg = None

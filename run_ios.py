@@ -48,9 +48,33 @@ def ensure_gh_cli():
     if not shutil.which("gh"):
         _die("GitHub CLI (gh) not found. Install it with: brew install gh")
 
+def _validate_simulator_arch():
+    """Warn if Runner.app is x86_64-only on Apple Silicon (needs Rosetta simulator runtime)."""
+    binary = os.path.join(APP_DIR, "Runner")
+    if not os.path.isfile(binary):
+        return
+    info = out(["lipo", "-info", binary]) or out(["file", binary])
+    host = platform.machine()
+    if host == "arm64" and "x86_64" in info and "arm64" not in info:
+        rosetta = subprocess.run(["pgrep", "-q", "oahd"], capture_output=True).returncode == 0
+        sims = out(["xcrun", "simctl", "list", "devices", "available"])
+        has_rosetta_sim = "Rosetta" in sims or "x86_64" in (out(["xcrun", "simctl", "runtime", "list"]) or "")
+        if not rosetta:
+            print("  ⚠️  x86_64 app on arm64 Mac — installing Rosetta...")
+            run(["softwareupdate", "--install-rosetta", "--agree-to-license"], check=False)
+        if not has_rosetta_sim:
+            print(
+                "  ⚠️  Runner.app is x86_64-only. Use a Rosetta simulator:\n"
+                "     xcodebuild -downloadPlatform iOS -architectureVariant universal\n"
+                "     Then pick 'iPhone … (Rosetta)' in Simulator."
+            )
+        else:
+            print("  ℹ️  x86_64 Runner.app — will use Rosetta simulator if available.")
+
 def download_ipa():
     if os.path.isdir(APP_DIR):
         print(f"  App already extracted at {APP_DIR}")
+        _validate_simulator_arch()
         return
     if not os.path.isfile(IPA_FILE):
         print("  Downloading iOS IPA from GitHub Release...")
@@ -64,31 +88,51 @@ def download_ipa():
     run(["unzip", "-q", IPA_FILE, "-d", "ipa_extracted"], stdout=subprocess.DEVNULL)
     if not os.path.isdir(APP_DIR):
         _die(f"Extracted IPA but could not find {APP_DIR}")
+    _validate_simulator_arch()
 
 def get_simulator():
     print("  Finding an iPhone Simulator...")
     devices = out(["xcrun", "simctl", "list", "devices", "available"])
+    if not devices.strip():
+        _die("No iOS simulators found. Install one in Xcode → Settings → Platforms → iOS.")
     sim_id = None
-    for line in devices.splitlines():
-        if "iPhone 15 Pro" in line and "Max" not in line and "Plus" not in line:
+    sim_name = None
+    # Prefer Rosetta simulators for x86_64 Runner.app builds
+    binary = os.path.join(APP_DIR, "Runner")
+    info = out(["lipo", "-info", binary]) if os.path.isfile(binary) else ""
+    want_rosetta = platform.machine() == "arm64" and "x86_64" in info and "arm64" not in info
+    lines = devices.splitlines()
+    if want_rosetta:
+        for line in lines:
+            if "iPhone" not in line or "Rosetta" not in line:
+                continue
             m = re.search(r"([A-F0-9-]{36})", line)
             if m:
                 sim_id = m.group(1)
+                sim_name = line.split("(")[0].strip() + " (Rosetta)"
                 break
     if not sim_id:
-        for line in devices.splitlines():
-            if "iPhone 15" in line:
+        for prefer in ("iPhone 17 Pro", "iPhone 16 Pro", "iPhone 15 Pro", "iPhone 16", "iPhone 15", "iPhone"):
+            for line in lines:
+                if prefer not in line:
+                    continue
+                if prefer in ("iPhone 15 Pro", "iPhone 17 Pro") and ("Max" in line or "Plus" in line):
+                    continue
                 m = re.search(r"([A-F0-9-]{36})", line)
                 if m:
-                    sim_id = m.group(1)
+                    sim_id, sim_name = m.group(1), line.split("(")[0].strip()
                     break
+            if sim_id:
+                break
     if not sim_id:
-        _die("Could not find an iPhone 15 simulator. Please install one via Xcode.")
+        _die("Could not find any iPhone simulator. Install one via Xcode → Settings → Platforms.")
+    print(f"  Using simulator: {sim_name} ({sim_id})")
     return sim_id
 
 def boot_simulator(sim_id):
     sim_status = out(["xcrun", "simctl", "list", "devices"])
-    if "(Booted)" in [line for line in sim_status.splitlines() if sim_id in line][0]:
+    booted = [line for line in sim_status.splitlines() if sim_id in line and "(Booted)" in line]
+    if booted:
         print(f"  Simulator {sim_id} already booted.")
         return
     print(f"  Booting simulator {sim_id}...")

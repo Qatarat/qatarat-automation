@@ -16,13 +16,13 @@ on:
 
 concurrency:
   group: appium-ios-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   appium-ios:
-    name: Appium Deep Tests (iOS ${{ github.event.inputs.ios_version || '17.0' }} Simulator)
+    name: Appium Deep Tests (iOS Simulator)
     runs-on: macos-14
-    timeout-minutes: 120
+    timeout-minutes: 180
 
     steps:
       - name: Checkout
@@ -47,8 +47,7 @@ jobs:
           done
           SIZE=$(stat -f%z qatarat-stage-ios.ipa 2>/dev/null || stat -c%s qatarat-stage-ios.ipa)
           if [ "$SIZE" -lt 1000000 ]; then
-            echo "::error::Downloaded file is too small ($SIZE bytes) — likely a Git LFS pointer"
-            head -5 qatarat-stage-ios.ipa
+            echo "::error::Downloaded file too small ($SIZE bytes)"
             exit 1
           fi
           echo "✅ IPA downloaded ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
@@ -77,135 +76,45 @@ jobs:
           appium driver install --source=npm appium-flutter-driver
           appium driver list --installed
           brew install ffmpeg --quiet 2>/dev/null || true
-          sudo softwareupdate --install-rosetta --agree-to-license 2>/dev/null || true
 
-      - name: List available simulators
-        run: xcrun simctl list devices available | grep -i iphone | head -15
-
-      - name: Boot iPhone 15 Pro Simulator
-        run: |
-          SIM_ID=$(xcrun simctl list devices available \
-            | grep "iPhone 15 Pro" | grep -v "Max\|Plus" \
-            | head -1 | grep -oE "[A-F0-9-]{36}")
-          if [ -z "$SIM_ID" ]; then
-            SIM_ID=$(xcrun simctl list devices available \
-              | grep "iPhone 15\"" | head -1 | grep -oE "[A-F0-9-]{36}")
-          fi
-          if [ -z "$SIM_ID" ]; then
-            echo "::error::No iPhone 15 simulator found on this runner"
-            xcrun simctl list devices available
-            exit 1
-          fi
-          echo "SIM_ID=$SIM_ID" >> $GITHUB_ENV
-          echo "SIM_NAME=iPhone 15 Pro" >> $GITHUB_ENV
-          echo "Booting: $SIM_ID"
-          xcrun simctl boot "$SIM_ID" || true
-          xcrun simctl bootstatus "$SIM_ID" -b
-          open -a Simulator || true
-
-      - name: Extract .app bundle from IPA
-        run: |
-          IPA_FILE="qatarat-stage-ios.ipa"
-          IPA_DIR="Qatarat (Lambda-Stage-IOS-1.8.2).ipa"
-          if [ -d "$IPA_DIR/Payload/Runner.app" ]; then
-            APP_PATH="$(pwd)/$IPA_DIR/Payload/Runner.app"
-            echo "Using pre-extracted Runner.app"
-          elif [ -f "$IPA_FILE" ]; then
-            echo "Extracting from $IPA_FILE..."
-            unzip -q "$IPA_FILE" -d ipa_extracted/
-            APP_PATH="$(pwd)/ipa_extracted/Payload/Runner.app"
-          else
-            echo "::warning::No IPA found — Git LFS fetch likely failed. Tests will be reported as SKIPPED."
-            echo "IOS_APP_PATH=" >> $GITHUB_ENV
-            echo "IOS_SIM_COMPATIBLE=false" >> $GITHUB_ENV
-            exit 0
-          fi
-          echo "IOS_APP_PATH=$APP_PATH" >> $GITHUB_ENV
-          echo "App path: $APP_PATH"
-
-      - name: Validate app architecture is simulator-compatible
-        if: env.IOS_APP_PATH != ''
-        run: |
-          APP="${{ env.IOS_APP_PATH }}"
-          BINARY="$APP/Runner"
-          if [ ! -f "$BINARY" ]; then
-            echo "::warning::Runner binary not found at $BINARY"
-            echo "IOS_SIM_COMPATIBLE=false" >> $GITHUB_ENV
-            exit 0
-          fi
-          ARCH_INFO=$(lipo -info "$BINARY" 2>/dev/null || file "$BINARY" 2>/dev/null || echo "unknown")
-          echo "Binary architecture info: $ARCH_INFO"
-          IS_SIM=false
-          if echo "$ARCH_INFO" | grep -qiE "x86_64|simulator"; then
-            IS_SIM=true
-          elif otool -l "$BINARY" 2>/dev/null | grep -A 4 "LC_BUILD_VERSION" | grep -q "platform 7"; then
-            IS_SIM=true
-          fi
-          if [ "$IS_SIM" = "true" ]; then
-            echo "✅ Runner.app is simulator-compatible"
-            echo "IOS_SIM_COMPATIBLE=true" >> $GITHUB_ENV
-          else
-            echo "IOS_SIM_COMPATIBLE=false" >> $GITHUB_ENV
-            echo "::warning::Runner.app is a DEVICE build (arm64-apple-ios), not a simulator build."
-            echo "::warning::Tests will be recorded as SKIPPED (not FAILED) with a clear reason."
-            echo ""
-            echo "=== HOW TO FIX ==="
-            echo "1. In the Flutter app repository, run:"
-            echo "   flutter build ios --simulator --debug --no-codesign"
-            echo "2. Copy build/ios/iphonesimulator/Runner.app into:"
-            echo "   'Qatarat (Lambda-Stage-IOS-1.8.2).ipa/Payload/Runner.app'"
-            echo "3. Commit the updated Runner.app via Git LFS"
-            echo "4. Re-run this workflow"
-          fi
-
-      - name: Pre-install app on Simulator
-        if: env.IOS_APP_PATH != ''
-        run: |
-          xcrun simctl install "$SIM_ID" "$IOS_APP_PATH"
-          echo "Installed com.qatarat.app"
+      - name: Boot Simulator and install app
+        run: bash testing/ios_ci_setup.sh qatarat-stage-ios.ipa
 
       - name: Start iOS screen recording
-        if: env.IOS_APP_PATH != ''
         run: |
           mkdir -p testing/appium/reports
           xcrun simctl io "$SIM_ID" recordVideo \
             testing/appium/reports/ios-appium-raw.mp4 \
             --codec h264 &
           echo $! > /tmp/ios_rec_pid
-          echo "iOS recorder started (PID: $(cat /tmp/ios_rec_pid))"
 
       - name: Start Appium server
-        if: env.IOS_APP_PATH != ''
         run: |
           appium --port 4723 --log /tmp/appium-ios.log &
-          for i in $(seq 1 15); do
+          for i in $(seq 1 20); do
             sleep 2
-            STATUS=$(curl -s http://localhost:4723/status 2>/dev/null || echo "")
-            if echo "$STATUS" | python3 -c "import sys,json; d=json.load(sys.stdin); print('Appium ready:', d['value']['ready'])" 2>/dev/null; then
-              break
+            if curl -sf http://localhost:4723/status | python3 -c \
+              "import sys,json; d=json.load(sys.stdin); exit(0 if d.get('value',{}).get('ready') else 1)" 2>/dev/null; then
+              echo "Appium ready"
+              exit 0
             fi
-            echo "Waiting for Appium... ($i/15)"
+            echo "Waiting for Appium... ($i/20)"
           done
+          echo "::error::Appium failed to start"
+          exit 1
 
       - name: Run Appium Tests (iOS Simulator)
-        if: env.IOS_APP_PATH != ''
         run: |
           cd testing/appium
           MARKER="${{ github.event.inputs.marker }}"
           PYTEST_ARGS="-v --tb=short --alluredir=allure-results --junitxml=reports/results.xml"
           [ -n "$MARKER" ] && PYTEST_ARGS="$PYTEST_ARGS -m $MARKER"
           mkdir -p allure-results reports/screenshots
-
-          if [ "$IOS_SIM_COMPATIBLE" = "false" ]; then
-            echo "::warning::Running tests against a device-build IPA — expect SKIP (not FAIL) results."
-            echo "Tests will report the reason clearly: device build cannot run on iOS Simulator."
-          fi
-
-          python -m pytest tests/ $PYTEST_ARGS || true
+          python -m pytest tests/ $PYTEST_ARGS
         env:
           PLATFORM: ios
           DEVICE_MODE: simulator
-          IOS_SIM_NAME: iPhone 15 Pro
+          IOS_SIM_NAME: ${{ env.SIM_NAME }}
           IOS_VERSION: ${{ github.event.inputs.ios_version || '17.0' }}
           IOS_APP_PATH: ${{ env.IOS_APP_PATH }}
           IOS_SIM_COMPATIBLE: ${{ env.IOS_SIM_COMPATIBLE }}
@@ -228,9 +137,6 @@ jobs:
               -vf "scale=480:-2,setsar=1" -r 15 -crf 35 -preset fast \
               -movflags +faststart -y "$OUT" 2>&1 | tail -3 || cp "$RAW" "$OUT"
             rm -f "$RAW"
-            echo "Recording: $(du -sh "$OUT")"
-          else
-            echo "No raw recording found"
           fi
 
       - name: Publish step summary
@@ -238,104 +144,22 @@ jobs:
         run: |
           python3 - <<'PYEOF'
           import xml.etree.ElementTree as ET, os, pathlib, textwrap
-
-          # ── error humanizer ────────────────────────────────────────────────────
-          def friendly_error(raw):
-              if not raw:
-                  return "Unknown error — check CI logs"
-              r = raw.lower()
-              if "simulator architecture" in r or "architecture is not supported" in r:
-                  return (
-                      "⚠️ Device build on Simulator — Runner.app is compiled for a real "
-                      "iOS device (arm64-apple-ios) and cannot run on the Simulator.\n"
-                      "**Fix:** rebuild with `flutter build ios --simulator --debug` "
-                      "and replace Runner.app in the repo."
-                  )
-              if "could not install" in r or "failed to install" in r:
-                  return "⚠️ App install failed — check that IOS_APP_PATH points to a valid .app bundle."
-              if "webdriveragent" in r or ("wda" in r and "fail" in r):
-                  return "⚠️ WebDriverAgent (WDA) failed to start — simulator may not be booted."
-              if "connection refused" in r or "could not connect" in r:
-                  return "⚠️ Appium server unreachable — check that Appium started correctly."
-              if "timeout" in r:
-                  return "⏳ Timed out waiting for element or app response."
-              if "assertionerror" in r:
-                  # Extract the assertion message
-                  for line in raw.split("\n"):
-                      if "assertionerror" in line.lower():
-                          return "❌ Assertion failed: " + line.strip()[:120]
-              return raw[:200].strip()
-
           f = "testing/appium/reports/results.xml"
           if not pathlib.Path(f).exists():
-              lfs_failed = os.environ.get("IOS_SIM_COMPATIBLE") == "false" and not os.environ.get("IOS_APP_PATH", "").strip()
-              if lfs_failed:
-                  reason = (
-                      "Git LFS fetch failed — the IPA binary (`qatarat-stage-ios.ipa`) could not be "
-                      "downloaded from LFS storage. This is a CI infrastructure issue.\n\n"
-                      "**Possible causes:**\n"
-                      "- GitHub LFS bandwidth or storage quota exceeded\n"
-                      "- LFS object was never pushed to remote\n\n"
-                      "**Fix options:**\n"
-                      "1. Check LFS quota: *repo Settings → Storage*\n"
-                      "2. Re-push the IPA: `git lfs push --all origin`\n"
-                      "3. Upload the IPA to a GitHub Release and update the workflow to download it"
-                  )
-                  summary = f"## 🍎 Appium iOS Results\n\n> ⚠️ **IPA not available — {reason}\n"
-              else:
-                  summary = "## 🍎 Appium iOS Results\n\n> No results file generated — Appium may have failed to start.\n"
               with open(os.environ.get("GITHUB_STEP_SUMMARY",""), "a") as fh:
-                  fh.write(summary)
+                  fh.write("## 🍎 Appium iOS\n\n> No results file — check logs.\n")
               exit(0)
-
           root = ET.parse(f).getroot()
           total = passed = failed = skipped = 0
-          rows = ""
           for tc in root.iter("testcase"):
               total += 1
-              name = tc.get("name", "")
-              dur  = float(tc.get("time", "0") or "0")
-              fail_el = tc.find("failure") or tc.find("error")
-              if fail_el is not None:
-                  failed += 1
-                  raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
-                  err_msg = friendly_error(raw)
-                  rows += f"| ❌ | `{name}` | {dur:.1f}s | {err_msg[:100]} |\n"
-              elif tc.find("skipped") is not None:
-                  skipped += 1
-                  skip_el = tc.find("skipped")
-                  skip_msg = (skip_el.get("message") or "").strip()[:100] if skip_el is not None else ""
-                  rows += f"| ⏭️ | `{name}` | {dur:.1f}s | {skip_msg} |\n"
-              else:
-                  passed += 1
-                  rows += f"| ✅ | `{name}` | {dur:.1f}s | — |\n"
-
+              if tc.find("failure") is not None or tc.find("error") is not None: failed += 1
+              elif tc.find("skipped") is not None: skipped += 1
+              else: passed += 1
           pct = int(passed/total*100) if total else 0
-          bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
-
-          arch_warn = ""
-          if os.environ.get("IOS_SIM_COMPATIBLE") == "false":
-              arch_warn = """\n> **⚠️ Infrastructure Note:** The app binary is a device build and cannot run on the iOS Simulator.
-          > Tests are reported as SKIPPED (not FAILED) — this is a build configuration issue, not an app bug.
-          > **Fix:** provide a simulator-compatible `Runner.app` built with `flutter build ios --simulator`.\n"""
-
-          summary = f"""## 🍎 Appium iOS Simulator Results — Run #{os.environ.get('GITHUB_RUN_NUMBER','?')}
-          {bar}
-          {arch_warn}
-          | Metric | Value |
-          |--------|-------|
-          | ✅ Passed   | {passed} |
-          | ❌ Failed   | {failed} |
-          | ⏭️ Skipped  | {skipped} |
-          | 📊 Total    | {total} |
-          | 📈 Pass rate | {pct}% |
-
-          ### Test Results
-          | Status | Test | Duration | Note |
-          |--------|------|----------|------|
-          {rows if rows else "| — | No results | — | — |\n"}"""
+          summary = f"## 🍎 Appium iOS — {passed}/{total} passed ({pct}%)\n"
           with open(os.environ.get("GITHUB_STEP_SUMMARY",""), "a") as fh:
-              fh.write(textwrap.dedent(summary))
+              fh.write(summary)
           PYEOF
 
       - name: Upload Allure results
@@ -345,6 +169,7 @@ jobs:
           name: appium-ios-allure-${{ github.run_number }}
           path: testing/appium/allure-results/
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload JUnit XML
         if: always()
@@ -353,6 +178,7 @@ jobs:
           name: appium-ios-junit-${{ github.run_number }}
           path: testing/appium/reports/results.xml
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload screenshots
         if: always()
@@ -361,6 +187,7 @@ jobs:
           name: appium-ios-screenshots-${{ github.run_number }}
           path: testing/appium/reports/screenshots/
           retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload Appium log on failure
         if: failure()
@@ -369,6 +196,7 @@ jobs:
           name: appium-ios-server-log-${{ github.run_number }}
           path: /tmp/appium-ios.log
           retention-days: 7
+          if-no-files-found: warn
 
       - name: Upload iOS Appium recording
         if: always()
