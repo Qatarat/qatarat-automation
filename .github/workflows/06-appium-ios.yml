@@ -16,7 +16,7 @@ on:
 
 concurrency:
   group: appium-ios-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true   # supersede stale queued/in-progress runs (macOS queue is slow)
 
 jobs:
   appium-ios:

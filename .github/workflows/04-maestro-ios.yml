@@ -16,7 +16,7 @@ on:
 
 concurrency:
   group: maestro-ios-${{ github.ref }}
-  cancel-in-progress: false   # never cancel — macOS runner minutes are scarce
+  cancel-in-progress: true   # supersede stale queued/in-progress runs (macOS queue is slow)
 
 jobs:
   ios-maestro:
