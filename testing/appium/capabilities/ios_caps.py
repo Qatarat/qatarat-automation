@@ -29,11 +29,13 @@ IOS_CAPS = {
 }
 
 # ── Simulator (default for local dev + CI) ────────────────────────────────────
+_sim_id = os.environ.get("SIM_ID", "")
 IOS_SIMULATOR_CAPS = {
     **IOS_CAPS,
     "appium:deviceName": os.environ.get("IOS_SIM_NAME", "iPhone 15 Pro"),
     "appium:platformVersion": os.environ.get("IOS_VERSION", "17.5"),
     "appium:app": os.environ.get("IOS_APP_PATH", _APP_BUNDLE),
+    **({"appium:udid": _sim_id} if _sim_id else {}),
     "appium:simulatorStartupTimeout": 180000,
     "appium:wdaLaunchTimeout": 120000,
     "appium:wdaConnectionTimeout": 120000,

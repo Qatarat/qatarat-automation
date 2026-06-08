@@ -22,7 +22,8 @@ jobs:
   appium-ios:
     name: Appium Deep Tests (iOS Simulator)
     runs-on: macos-14
-    timeout-minutes: 180
+    # account suite ~60–90 min; full suite needs more headroom on Rosetta sim
+    timeout-minutes: ${{ github.event.inputs.marker == '' && 240 || 180 }}
 
     steps:
       - name: Checkout
@@ -104,22 +105,18 @@ jobs:
           exit 1
 
       - name: Run Appium Tests (iOS Simulator)
-        run: |
-          cd testing/appium
-          MARKER="${{ github.event.inputs.marker }}"
-          PYTEST_ARGS="-v --tb=short --alluredir=allure-results --junitxml=reports/results.xml"
-          [ -n "$MARKER" ] && PYTEST_ARGS="$PYTEST_ARGS -m $MARKER"
-          mkdir -p allure-results reports/screenshots
-          python -m pytest tests/ $PYTEST_ARGS
         env:
           PLATFORM: ios
           DEVICE_MODE: simulator
+          SIM_ID: ${{ env.SIM_ID }}
           IOS_SIM_NAME: ${{ env.SIM_NAME }}
           IOS_VERSION: ${{ github.event.inputs.ios_version || '17.0' }}
           IOS_APP_PATH: ${{ env.IOS_APP_PATH }}
           IOS_SIM_COMPATIBLE: ${{ env.IOS_SIM_COMPATIBLE }}
-          APPIUM_HOST: localhost
-          APPIUM_PORT: "4723"
+          APPIUM_SERVER: http://localhost:4723
+          # Default to account suite — full suite needs Android-ported page objects
+          TEST_MARKER: ${{ github.event.inputs.marker || 'account' }}
+        run: bash testing/run_appium_ci.sh "$TEST_MARKER"
 
       - name: Stop and compress iOS recording
         if: always()

@@ -10,6 +10,39 @@ APPIUM_SERVER = os.environ.get("APPIUM_SERVER", "http://127.0.0.1:4723")
 SCREENSHOT_DIR = os.path.join(os.path.dirname(__file__), "../reports/screenshots")
 
 
+def is_ios() -> bool:
+    return os.environ.get("PLATFORM", "android").lower() == "ios"
+
+
+def text_field_xpath() -> str:
+    """XPath matching editable fields on Android or iOS."""
+    if is_ios():
+        return "//XCUIElementTypeTextField | //XCUIElementTypeSecureTextField"
+    return "//android.widget.EditText"
+
+
+def find_elements_by_label(driver, label: str, contains: bool = False):
+    """Find elements by visible label — Android content-desc/text or iOS name/label/value."""
+    if is_ios():
+        if contains:
+            xp = (
+                f'//*[contains(@name,"{label}") or contains(@label,"{label}") '
+                f'or contains(@value,"{label}")]'
+            )
+        else:
+            xp = (
+                f'//*[@name="{label}" or @label="{label}" or @value="{label}"]'
+            )
+    else:
+        if contains:
+            xp = (
+                f'//*[contains(@content-desc,"{label}") or contains(@text,"{label}")]'
+            )
+        else:
+            xp = f'//*[@content-desc="{label}" or @text="{label}"]'
+    return driver.find_elements(AppiumBy.XPATH, xp)
+
+
 def wait_for_text(driver, text, timeout=15):
     return find_by_text(driver, text, timeout=timeout)
 
@@ -21,15 +54,27 @@ def tap_text(driver, text, timeout=15):
 
 
 def find_by_text(driver, text, timeout=10):
-    """Find element by visible text — tries multiple locator strategies."""
-    strategies = [
-        (AppiumBy.XPATH, f'//*[@content-desc="{text}"]'),
-        (AppiumBy.ACCESSIBILITY_ID, text),
-        (AppiumBy.XPATH, f'//*[@text="{text}"]'),
-        (AppiumBy.XPATH, f'//*[contains(@content-desc,"{text}")]'),
-        (AppiumBy.XPATH, f'//*[contains(@text,"{text}")]'),
-    ]
-    # Spread total timeout across strategies but cap per-strategy to avoid slow misses
+    """Find element by visible text — tries multiple locator strategies per platform."""
+    if is_ios():
+        strategies = [
+            (AppiumBy.ACCESSIBILITY_ID, text),
+            (AppiumBy.XPATH, f'//*[@name="{text}"]'),
+            (AppiumBy.XPATH, f'//*[@label="{text}"]'),
+            (AppiumBy.XPATH, f'//*[@value="{text}"]'),
+            (AppiumBy.XPATH, f'//*[contains(@name,"{text}")]'),
+            (AppiumBy.XPATH, f'//*[contains(@label,"{text}")]'),
+            (AppiumBy.XPATH, f'//*[contains(@value,"{text}")]'),
+            (AppiumBy.XPATH, f'//XCUIElementTypeButton[@name="{text}"]'),
+            (AppiumBy.XPATH, f'//XCUIElementTypeStaticText[@name="{text}"]'),
+        ]
+    else:
+        strategies = [
+            (AppiumBy.XPATH, f'//*[@content-desc="{text}"]'),
+            (AppiumBy.ACCESSIBILITY_ID, text),
+            (AppiumBy.XPATH, f'//*[@text="{text}"]'),
+            (AppiumBy.XPATH, f'//*[contains(@content-desc,"{text}")]'),
+            (AppiumBy.XPATH, f'//*[contains(@text,"{text}")]'),
+        ]
     n = len(strategies)
     per_strategy = max(1, min(3, timeout // n))
     deadline = time.time() + timeout
@@ -72,6 +117,14 @@ def scroll_to_text(driver, text, direction="down", max_scrolls=10):
 
 
 def enter_otp(driver, otp="1234"):
-    for digit in otp:
-        driver.find_element(AppiumBy.XPATH, f"//android.widget.EditText").send_keys(digit)
-        time.sleep(0.1)
+    fields = driver.find_elements(AppiumBy.XPATH, text_field_xpath())
+    if not fields:
+        raise NoSuchElementException("No text fields found for OTP entry")
+    if len(fields) >= len(otp):
+        for i, digit in enumerate(otp):
+            fields[i].click()
+            fields[i].send_keys(digit)
+            time.sleep(0.1)
+    else:
+        fields[0].click()
+        fields[0].send_keys(otp)

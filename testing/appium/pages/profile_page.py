@@ -1,6 +1,6 @@
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation
+from utils.helpers import wait_for_animation, text_field_xpath, find_elements_by_label
 
 
 class ProfilePage(BasePage):
@@ -19,7 +19,7 @@ class ProfilePage(BasePage):
 
     def enter_name(self, name):
         try:
-            els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+            els = self.driver.find_elements(AppiumBy.XPATH, text_field_xpath())
             if els:
                 els[0].clear()
                 els[0].send_keys(name)
@@ -29,7 +29,7 @@ class ProfilePage(BasePage):
 
     def enter_email(self, email):
         try:
-            els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+            els = self.driver.find_elements(AppiumBy.XPATH, text_field_xpath())
             for el in els:
                 try:
                     content = el.get_attribute("text") or ""
@@ -61,22 +61,21 @@ class ProfilePage(BasePage):
     def tap_logout(self):
         size = self.driver.get_window_size()
         w, h = size["width"], size["height"]
+        logout_labels = ["Logout", "Log out", "Sign out"]
         for _ in range(6):
-            els = self.driver.find_elements(
-                AppiumBy.XPATH,
-                '//*[@content-desc="Logout" or @text="Logout" or '
-                '@content-desc="Log out" or @text="Log out" or '
-                '@content-desc="Sign out" or @text="Sign out"]',
-            )
+            els = []
+            for label in logout_labels:
+                els = find_elements_by_label(self.driver, label)
+                if els:
+                    break
             if els:
                 els[0].click()
                 wait_for_animation(self.driver)
                 return self
             self.driver.swipe(w // 2, int(h * 0.75), w // 2, int(h * 0.25), 600)
             wait_for_animation(self.driver, 0.5)
-        self.tap_optional("Logout")
-        self.tap_optional("Log out")
-        self.tap_optional("Sign out")
+        for label in logout_labels:
+            self.tap_optional(label)
         wait_for_animation(self.driver)
         return self
 

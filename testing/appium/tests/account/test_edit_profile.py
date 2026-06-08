@@ -8,7 +8,6 @@ from utils.helpers import screenshot, wait_for_animation
 @allure.epic("Account")
 @allure.feature("Edit Profile")
 @pytest.mark.account
-@pytest.mark.android
 class TestEditProfile:
     """Tests covering the edit-profile form including boundary and security inputs."""
 

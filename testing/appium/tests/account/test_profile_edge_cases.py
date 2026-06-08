@@ -9,7 +9,6 @@ from test_data import BoundaryValues, InvalidRating
 
 @pytest.mark.account
 @pytest.mark.negative
-@pytest.mark.android
 class TestProfileEdgeCases:
     """Edge-case and negative tests for profile and account settings."""
 

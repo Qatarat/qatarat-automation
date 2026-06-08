@@ -167,6 +167,16 @@ def _ios_skip_if_infra_error(exc: Exception) -> None:
         )
 
 
+def pytest_collection_modifyitems(config, items):
+    """Skip Android-only tests when running on iOS until page objects support both."""
+    if PLATFORM != "ios":
+        return
+    skip_android = pytest.mark.skip(reason="Android-only test (not yet ported to iOS)")
+    for item in items:
+        if "android" in item.keywords:
+            item.add_marker(skip_android)
+
+
 @pytest.fixture(scope="function")
 def driver():
     import time as _time

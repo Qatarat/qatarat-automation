@@ -6,7 +6,12 @@ from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation
+from utils.helpers import (
+    wait_for_animation,
+    is_ios,
+    text_field_xpath,
+    find_elements_by_label,
+)
 
 # Arabic label mappings used when app language is Arabic
 _LOGIN_LABELS = [
@@ -29,14 +34,14 @@ class LoginPage(BasePage):
     def _already_on_login_screen(self):
         # find_elements (plural) returns immediately with [] when nothing found
         # — avoids the 10-second implicitly_wait penalty for each missing element
-        return bool(self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText"))
+        return bool(self.driver.find_elements(AppiumBy.XPATH, text_field_xpath()))
 
     def _navigate_to_login_screen(self):
         """Click the login button on home/onboarding to reach the phone-input screen."""
         if self._already_on_login_screen():
             return self
         for label in _HOME_LOGIN_BTNS + _LOGIN_LABELS:
-            els = self.driver.find_elements(AppiumBy.XPATH, f'//*[@content-desc="{label}"]')
+            els = find_elements_by_label(self.driver, label)
             if els:
                 els[0].click()
                 wait_for_animation(self.driver, 2)
@@ -45,9 +50,9 @@ class LoginPage(BasePage):
         return self
 
     def _dismiss_system_dialogs(self):
-        """Tap through any Android system permission dialogs."""
+        """Tap through system permission / alert dialogs."""
         for label in ["While using the app", "Only this time", "Allow", "OK", "ALLOW"]:
-            els = self.driver.find_elements(AppiumBy.XPATH, f'//*[@text="{label}"]')
+            els = find_elements_by_label(self.driver, label)
             if els:
                 els[0].click()
                 wait_for_animation(self.driver, 1)
@@ -55,19 +60,13 @@ class LoginPage(BasePage):
 
     def _switch_to_english(self):
         """Tap the language toggle (shown as '  Ara' when in Arabic) and select English."""
-        els = self.driver.find_elements(
-            AppiumBy.XPATH,
-            '//*[contains(@content-desc,"  Ara") or contains(@content-desc,"Ara")]',
-        )
+        els = find_elements_by_label(self.driver, "Ara", contains=True)
         if not els:
             return self
         els[0].click()
         wait_for_animation(self.driver, 1.5)
         for eng_label in ["English", "en"]:
-            hits = self.driver.find_elements(
-                AppiumBy.XPATH,
-                f'//*[@text="{eng_label}" or @content-desc="{eng_label}"]',
-            )
+            hits = find_elements_by_label(self.driver, eng_label)
             if hits:
                 hits[0].click()
                 wait_for_animation(self.driver, 2)
@@ -89,30 +88,22 @@ class LoginPage(BasePage):
 
     def _select_bangladesh_country_code(self):
         """Open country code picker and select Bangladesh (+880) via search."""
-        # Already on Bangladesh? Skip
-        if self.driver.find_elements(AppiumBy.XPATH, '//*[contains(@content-desc,"880")]'):
+        if find_elements_by_label(self.driver, "880", contains=True):
             return self
-        # Open country code picker
-        cc_els = self.driver.find_elements(
-            AppiumBy.XPATH,
-            '//*[contains(@content-desc,"+(")]',
-        )
+        cc_els = find_elements_by_label(self.driver, "+(", contains=True)
+        if not cc_els:
+            cc_els = find_elements_by_label(self.driver, "+880", contains=True)
         if not cc_els:
             return self
         cc_els[0].click()
         wait_for_animation(self.driver, 2)
-        # Type in the search EditText inside the picker
-        fields = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+        fields = self.driver.find_elements(AppiumBy.XPATH, text_field_xpath())
         if fields:
             fields[0].click()
             fields[0].send_keys("Bangladesh")
             wait_for_animation(self.driver, 1.5)
-        # Tap Bangladesh result
         for label in ["Bangladesh\n(+880)", "Bangladesh"]:
-            hits = self.driver.find_elements(
-                AppiumBy.XPATH,
-                f'//*[contains(@content-desc,"{label}") or contains(@text,"{label}")]',
-            )
+            hits = find_elements_by_label(self.driver, label, contains=True)
             if hits:
                 hits[0].click()
                 wait_for_animation(self.driver, 1.5)
@@ -129,7 +120,7 @@ class LoginPage(BasePage):
         else:
             phone_local = phone
         el = WebDriverWait(self.driver, 20).until(
-            EC.presence_of_element_located((AppiumBy.XPATH, "//android.widget.EditText"))
+            EC.presence_of_element_located((AppiumBy.XPATH, text_field_xpath()))
         )
         el.click()
         el.clear()
@@ -143,115 +134,105 @@ class LoginPage(BasePage):
 
     def _handle_otp_delivery_method(self):
         """Select SMS delivery method if the app shows a method-selection dialog."""
-        # Only act if the delivery dialog is actually on screen
-        on_dialog = self.driver.find_elements(
-            AppiumBy.XPATH,
-            '//*[@content-desc="SMS" or @text="SMS" or '
-            '@content-desc="Text message" or @text="Text message" or '
-            '@content-desc="WhatsApp" or @text="WhatsApp"]',
+        on_dialog = (
+            find_elements_by_label(self.driver, "SMS")
+            or find_elements_by_label(self.driver, "Text message")
+            or find_elements_by_label(self.driver, "WhatsApp")
         )
         if not on_dialog:
             return self
-        # Prefer SMS; fall back to whatever is available
         for sms_label in ["SMS", "Text message"]:
-            els = self.driver.find_elements(
-                AppiumBy.XPATH,
-                f'//*[@content-desc="{sms_label}" or @text="{sms_label}"]',
-            )
+            els = find_elements_by_label(self.driver, sms_label)
             if els:
                 els[0].click()
                 wait_for_animation(self.driver, 1)
                 break
-        # Tap the Send/Continue button to submit the delivery choice
         for send_label in ["Send", "Continue", "متابعة", "إرسال"]:
-            els = self.driver.find_elements(
-                AppiumBy.XPATH,
-                f'//*[@content-desc="{send_label}" or @text="{send_label}"]',
-            )
+            els = find_elements_by_label(self.driver, send_label)
             if els:
                 els[0].click()
                 wait_for_animation(self.driver, 3)
                 return self
         return self
 
+    def _on_otp_or_delivery_screen(self):
+        for label in ["SMS", "Send", "Verification code", "Confirm to Login"]:
+            if find_elements_by_label(self.driver, label):
+                return True
+        return False
+
     def tap_continue(self):
         # Only tap the first matching label — multiple taps cause multiple OTP requests
         for label in _CONTINUE_LABELS:
-            els = self.driver.find_elements(
-                AppiumBy.XPATH,
-                f'//*[@content-desc="{label}" or @text="{label}"]',
-            )
+            els = find_elements_by_label(self.driver, label)
             if els:
                 els[0].click()
                 wait_for_animation(self.driver, 1)
                 break
-        # Wait up to 10s for the delivery-method dialog OR the OTP verification screen
         deadline = time.time() + 10
         while time.time() < deadline:
-            if self.driver.find_elements(
-                AppiumBy.XPATH,
-                '//*[@content-desc="SMS" or @content-desc="Send" or '
-                '@text="SMS" or @text="Send" or '
-                '@content-desc="Verification code" or @content-desc="Confirm to Login"]',
-            ):
+            if self._on_otp_or_delivery_screen():
                 break
             time.sleep(0.5)
         self._handle_otp_delivery_method()
-        # Wait up to 10s for OTP verification screen to appear after delivery dialog is dismissed
         deadline = time.time() + 10
         while time.time() < deadline:
-            if self.driver.find_elements(
-                AppiumBy.XPATH,
-                '//*[@content-desc="Verification code" or @content-desc="Confirm to Login"]',
+            if (
+                find_elements_by_label(self.driver, "Verification code")
+                or find_elements_by_label(self.driver, "Confirm to Login")
             ):
                 break
             time.sleep(0.5)
         return self
 
+    def _field_text(self, el) -> str:
+        for attr in ("text", "value", "name", "label"):
+            val = el.get_attribute(attr)
+            if val:
+                return str(val).strip()
+        return ""
+
     def enter_otp(self, otp="1234"):
-        # Wait for OTP verification screen (not the phone input screen)
         try:
             WebDriverWait(self.driver, 15).until(
-                lambda d: d.find_elements(
-                    AppiumBy.XPATH,
-                    '//*[@content-desc="Verification code" or @content-desc="Confirm to Login"]',
+                lambda d: (
+                    find_elements_by_label(d, "Verification code")
+                    or find_elements_by_label(d, "Confirm to Login")
+                    or d.find_elements(AppiumBy.XPATH, text_field_xpath())
                 )
             )
         except Exception:
             pass
         wait_for_animation(self.driver, 1)
         try:
-            fields = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+            fields = self.driver.find_elements(AppiumBy.XPATH, text_field_xpath())
             if not fields:
-                # Fallback: tap anywhere on OTP area and use ADB keyboard input
-                self._adb_type_otp(otp)
+                if not is_ios():
+                    self._adb_type_otp(otp)
                 return self
 
-            # Filter to OTP fields only (empty or has only a cursor hint, not phone number)
             otp_fields = [
                 f for f in fields
-                if (f.get_attribute("text") or "").strip() in ("", "null", "|")
-                and len(f.get_attribute("text") or "") < 6
+                if self._field_text(f) in ("", "null", "|")
+                and len(self._field_text(f)) < 6
             ]
             if not otp_fields:
-                # All fields have long content (phone number) — OTP screen not ready yet
-                # Use ADB input instead
-                self._adb_type_otp(otp)
+                if not is_ios():
+                    self._adb_type_otp(otp)
                 return self
 
             if len(otp_fields) >= len(otp):
-                # One box per digit
                 for i, digit in enumerate(otp):
                     otp_fields[i].click()
                     otp_fields[i].send_keys(digit)
                     time.sleep(0.2)
             else:
-                # Single combined field
                 otp_fields[0].click()
                 time.sleep(0.2)
                 otp_fields[0].send_keys(otp)
         except Exception:
-            self._adb_type_otp(otp)
+            if not is_ios():
+                self._adb_type_otp(otp)
         return self
 
     @staticmethod
@@ -267,27 +248,21 @@ class LoginPage(BasePage):
             pass
 
     def tap_verify(self):
-        # Wait up to 3s for the verify button to appear (OTP auto-submit may hide it quickly)
         deadline = time.time() + 3
         while time.time() < deadline:
             for label in _VERIFY_LABELS:
-                els = self.driver.find_elements(AppiumBy.XPATH, f'//*[@content-desc="{label}"]')
+                els = find_elements_by_label(self.driver, label)
                 if els:
                     els[0].click()
                     wait_for_animation(self.driver, 4)
                     return self
             time.sleep(0.3)
-        # Fallback: contains match on common stems
         for stem in ["Confirm", "Verify", "تأكيد", "تحقق"]:
-            els = self.driver.find_elements(
-                AppiumBy.XPATH,
-                f'//*[contains(@content-desc,"{stem}") or contains(@text,"{stem}")]',
-            )
+            els = find_elements_by_label(self.driver, stem, contains=True)
             if els:
                 els[0].click()
                 wait_for_animation(self.driver, 4)
                 return self
-        # OTP may auto-submit — just wait for result
         wait_for_animation(self.driver, 4)
         return self
 
@@ -302,9 +277,10 @@ class LoginPage(BasePage):
         if not any(self.is_visible(t, timeout=timeout) for t in self._HOME_INDICATORS):
             return False
         # Guest mode shows a "Log In" CTA on the home screen — real login does not
-        guest_btns = self.driver.find_elements(
-            AppiumBy.XPATH,
-            '//*[@content-desc="Log In" or @content-desc="Sign in" or @content-desc="تسجيل الدخول"]',
+        guest_btns = (
+            find_elements_by_label(self.driver, "Log In")
+            or find_elements_by_label(self.driver, "Sign in")
+            or find_elements_by_label(self.driver, "تسجيل الدخول")
         )
         return len(guest_btns) == 0
 
@@ -369,8 +345,8 @@ class LoginPage(BasePage):
         self.tap_continue()
         self._dismiss_system_dialogs()
 
-        # If we have a real OTP (env var), inject it as SMS so the app can auto-read it
-        if os.environ.get("TEST_OTP"):
+        # Android only: inject SMS so the app can auto-read OTP
+        if os.environ.get("TEST_OTP") and not is_ios():
             self._inject_sms_to_emulator(otp)
 
         self.enter_otp(otp)

@@ -9,7 +9,6 @@ from utils.helpers import screenshot, wait_for_animation
 @allure.epic("Account")
 @allure.feature("Logout")
 @pytest.mark.account
-@pytest.mark.android
 class TestLogout:
     """Tests covering the logout flow, session state, and redirect behaviour."""
 
