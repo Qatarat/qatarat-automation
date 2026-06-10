@@ -51,8 +51,13 @@ IOS_SIMULATOR_CAPS = {
     "appium:simulatorStartupTimeout": 300000,   # 5 min (was 3 min)
     "appium:wdaLaunchTimeout": 180000,          # 3 min (was 2 min)
     "appium:wdaConnectionTimeout": 180000,      # 3 min (was 2 min)
-    # Reuse WDA after first install — saves 30–60s per session on subsequent tests
-    "appium:usePreinstalledWDA": True,
+    # usePreinstalledWDA: False (default) — build+install WDA on first session.
+    # True would skip the build step but requires WDA already compiled, which
+    # fails on fresh CI runners with FBSOpenApplicationServiceErrorDomain code=4.
+    "appium:usePreinstalledWDA": False,
+    # Reuse the already-running WDA between successive test sessions (safe + faster).
+    # Unlike usePreinstalledWDA, this does NOT skip the initial build.
+    "appium:useNewWDA": False,
     # Prevent slow Safari/webview context enumeration on every session
     "appium:includeSafariInWebviews": False,
     "appium:fullContextList": False,

@@ -77,6 +77,26 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      - name: Pre-install Android system image (retry on corrupt download)
+        run: |
+          # android-emulator-runner installs this internally, but can fail with
+          # "ZipFile unknown archive" on a transient bad download. Pre-installing
+          # with retry here so the emulator runner finds it already present.
+          set +e
+          for attempt in 1 2 3; do
+            echo "SDK install attempt $attempt/3..."
+            OUT=$(sdkmanager --install 'system-images;android-33;google_apis;x86_64' --channel=0 2>&1)
+            RC=$?
+            echo "$OUT"
+            if [ $RC -eq 0 ] && ! echo "$OUT" | grep -qi "ZipFile\|unknown archive\|Error on"; then
+              echo "✅ system-images;android-33;google_apis;x86_64 ready"
+              exit 0
+            fi
+            [ "$attempt" -eq 3 ] && { echo "::error::SDK install failed after 3 attempts"; exit 1; }
+            echo "Retrying in 20s..."
+            sleep 20
+          done
+
       - name: Start Appium server
         run: |
           appium --port 4723 --log /tmp/appium.log &
