@@ -82,10 +82,18 @@ jobs:
           # android-emulator-runner installs this internally, but can fail with
           # "ZipFile unknown archive" on a transient bad download. Pre-installing
           # with retry here so the emulator runner finds it already present.
+          #
+          # sdkmanager is not on PATH at this stage — use the full ANDROID_SDK_ROOT path.
+          SDKMAN="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}/cmdline-tools/latest/bin/sdkmanager"
+          echo "sdkmanager path: $SDKMAN"
+          if [ ! -f "$SDKMAN" ]; then
+            echo "::warning::sdkmanager not found at $SDKMAN — skipping pre-install (emulator runner will install)"
+            exit 0
+          fi
           set +e
           for attempt in 1 2 3; do
             echo "SDK install attempt $attempt/3..."
-            OUT=$(sdkmanager --install 'system-images;android-33;google_apis;x86_64' --channel=0 2>&1)
+            OUT=$("$SDKMAN" --install 'system-images;android-33;google_apis;x86_64' --channel=0 2>&1)
             RC=$?
             echo "$OUT"
             if [ $RC -eq 0 ] && ! echo "$OUT" | grep -qi "ZipFile\|unknown archive\|Error on"; then
