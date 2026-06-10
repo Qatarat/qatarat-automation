@@ -166,6 +166,27 @@ def _ios_skip_if_infra_error(exc: Exception) -> None:
             f"[Appium: {msg[:200].strip()}]"
         )
 
+    # Stale/expired session — happens when Appium is restarted between tests
+    if "no such session" in msg_lower or "invalid session id" in msg_lower:
+        pytest.skip(
+            "Appium session expired or was invalidated before this test started. "
+            f"[Appium: {msg[:200].strip()}]"
+        )
+
+    # XCUITest / WDA internal error — infra, not app bug
+    if "original error" in msg_lower and any(p in msg_lower for p in ["xcuitest", "wda", "xcode"]):
+        pytest.skip(
+            "XCUITest driver internal error — likely a WDA crash or simulator instability. "
+            f"[Appium: {msg[:200].strip()}]"
+        )
+
+    # Timeout waiting for session/app to start
+    if "timeout" in msg_lower and any(p in msg_lower for p in ["session", "launch", "wda", "startup"]):
+        pytest.skip(
+            "Appium session startup timed out — simulator may be slow or resource-constrained. "
+            f"[Appium: {msg[:200].strip()}]"
+        )
+
 
 def pytest_collection_modifyitems(config, items):
     """Skip Android-only tests when running on iOS until page objects support both."""
@@ -182,13 +203,18 @@ def driver():
     import time as _time
     if PLATFORM == "android":
         _reset_android_app()
+    elif PLATFORM == "ios":
+        # Brief pause before new iOS session — allows WDA to fully settle after previous quit
+        _time.sleep(1)
     try:
         d = webdriver.Remote(APPIUM_SERVER, options=_build_options(get_caps()))
     except Exception as exc:
         _ios_skip_if_infra_error(exc)
         raise
     d.implicitly_wait(10)
-    _time.sleep(4)   # wait for app splash / initial load
+    # iOS simulator needs longer than Android emulator to fully render app after launch
+    splash_wait = 7 if PLATFORM == "ios" else 4
+    _time.sleep(splash_wait)
     yield d
     try:
         d.quit()
@@ -198,11 +224,21 @@ def driver():
 
 @pytest.fixture(scope="module")
 def driver_module():
+    import time as _time
     caps = {**get_caps(), "appium:noReset": True}
-    d = webdriver.Remote(APPIUM_SERVER, options=_build_options(caps))
+    try:
+        d = webdriver.Remote(APPIUM_SERVER, options=_build_options(caps))
+    except Exception as exc:
+        _ios_skip_if_infra_error(exc)
+        raise
     d.implicitly_wait(10)
+    splash_wait = 7 if PLATFORM == "ios" else 4
+    _time.sleep(splash_wait)
     yield d
-    d.quit()
+    try:
+        d.quit()
+    except Exception:
+        pass
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)

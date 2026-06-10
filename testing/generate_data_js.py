@@ -262,11 +262,12 @@ APPIUM_DEF = [
 ]
 
 CI_WORKFLOWS_DEF = [
-    {"name": "Maestro Smoke",      "trigger": "Every push / PR",    "duration": "~10 min", "coverage": "Login, cart, checkout",                 "passRate": 0, "runs": 0},
-    {"name": "Maestro Regression", "trigger": "Nightly 01:00 UTC",  "duration": "~30 min", "coverage": "All 16 flows",                          "passRate": 0, "runs": 0},
-    {"name": "Appium Deep Tests",  "trigger": "Every Monday",       "duration": "~60 min", "coverage": "Payment, gift, subscriptions, account", "passRate": 0, "runs": 0},
-    {"name": "Maestro iOS",        "trigger": "Every Tuesday 03:00 UTC", "duration": "~30 min", "coverage": "Smoke on iOS Simulator",                "passRate": 0, "runs": 0},
-    {"name": "Publish Report",     "trigger": "After any test run", "duration": "~3 min",  "coverage": "Deploys to GitHub Pages",               "passRate": 0, "runs": 0},
+    {"name": "Maestro Smoke",          "trigger": "Every push / PR",         "duration": "~10 min", "coverage": "Login, cart, checkout",                 "passRate": 0, "runs": 0},
+    {"name": "Maestro Regression",     "trigger": "Nightly 01:00 UTC",       "duration": "~30 min", "coverage": "All 16 flows",                          "passRate": 0, "runs": 0},
+    {"name": "Appium Deep Tests",      "trigger": "Every Monday",            "duration": "~60 min", "coverage": "Payment, gift, subscriptions, account", "passRate": 0, "runs": 0},
+    {"name": "Maestro iOS",            "trigger": "Every Tuesday 03:00 UTC", "duration": "~30 min", "coverage": "Smoke flows on iOS Simulator",          "passRate": 0, "runs": 0},
+    {"name": "Appium iOS Deep Tests",  "trigger": "Daily 12:00 UTC",         "duration": "~90 min", "coverage": "Account suite — profile, logout, edit", "passRate": 0, "runs": 0},
+    {"name": "Publish Report",         "trigger": "After any test run",      "duration": "~3 min",  "coverage": "Deploys to GitHub Pages",               "passRate": 0, "runs": 0},
 ]
 
 # ─── XML helpers ──────────────────────────────────────────────────────────
@@ -649,20 +650,25 @@ def main():
                 ok    = sum(1 for s in appium_map.values() if s[0] == "pass")
                 row["passRate"] = round(ok / total * 100, 1) if total else 0
                 row["runs"] = 1
-        elif "iOS" in w["name"]:
-            ios_ran = bool(ios_flow_statuses) or bool(ios_appium_map)
-            ios_fail = (
-                any(s == "fail" for s in ios_flow_statuses.values())
-                or any(v[0] == "fail" for v in ios_appium_map.values())
-            )
-            row["status"] = ("fail" if ios_fail else "pass") if ios_ran else "idle"
-            if ios_ran:
-                ios_total = len(ios_flow_statuses) or len(ios_appium_map)
-                ios_ok = (
-                    sum(1 for s in ios_flow_statuses.values() if s == "pass")
-                    + sum(1 for v in ios_appium_map.values() if v[0] == "pass")
-                )
-                row["passRate"] = round(ios_ok / ios_total * 100, 1) if ios_total else 0
+        elif "Maestro iOS" in w["name"]:
+            # iOS Maestro flows only — separate from iOS Appium
+            ios_maestro_ran  = bool(ios_flow_statuses)
+            ios_maestro_fail = any(s == "fail" for s in ios_flow_statuses.values())
+            row["status"] = ("fail" if ios_maestro_fail else "pass") if ios_maestro_ran else "idle"
+            if ios_maestro_ran:
+                total = len(ios_flow_statuses)
+                ok    = sum(1 for s in ios_flow_statuses.values() if s == "pass")
+                row["passRate"] = round(ok / total * 100, 1) if total else 0
+                row["runs"] = 1
+        elif "Appium iOS" in w["name"]:
+            # iOS Appium deep tests — separate from iOS Maestro
+            ios_appium_ran  = bool(ios_appium_map)
+            ios_appium_fail = any(v[0] == "fail" for v in ios_appium_map.values())
+            row["status"] = ("fail" if ios_appium_fail else "pass") if ios_appium_ran else "idle"
+            if ios_appium_ran:
+                total = len(ios_appium_map)
+                ok    = sum(1 for v in ios_appium_map.values() if v[0] == "pass")
+                row["passRate"] = round(ok / total * 100, 1) if total else 0
                 row["runs"] = 1
         else:
             # Publish Report — ran if anything else ran

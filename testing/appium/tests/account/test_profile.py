@@ -117,4 +117,8 @@ class TestProfile:
         scroll_to_text(driver, "Billing History", max_scrolls=5)
         page.tap_optional("Billing History")
         wait_for_animation(driver, 2)
+        assert page.is_visible("Billing History") or \
+               page.is_visible("Orders") or \
+               page.is_visible("Invoices"), \
+            "Billing History page did not load or section is not accessible"
         screenshot(driver, "billing_history")

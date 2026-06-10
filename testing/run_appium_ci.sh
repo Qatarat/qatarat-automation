@@ -10,15 +10,24 @@ APPIUM_DIR="$SCRIPT_DIR/appium"
 REPORTS_DIR="$APPIUM_DIR/reports"
 ALLURE_DIR="$APPIUM_DIR/allure-results"
 MARKER="${1:-}"
+PLATFORM="${PLATFORM:-android}"
 
 mkdir -p "$REPORTS_DIR/screenshots" "$ALLURE_DIR"
 
 cd "$APPIUM_DIR"
 
+# iOS simulator is slower than Android emulator — use shorter per-test timeout
+# to fail fast on hangs rather than holding the runner for 5 minutes per stuck test.
+if [ "$PLATFORM" = "ios" ]; then
+  PER_TEST_TIMEOUT=120
+else
+  PER_TEST_TIMEOUT=300
+fi
+
 PYTEST_ARGS=(
   tests/
   -v
-  --timeout=300
+  --timeout="$PER_TEST_TIMEOUT"
   --timeout-method=signal
   --html="$REPORTS_DIR/report.html"
   --self-contained-html
@@ -29,10 +38,10 @@ PYTEST_ARGS=(
 )
 
 if [ -n "$MARKER" ]; then
-  echo "Running Appium tests with marker: $MARKER"
+  echo "Running Appium tests with marker: $MARKER (platform: $PLATFORM)"
   python3 -m pytest "${PYTEST_ARGS[@]}" -m "$MARKER"
 else
-  echo "Running full Appium test suite"
+  echo "Running full Appium test suite (platform: $PLATFORM)"
   python3 -m pytest "${PYTEST_ARGS[@]}"
 fi
 

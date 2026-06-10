@@ -11,6 +11,10 @@ on:
         description: "iOS simulator version"
         required: false
         default: "17.0"
+      record_video:
+        description: "Record screen video (true/false) — disabled by default to prevent OOM"
+        required: false
+        default: "false"
   schedule:
     - cron: "0 12 * * *"  # Daily 12:00 UTC = 6:00 PM BDT (UTC+6)
 
@@ -81,30 +85,46 @@ jobs:
       - name: Boot Simulator and install app
         run: bash testing/ios_ci_setup.sh qatarat-stage-ios.ipa
 
-      - name: Start iOS screen recording
+      - name: Log system resources before tests
+        run: |
+          echo "=== Memory ===" && vm_stat | head -20
+          echo "=== Disk ===" && df -h /
+          echo "=== Processes ===" && top -l 1 -n 15 -o mem 2>/dev/null | head -25 || true
+
+      - name: Start iOS screen recording (optional)
+        if: ${{ github.event.inputs.record_video == 'true' }}
         run: |
           mkdir -p testing/appium/reports
           xcrun simctl io "$SIM_ID" recordVideo \
             testing/appium/reports/ios-appium-raw.mp4 \
             --codec h264 &
           echo $! > /tmp/ios_rec_pid
+          echo "Screen recording started (PID $(cat /tmp/ios_rec_pid))"
 
       - name: Start Appium server
         run: |
-          appium --port 4723 --log /tmp/appium-ios.log &
-          for i in $(seq 1 20); do
+          # Raise file descriptor limit — prevents EMFILE errors under heavy test load
+          ulimit -n 65536 || true
+          appium --port 4723 \
+            --log /tmp/appium-ios.log \
+            --log-level warn \
+            --relaxed-security &
+          for i in $(seq 1 30); do
             sleep 2
             if curl -sf http://localhost:4723/status | python3 -c \
               "import sys,json; d=json.load(sys.stdin); exit(0 if d.get('value',{}).get('ready') else 1)" 2>/dev/null; then
-              echo "Appium ready"
+              echo "✅ Appium ready after $((i*2))s"
               exit 0
             fi
-            echo "Waiting for Appium... ($i/20)"
+            echo "Waiting for Appium... ($i/30)"
           done
-          echo "::error::Appium failed to start"
+          echo "::error::Appium failed to start within 60s"
+          cat /tmp/appium-ios.log | tail -30
           exit 1
 
       - name: Run Appium Tests (iOS Simulator)
+        id: run_tests
+        timeout-minutes: ${{ github.event.inputs.marker == '' && 150 || 120 }}
         env:
           PLATFORM: ios
           DEVICE_MODE: simulator
@@ -114,9 +134,19 @@ jobs:
           IOS_APP_PATH: ${{ env.IOS_APP_PATH }}
           IOS_SIM_COMPATIBLE: ${{ env.IOS_SIM_COMPATIBLE }}
           APPIUM_SERVER: http://localhost:4723
-          # Default to account suite — full suite needs Android-ported page objects
           TEST_MARKER: ${{ github.event.inputs.marker || 'account' }}
-        run: bash testing/run_appium_ci.sh "$TEST_MARKER"
+          # Static OTP used by test backend (same as Android CI)
+          TEST_OTP: "1234"
+        run: |
+          # Raise file descriptor limit for the test process
+          ulimit -n 65536 || true
+          bash testing/run_appium_ci.sh "$TEST_MARKER"
+
+      - name: Log system resources after tests
+        if: always()
+        run: |
+          echo "=== Memory after tests ===" && vm_stat | head -20 || true
+          echo "=== Disk after tests ===" && df -h / || true
 
       - name: Stop and compress iOS recording
         if: always()
@@ -148,15 +178,45 @@ jobs:
               exit(0)
           root = ET.parse(f).getroot()
           total = passed = failed = skipped = 0
+          rows = ""
           for tc in root.iter("testcase"):
               total += 1
-              if tc.find("failure") is not None or tc.find("error") is not None: failed += 1
-              elif tc.find("skipped") is not None: skipped += 1
-              else: passed += 1
+              name = tc.get("name", "")
+              classname = tc.get("classname", "").split(".")[-1]
+              if tc.find("failure") is not None or tc.find("error") is not None:
+                  failed += 1; icon = "❌"
+                  reason = ""
+                  el = tc.find("failure") or tc.find("error")
+                  if el is not None:
+                      reason = (el.get("message") or "")[:120].replace("|", "\\|")
+                  rows += f"| {icon} | `{classname}` | {name} | {reason} |\n"
+              elif tc.find("skipped") is not None:
+                  skipped += 1; icon = "⏭️"
+                  el = tc.find("skipped")
+                  reason = (el.get("message") or "")[:80].replace("|", "\\|") if el is not None else ""
+                  rows += f"| {icon} | `{classname}` | {name} | {reason} |\n"
+              else:
+                  passed += 1; icon = "✅"
+                  rows += f"| {icon} | `{classname}` | {name} |  |\n"
           pct = int(passed/total*100) if total else 0
-          summary = f"## 🍎 Appium iOS — {passed}/{total} passed ({pct}%)\n"
+          bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
+          summary = f"""## 🍎 Appium iOS — {passed}/{total} passed ({pct}%)
+          {bar}
+
+          | Metric | Value |
+          |--------|-------|
+          | ✅ Passed  | {passed} |
+          | ❌ Failed  | {failed} |
+          | ⏭️ Skipped | {skipped} |
+          | 📊 Total   | {total} |
+          | 📈 Pass rate | {pct}% |
+
+          ### Test Details
+          | Status | Suite | Test | Reason |
+          |--------|-------|------|--------|
+          {rows}"""
           with open(os.environ.get("GITHUB_STEP_SUMMARY",""), "a") as fh:
-              fh.write(summary)
+              fh.write(textwrap.dedent(summary))
           PYEOF
 
       - name: Upload Allure results
@@ -174,6 +234,15 @@ jobs:
         with:
           name: appium-ios-junit-${{ github.run_number }}
           path: testing/appium/reports/results.xml
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appium-ios-html-report-${{ github.run_number }}
+          path: testing/appium/reports/report.html
           retention-days: 30
           if-no-files-found: warn
 
@@ -196,7 +265,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload iOS Appium recording
-        if: always()
+        if: ${{ github.event.inputs.record_video == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ios-appium-recording-${{ github.run_number }}

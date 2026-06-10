@@ -67,6 +67,9 @@ def find_by_text(driver, text, timeout=10):
             (AppiumBy.XPATH, f'//XCUIElementTypeButton[@name="{text}"]'),
             (AppiumBy.XPATH, f'//XCUIElementTypeStaticText[@name="{text}"]'),
         ]
+        # Each strategy gets at least 2s — iOS CI simulators are significantly slower
+        # than local Macs; 1s (the old value) caused false negatives on every strategy.
+        per_strategy = max(2, min(4, timeout // max(1, len(strategies) // 3)))
     else:
         strategies = [
             (AppiumBy.XPATH, f'//*[@content-desc="{text}"]'),
@@ -75,8 +78,8 @@ def find_by_text(driver, text, timeout=10):
             (AppiumBy.XPATH, f'//*[contains(@content-desc,"{text}")]'),
             (AppiumBy.XPATH, f'//*[contains(@text,"{text}")]'),
         ]
-    n = len(strategies)
-    per_strategy = max(1, min(3, timeout // n))
+        per_strategy = max(1, min(3, timeout // len(strategies)))
+
     deadline = time.time() + timeout
     for by, val in strategies:
         if time.time() >= deadline:
@@ -89,6 +92,31 @@ def find_by_text(driver, text, timeout=10):
         except (TimeoutException, NoSuchElementException):
             continue
     raise NoSuchElementException(f"Could not find element with text: {text}")
+
+
+def clear_and_type(driver, element, text: str) -> None:
+    """Clear a text field and type new text — handles iOS quirks.
+
+    On iOS, element.clear() can leave stale cursor state or silently fail.
+    This function verifies the clear worked and falls back to mobile: clearText.
+    """
+    element.click()
+    time.sleep(0.3)
+    if is_ios():
+        element.clear()
+        time.sleep(0.2)
+        current = element.get_attribute("value") or ""
+        if current:
+            try:
+                driver.execute_script("mobile: clearText", {"element": element.id})
+                time.sleep(0.2)
+            except Exception:
+                pass
+    else:
+        element.clear()
+    if text:
+        element.send_keys(text)
+        time.sleep(0.1)
 
 
 def screenshot(driver, name):
@@ -109,10 +137,17 @@ def scroll_to_text(driver, text, direction="down", max_scrolls=10):
         except NoSuchElementException:
             size = driver.get_window_size()
             w, h = size["width"], size["height"]
-            if direction == "down":
-                driver.swipe(w // 2, int(h * 0.7), w // 2, int(h * 0.3), 600)
+            if is_ios():
+                # Stay within safe scroll zone — avoid triggering home indicator / control center
+                start_y = int(h * 0.65)
+                end_y = int(h * 0.35)
             else:
-                driver.swipe(w // 2, int(h * 0.3), w // 2, int(h * 0.7), 600)
+                start_y = int(h * 0.7)
+                end_y = int(h * 0.3)
+            if direction == "down":
+                driver.swipe(w // 2, start_y, w // 2, end_y, 800)
+            else:
+                driver.swipe(w // 2, end_y, w // 2, start_y, 800)
     raise NoSuchElementException(f"Could not scroll to: {text}")
 
 

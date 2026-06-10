@@ -21,11 +21,22 @@ IOS_CAPS = {
     "appium:automationName": "XCUITest",
     "appium:bundleId": "com.qatarat.app",
     "appium:noReset": False,
-    "appium:newCommandTimeout": 120,
+    # Match Android's 300s — prevents "New Command Timeout" mid-test on slow CI runners
+    "appium:newCommandTimeout": 300,
     "appium:autoAcceptAlerts": True,
     "appium:retryBackoffTime": 500,
     "appium:maxRetryCount": 3,
     "appium:forceSimulatorSoftwareKeyboardPresence": True,
+    # Ensure software keyboard (never hardware) — critical for send_keys on simulator
+    "appium:connectHardwareKeyboard": False,
+    # Clean up WDA artifacts between sessions; prevents stale XCUITest state
+    "appium:clearSystemFiles": True,
+    # Disable system animations — speeds up element detection, reduces flakiness
+    "appium:reduceMotion": True,
+    # Lower screenshot quality reduces per-screenshot memory pressure on CI
+    "appium:screenshotQuality": 2,
+    # Suppress Xcode compilation logs from Appium output
+    "appium:showXcodeLog": False,
 }
 
 # ── Simulator (default for local dev + CI) ────────────────────────────────────
@@ -36,10 +47,15 @@ IOS_SIMULATOR_CAPS = {
     "appium:platformVersion": os.environ.get("IOS_VERSION", "17.5"),
     "appium:app": os.environ.get("IOS_APP_PATH", _APP_BUNDLE),
     **({"appium:udid": _sim_id} if _sim_id else {}),
-    "appium:simulatorStartupTimeout": 180000,
-    "appium:wdaLaunchTimeout": 120000,
-    "appium:wdaConnectionTimeout": 120000,
-    "appium:usePreinstalledWDA": False,
+    # Extended timeouts for macOS CI runners (macos-14 is slower than local Mac)
+    "appium:simulatorStartupTimeout": 300000,   # 5 min (was 3 min)
+    "appium:wdaLaunchTimeout": 180000,          # 3 min (was 2 min)
+    "appium:wdaConnectionTimeout": 180000,      # 3 min (was 2 min)
+    # Reuse WDA after first install — saves 30–60s per session on subsequent tests
+    "appium:usePreinstalledWDA": True,
+    # Prevent slow Safari/webview context enumeration on every session
+    "appium:includeSafariInWebviews": False,
+    "appium:fullContextList": False,
 }
 
 # ── Real device ───────────────────────────────────────────────────────────────

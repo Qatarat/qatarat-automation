@@ -252,6 +252,17 @@ jobs:
           merge-multiple: true
         continue-on-error: true
 
+      - name: Download Appium iOS Allure results
+        if: steps.appium-ios-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.appium-ios-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: allure-results/
+          pattern: "appium-ios-allure-*"
+          merge-multiple: true
+        continue-on-error: true
+
       - name: Download Appium iOS screenshots
         if: steps.appium-ios-run.outputs.id != ''
         uses: actions/download-artifact@v4
