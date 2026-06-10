@@ -1024,13 +1024,19 @@ var APPIUM_GROUPS = [
   {
     icon:'👤', color:'#e3b341', iconBg:'rgba(227,179,65,.15)',
     title:'Account, Profile & Live', file:'account/ + streaming/', tests:[
-      {name:'test_profile_currency_change',tags:['happy','profile'],status:'pass'},
-      {name:'test_profile_about_page',tags:['happy','profile'],status:'pass'},
-      {name:'test_profile_logout_dialog',tags:['happy','profile'],status:'pass'},
-      {name:'test_profile_delete_account',tags:['happy','profile'],status:'pass'},
-      {name:'test_profile_billing_history',tags:['happy','profile'],status:'pass'},
-      {name:'test_profile_sql_help_search',tags:['security','profile'],status:'pass'},
-      {name:'test_profile_empty_search',tags:['negative','profile'],status:'pass'},
+      {name:'test_change_currency_accessible',tags:['happy','profile'],status:'pass'},
+      {name:'test_about_page_loads',tags:['happy','profile'],status:'pass'},
+      {name:'test_logout_confirmation_dialog',tags:['happy','profile'],status:'pass'},
+      {name:'test_delete_account_has_confirmation',tags:['happy','profile'],status:'pass'},
+      {name:'test_help_support_contact_options',tags:['happy','profile'],status:'pass'},
+      {name:'test_billing_history_accessible',tags:['happy','profile'],status:'pass'},
+      {name:'test_logout_cancel_stays_logged_in',tags:['negative','account'],status:'pass'},
+      {name:'test_delete_account_cancel_stays_active',tags:['negative','account'],status:'pass'},
+      {name:'test_currency_list_loads_without_error',tags:['negative','profile'],status:'pass'},
+      {name:'test_about_page_has_app_info',tags:['happy','profile'],status:'pass'},
+      {name:'test_help_support_contact_options_visible',tags:['happy','profile'],status:'pass'},
+      {name:'test_help_search_no_results_shows_empty_state',tags:['negative','profile'],status:'pass'},
+      {name:'test_help_search_sql_injection_is_safe',tags:['security','profile'],status:'pass'},
       {name:'test_logout_happy_path',tags:['happy','account'],status:'pass'},
       {name:'test_logout_cancel_dialog',tags:['happy','account'],status:'pass'},
       {name:'test_logout_state_cleared',tags:['happy','account'],status:'pass'},
@@ -1976,9 +1982,10 @@ function renderAppiumIOS(){
   var sbIos=document.getElementById('sb-ios-status');
   var iosDot=document.getElementById('sb-ios-dot');
 
-  // Always update Android counters
-  if(andEl){andEl.textContent=andPass+'/191';andEl.style.color='var(--green)';}
-  if(sbAnd) sbAnd.textContent=andPass+'/191';
+  // Always update Android counters (compute total dynamically — avoids stale hardcoded count)
+  var andTotalTests=APPIUM_GROUPS.reduce(function(acc,g){return acc+g.tests.length;},0);
+  if(andEl){andEl.textContent=andPass+'/'+andTotalTests;andEl.style.color='var(--green)';}
+  if(sbAnd) sbAnd.textContent=andPass+'/'+andTotalTests;
 
   if(!window.QATARAT_LIVE){
     if(iosEl){iosEl.textContent='Pending';iosEl.style.color='var(--text3)';}
@@ -2014,30 +2021,36 @@ function renderAppiumIOS(){
   var iosHasData=live.iosTestResults&&Object.keys(live.iosTestResults).length>0;
   var iosPassLive=iosHasData?(window.IOS_APPIUM_GROUPS||[]).reduce(function(acc,g){return acc+g.tests.filter(function(t){return t.status==='pass';}).length;},0):null;
   var iosMaestroRan=live.iosMaestroStatuses&&Object.keys(live.iosMaestroStatuses).length>0;
-  if(iosEl&&iosPassLive!==null){iosEl.textContent=iosPassLive+'/191';iosEl.style.color='var(--green)';}
-  else if(iosEl&&iosMaestroRan){
-    var iosMPass=Object.values(live.iosMaestroStatuses).filter(function(s){return s==='pass';}).length;
-    var iosMFail=Object.values(live.iosMaestroStatuses).filter(function(s){return s==='fail';}).length;
-    var iosTotal=Object.keys(live.iosMaestroStatuses).length;
-    iosEl.textContent=iosMPass+'/'+iosTotal+' Maestro flows';
+  var iosTotalTests=(window.IOS_APPIUM_GROUPS||[]).reduce(function(acc,g){return acc+g.tests.length;},0)||andTotalTests;
+  var iosAppiumHasFail=iosPassLive!==null&&(window.IOS_APPIUM_GROUPS||[]).some(function(g){return g.tests.some(function(t){return t.status==='fail';});});
+  if(iosEl&&iosPassLive!==null){
+    iosEl.textContent=iosPassLive+'/'+iosTotalTests;
+    iosEl.style.color=iosAppiumHasFail?'var(--red)':'var(--green)';
+  } else if(iosEl&&iosMaestroRan){
+    var iosMPass=Object.values(live.iosMaestroStatuses||{}).filter(function(s){return s==='pass';}).length;
+    var iosMFail=Object.values(live.iosMaestroStatuses||{}).filter(function(s){return s==='fail';}).length;
+    var iosMTotal=Object.keys(live.iosMaestroStatuses||{}).length;
+    iosEl.textContent=iosMPass+'/'+iosMTotal+' Maestro flows';
     iosEl.style.color=iosMFail>0?'var(--red)':'var(--green)';
   }
-  if(sbIos&&iosPassLive!==null){sbIos.textContent=iosPassLive+'/191';}
-  else if(sbIos&&iosMaestroRan){
-    var iosMF=Object.values(live.iosMaestroStatuses).filter(function(s){return s==='fail';}).length;
-    sbIos.textContent=iosMF>0?'CI ran — app launch failed':'Smoke passed';
+  if(sbIos&&iosPassLive!==null){
+    sbIos.textContent=iosPassLive+'/'+iosTotalTests+(iosAppiumHasFail?' ⚠':'');
+  } else if(sbIos&&iosMaestroRan){
+    var iosMF=Object.values(live.iosMaestroStatuses||{}).filter(function(s){return s==='fail';}).length;
+    sbIos.textContent=iosMF>0?'CI ran — failures':'Smoke passed';
   }
   if(iosDot&&(iosPassLive!==null||iosMaestroRan)){
-    var iosMHasFail=iosMaestroRan&&Object.values(live.iosMaestroStatuses).some(function(s){return s==='fail';});
-    iosDot.className='status-dot '+(iosMHasFail?'fail':'pass');
+    var iosMHasFail=iosMaestroRan&&Object.values(live.iosMaestroStatuses||{}).some(function(s){return s==='fail';});
+    iosDot.className='status-dot '+((iosMHasFail||iosAppiumHasFail)?'fail':'pass');
   } else if(iosDot) {
     iosDot.className='status-dot idle';
   }
-  if(iosEl&&!iosPassLive&&!iosMaestroRan){
+  // Use strict null check — !0 is truthy, which wrongly shows "Pending" when 0 tests pass
+  if(iosEl&&iosPassLive===null&&!iosMaestroRan){
     iosEl.textContent='Pending';
     iosEl.style.color='var(--text3)';
   }
-  if(sbIos&&!iosPassLive&&!iosMaestroRan){
+  if(sbIos&&iosPassLive===null&&!iosMaestroRan){
     sbIos.textContent='Awaiting iOS CI';
   }
 })();

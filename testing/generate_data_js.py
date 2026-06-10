@@ -116,11 +116,12 @@ APPIUM_DEF = [
         {"name": "test_permission_handling",    "dur": 13.8},
     ]},
     {"file": "test_profile.py",       "group": "Account",  "icon": "user",   "tests": [
-        {"name": "test_currency_switch", "dur": 7.1},
-        {"name": "test_about_page",      "dur": 4.4},
-        {"name": "test_logout_dialog",   "dur": 5.8},
-        {"name": "test_delete_account",  "dur": 9.3},
-        {"name": "test_billing_history", "dur": 6.9},
+        {"name": "test_change_currency_accessible",     "dur": 7.1},
+        {"name": "test_about_page_loads",               "dur": 4.4},
+        {"name": "test_logout_confirmation_dialog",     "dur": 5.8},
+        {"name": "test_delete_account_has_confirmation","dur": 9.3},
+        {"name": "test_help_support_contact_options",   "dur": 5.2},
+        {"name": "test_billing_history_accessible",     "dur": 6.9},
     ]},
     {"file": "test_payment_negative.py", "group": "Payment",  "icon": "shield", "tests": [
         {"name": "test_short_card_number_shows_error",       "dur": 8.2},
