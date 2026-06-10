@@ -97,12 +97,15 @@ def find_by_text(driver, text, timeout=10):
 def clear_and_type(driver, element, text: str) -> None:
     """Clear a text field and type new text — handles iOS quirks.
 
-    On iOS, element.clear() can leave stale cursor state or silently fail.
-    This function verifies the clear worked and falls back to mobile: clearText.
+    Android: plain clear() + send_keys() — matches original behaviour.
+      Adding element.click() on Android can defocus the field when the keyboard
+      is mid-animation, causing send_keys to drop special characters (< > ' Arabic emoji).
+
+    iOS: tap to focus, verify clear() worked, fall back to mobile: clearText if stale.
     """
-    element.click()
-    time.sleep(0.3)
     if is_ios():
+        element.click()
+        time.sleep(0.3)
         element.clear()
         time.sleep(0.2)
         current = element.get_attribute("value") or ""
@@ -116,7 +119,6 @@ def clear_and_type(driver, element, text: str) -> None:
         element.clear()
     if text:
         element.send_keys(text)
-        time.sleep(0.1)
 
 
 def screenshot(driver, name):

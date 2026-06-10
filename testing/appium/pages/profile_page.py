@@ -4,6 +4,7 @@ from utils.helpers import (
     wait_for_animation,
     text_field_xpath,
     find_elements_by_label,
+    find_by_text,
     clear_and_type,
     is_ios,
 )
@@ -28,15 +29,20 @@ class ProfilePage(BasePage):
     ]
 
     def navigate_to_profile(self):
-        # Try each candidate tab label; stop as soon as one is found and tapped
-        for label in self._PROFILE_TAB_LABELS:
-            if self.is_visible(label, timeout=2):
+        if is_ios():
+            # iOS: find first visible label from the extended set (includes Arabic variants)
+            for label in self._PROFILE_TAB_LABELS:
+                if self.is_visible(label, timeout=2):
+                    self.tap_optional(label, timeout=3)
+                    wait_for_animation(self.driver, 1)
+                    return self
+            # None quickly visible — fall back to trying all labels
+            for label in self._PROFILE_TAB_LABELS:
                 self.tap_optional(label, timeout=3)
-                wait_for_animation(self.driver, 1)
-                return self
-        # None quickly visible — fall back to trying all labels
-        for label in self._PROFILE_TAB_LABELS:
-            self.tap_optional(label, timeout=3)
+        else:
+            # Android: tap Profile tab then the Account sub-section (original behaviour)
+            self.tap_optional("Profile")
+            self.tap_optional("Account")
         wait_for_animation(self.driver)
         return self
 
@@ -119,13 +125,18 @@ class ProfilePage(BasePage):
         return self
 
     def confirm_logout(self):
+        # Brief pause so the confirmation dialog finishes its opening animation
         wait_for_animation(self.driver, 0.5)
+        # Use find_by_text (has timeout) — not find_elements_by_label (instant).
+        # The dialog may not have rendered yet; instant lookup returns [] and skips it.
         for label in self._CONFIRM_LOGOUT_LABELS:
-            els = find_elements_by_label(self.driver, label)
-            if els:
-                els[0].click()
+            try:
+                el = find_by_text(self.driver, label, timeout=3)
+                el.click()
                 wait_for_animation(self.driver, 2)
                 return self
+            except Exception:
+                continue
         wait_for_animation(self.driver, 2)
         return self
 
