@@ -122,6 +122,63 @@ jobs:
           cat /tmp/appium-ios.log | tail -30
           exit 1
 
+      - name: Pre-warm WebDriverAgent (compile + launch WDA before tests)
+        timeout-minutes: 12
+        env:
+          PLATFORM: ios
+          DEVICE_MODE: simulator
+          SIM_ID: ${{ env.SIM_ID }}
+          IOS_APP_PATH: ${{ env.IOS_APP_PATH }}
+          IOS_VERSION: ${{ github.event.inputs.ios_version || '17.0' }}
+          IOS_SIM_NAME: ${{ env.SIM_NAME }}
+          APPIUM_SERVER: http://localhost:4723
+        run: |
+          # Create one Appium session that forces XCUITest to compile and install
+          # WebDriverAgent on the simulator (takes 3-5 min cold). All subsequent
+          # pytest sessions (useNewWDA: False) reuse the running WDA instance
+          # and create in <10s instead of timing out at 120s.
+          python3 - <<'PYEOF'
+          import os, sys, time
+          sys.path.insert(0, 'testing/appium')
+
+          try:
+              from appium.options import AppiumOptions
+          except ImportError:
+              try:
+                  from appium.options.common.base import AppiumOptions
+              except ImportError:
+                  from appium.options.android.uiautomator2.base import UiAutomator2Options as AppiumOptions
+
+          from appium import webdriver
+          from capabilities.ios_caps import IOS_SIMULATOR_CAPS
+
+          APPIUM_SERVER = os.environ.get("APPIUM_SERVER", "http://localhost:4723")
+
+          caps = dict(IOS_SIMULATOR_CAPS)
+          caps["appium:wdaLaunchTimeout"]       = 600000  # 10 min — enough for first build
+          caps["appium:simulatorStartupTimeout"] = 60000  # sim already booted
+          caps["appium:newCommandTimeout"]       = 60     # quit quickly after connect
+
+          try:
+              opts = AppiumOptions()
+              opts.load_capabilities(caps)
+          except Exception:
+              opts = AppiumOptions()
+              for k, v in caps.items():
+                  opts.set_capability(k, v)
+
+          print("Pre-warming WDA — first session compiles WebDriverAgent (~3-5 min)...")
+          t0 = time.time()
+          try:
+              d = webdriver.Remote(APPIUM_SERVER, options=opts)
+              print(f"WDA session ready in {time.time()-t0:.0f}s — quitting warmup session")
+              d.quit()
+              print("WDA pre-warm complete ✅")
+          except Exception as e:
+              print(f"WDA pre-warm failed after {time.time()-t0:.0f}s: {e}")
+              print("Continuing — pytest will attempt sessions anyway")
+          PYEOF
+
       - name: Run Appium Tests (iOS Simulator)
         id: run_tests
         timeout-minutes: ${{ github.event.inputs.marker == '' && 150 || 120 }}

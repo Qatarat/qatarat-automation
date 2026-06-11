@@ -16,10 +16,11 @@ mkdir -p "$REPORTS_DIR/screenshots" "$ALLURE_DIR"
 
 cd "$APPIUM_DIR"
 
-# iOS simulator is slower than Android emulator — use shorter per-test timeout
-# to fail fast on hangs rather than holding the runner for 5 minutes per stuck test.
+# iOS: 300s per test — WDA pre-warm runs before this script so cold-start is
+# already done, but the login flow itself can take 60-90s on a slow simulator.
+# 120s was too short (tests timed out during login). Android: 300s unchanged.
 if [ "$PLATFORM" = "ios" ]; then
-  PER_TEST_TIMEOUT=120
+  PER_TEST_TIMEOUT=300
 else
   PER_TEST_TIMEOUT=300
 fi

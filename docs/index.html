@@ -2021,10 +2021,16 @@ function renderAppiumIOS(){
   var iosHasData=live.iosTestResults&&Object.keys(live.iosTestResults).length>0;
   var iosPassLive=iosHasData?(window.IOS_APPIUM_GROUPS||[]).reduce(function(acc,g){return acc+g.tests.filter(function(t){return t.status==='pass';}).length;},0):null;
   var iosMaestroRan=live.iosMaestroStatuses&&Object.keys(live.iosMaestroStatuses).length>0;
-  var iosTotalTests=(window.IOS_APPIUM_GROUPS||[]).reduce(function(acc,g){return acc+g.tests.length;},0)||andTotalTests;
-  var iosAppiumHasFail=iosPassLive!==null&&(window.IOS_APPIUM_GROUPS||[]).some(function(g){return g.tests.some(function(t){return t.status==='fail';});});
+  // Use actual ran count (keys in iosTestResults) so counter shows "X/27" when
+  // account suite ran, not "X/197" (which implies all groups were tested).
+  var iosTestsRan=live.iosTestResults?Object.keys(live.iosTestResults).length:0;
+  var iosTotalDisplay=iosTestsRan||((window.IOS_APPIUM_GROUPS||[]).reduce(function(acc,g){return acc+g.tests.length;},0)||andTotalTests);
+  // Recompute pass count from raw iosTestResults (not IOS_APPIUM_GROUPS which has idle entries)
+  var iosPassActual=iosHasData?Object.values(live.iosTestResults).filter(function(i){return (typeof i==='object'?i.status:i)==='pass';}).length:null;
+  if(iosPassActual!==null)iosPassLive=iosPassActual;
+  var iosAppiumHasFail=iosPassLive!==null&&Object.values(live.iosTestResults||{}).some(function(i){return (typeof i==='object'?i.status:i)==='fail';});
   if(iosEl&&iosPassLive!==null){
-    iosEl.textContent=iosPassLive+'/'+iosTotalTests;
+    iosEl.textContent=iosPassLive+'/'+iosTotalDisplay+(iosTestsRan&&iosTestsRan<andTotalTests?' (account suite)':'');
     iosEl.style.color=iosAppiumHasFail?'var(--red)':'var(--green)';
   } else if(iosEl&&iosMaestroRan){
     var iosMPass=Object.values(live.iosMaestroStatuses||{}).filter(function(s){return s==='pass';}).length;
@@ -2034,7 +2040,7 @@ function renderAppiumIOS(){
     iosEl.style.color=iosMFail>0?'var(--red)':'var(--green)';
   }
   if(sbIos&&iosPassLive!==null){
-    sbIos.textContent=iosPassLive+'/'+iosTotalTests+(iosAppiumHasFail?' ⚠':'');
+    sbIos.textContent=iosPassLive+'/'+iosTotalDisplay+(iosAppiumHasFail?' ⚠':'');
   } else if(sbIos&&iosMaestroRan){
     var iosMF=Object.values(live.iosMaestroStatuses||{}).filter(function(s){return s==='fail';}).length;
     sbIos.textContent=iosMF>0?'CI ran — failures':'Smoke passed';
