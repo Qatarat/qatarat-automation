@@ -16,11 +16,11 @@ mkdir -p "$REPORTS_DIR/screenshots" "$ALLURE_DIR"
 
 cd "$APPIUM_DIR"
 
-# iOS: 300s per test — WDA pre-warm runs before this script so cold-start is
-# already done, but the login flow itself can take 60-90s on a slow simulator.
-# 120s was too short (tests timed out during login). Android: 300s unchanged.
+# iOS: 420s per test — login flow on slow CI simulator takes ~260s (multi-strategy
+# element search + OTP round-trip + navigation). 300s was too tight.
+# Android: 300s unchanged.
 if [ "$PLATFORM" = "ios" ]; then
-  PER_TEST_TIMEOUT=300
+  PER_TEST_TIMEOUT=420
 else
   PER_TEST_TIMEOUT=300
 fi

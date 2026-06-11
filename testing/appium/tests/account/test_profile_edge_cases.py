@@ -14,9 +14,7 @@ class TestProfileEdgeCases:
 
     def _login_and_open_profile(self, driver):
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
 
         base = BasePage(driver)
         base.tap_optional("Profile")
@@ -91,9 +89,7 @@ class TestProfileEdgeCases:
     def test_help_support_contact_options_visible(self, driver):
         """Help & Support must show at least one contact option."""
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
 
         base = BasePage(driver)
         base.tap_optional("How can we help?")
@@ -111,9 +107,7 @@ class TestProfileEdgeCases:
     def test_help_search_no_results_shows_empty_state(self, driver):
         """Searching help with a nonsense term must show an empty state, not crash."""
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
 
         base = BasePage(driver)
         base.tap_optional("How can we help?")
@@ -133,9 +127,7 @@ class TestProfileEdgeCases:
     def test_help_search_sql_injection_is_safe(self, driver):
         """SQL injection in help search must not produce a database error."""
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
 
         base = BasePage(driver)
         base.tap_optional("How can we help?")

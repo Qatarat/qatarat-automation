@@ -334,7 +334,9 @@ class LoginPage(BasePage):
 
         # Short-circuit if already on home screen (persisted login token)
         self._dismiss_system_dialogs()
-        if self._is_already_logged_in(timeout=4):
+        # timeout=2: home indicators appear immediately if logged in; saves 24s/test
+        # on iOS CI where 8 indicators × 4s = 32s was wasted after noReset=False
+        if self._is_already_logged_in(timeout=2):
             return self
 
         self._switch_to_english()

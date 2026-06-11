@@ -14,9 +14,7 @@ class TestLogout:
 
     def _login(self, driver):
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
         return ProfilePage(driver)
 
     @allure.story("Happy Path")

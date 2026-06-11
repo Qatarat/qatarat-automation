@@ -14,9 +14,7 @@ class TestProfile:
     @allure.title("Change currency option is accessible")
     def test_change_currency_accessible(self, driver):
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
 
         page = BasePage(driver)
         page.tap_optional("Profile")
@@ -31,9 +29,7 @@ class TestProfile:
     @allure.title("About Qatarat page loads")
     def test_about_page_loads(self, driver):
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
 
         page = BasePage(driver)
         page.tap_optional("Profile")
@@ -49,9 +45,7 @@ class TestProfile:
     @allure.title("Logout confirmation dialog appears")
     def test_logout_confirmation_dialog(self, driver):
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
 
         page = BasePage(driver)
         page.tap_optional("Profile")
@@ -67,9 +61,7 @@ class TestProfile:
     @allure.title("Delete account option exists with confirmation")
     def test_delete_account_has_confirmation(self, driver):
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
 
         page = BasePage(driver)
         page.tap_optional("Profile")
@@ -87,9 +79,7 @@ class TestProfile:
     @allure.title("Help & Support page shows contact options")
     def test_help_support_contact_options(self, driver):
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
 
         page = BasePage(driver)
         page.tap_optional("How can we help?")
@@ -106,9 +96,7 @@ class TestProfile:
     @allure.title("Billing history is accessible")
     def test_billing_history_accessible(self, driver):
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
 
         page = BasePage(driver)
         page.tap_optional("Billing History")

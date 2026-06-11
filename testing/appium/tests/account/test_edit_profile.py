@@ -13,9 +13,7 @@ class TestEditProfile:
 
     def _login_and_open_edit(self, driver):
         login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        login.login()  # login() handles country/language + onboarding internally
         page = ProfilePage(driver)
         page.navigate_to_profile()
         page.tap_edit_profile()
