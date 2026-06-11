@@ -340,9 +340,11 @@ class LoginPage(BasePage):
 
         # Short-circuit if already on home screen (persisted login token)
         self._dismiss_system_dialogs()
-        # timeout=2: home indicators appear immediately if logged in; saves 24s/test
-        # on iOS CI where 8 indicators × 4s = 32s was wasted after noReset=False
-        if self._is_already_logged_in(timeout=2):
+        # timeout=4: gives the home screen 4s to render each indicator after app launch.
+        # Android noReset=True keeps login tokens; after force-stop + 8s splash_wait
+        # the home screen is usually loaded, so 4s/check finds "Cart" in first poll.
+        # iOS noReset=False always starts fresh so this always returns False quickly.
+        if self._is_already_logged_in(timeout=4):
             return self
 
         self._switch_to_english()

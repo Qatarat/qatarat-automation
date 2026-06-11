@@ -216,8 +216,11 @@ def driver():
     # find_element inside each poll waits the full implicit timeout before returning.
     # All timeout logic lives in find_by_text() which uses explicit WebDriverWait.
     d.implicitly_wait(0)
-    # iOS simulator needs longer than Android emulator to fully render app after launch
-    splash_wait = 7 if PLATFORM == "ios" else 4
+    # iOS: 7s for simulator to render app after WDA launch
+    # Android noReset=True: 8s for home screen to load after force-stop+relaunch
+    #   so _is_already_logged_in() finds "Cart" etc. on first poll instead of
+    #   triggering the full login flow unnecessarily
+    splash_wait = 7 if PLATFORM == "ios" else 8
     _time.sleep(splash_wait)
     yield d
     try:
