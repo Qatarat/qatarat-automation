@@ -116,6 +116,32 @@ class LoginPage(BasePage):
                 return self
         return self
 
+    def _advance_onboarding_screen(self):
+        """Tap through any blocking screen (country/language selection, splash, etc.).
+        Used as a fallback when the phone text field can't be found — tries known
+        labels first, then falls back to tapping the last visible XCUIElementTypeButton
+        (which is usually the action/proceed button on Flutter onboarding screens).
+        """
+        proceeded = False
+        for label in ["Saudi Arabia", "English", "Get Started", "Next", "Proceed",
+                      "Continue", "Start", "Skip", "Done", "OK",
+                      "ابدأ", "التالي", "متابعة", "تخطي"]:
+            els = find_elements_by_label(self.driver, label)
+            if els:
+                els[0].click()
+                wait_for_animation(self.driver, 1.5)
+                proceeded = True
+                break
+        if not proceeded and is_ios():
+            # Brute force: tap the last XCUIElementTypeButton (usually the action button)
+            try:
+                buttons = self.driver.find_elements(AppiumBy.XPATH, "//XCUIElementTypeButton")
+                if buttons:
+                    buttons[-1].click()
+                    wait_for_animation(self.driver, 1.5)
+            except Exception:
+                pass
+
     def enter_phone(self, phone):
         self._navigate_to_login_screen()
         wait_for_animation(self.driver, 1)
@@ -125,13 +151,23 @@ class LoginPage(BasePage):
             phone_local = phone[3:] if len(phone) > 3 else phone  # strip 880 prefix
         else:
             phone_local = phone
-        el = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located((AppiumBy.XPATH, text_field_xpath()))
-        )
-        el.click()
-        el.clear()
-        el.send_keys(phone_local)
-        return self
+        # Retry up to 3 times: if phone field not found, try to advance past blocking
+        # screens (country/language selection on iOS fresh install)
+        last_exc = None
+        for attempt in range(3):
+            try:
+                el = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((AppiumBy.XPATH, text_field_xpath()))
+                )
+                el.click()
+                el.clear()
+                el.send_keys(phone_local)
+                return self
+            except Exception as exc:
+                last_exc = exc
+                if attempt < 2:
+                    self._advance_onboarding_screen()
+        raise last_exc  # type: ignore
 
     def accept_terms(self):
         for label in ["By clicking continue", "بالضغط على متابعة"]:
@@ -340,11 +376,12 @@ class LoginPage(BasePage):
 
         # Short-circuit if already on home screen (persisted login token)
         self._dismiss_system_dialogs()
-        # timeout=4: gives the home screen 4s to render each indicator after app launch.
-        # Android noReset=True keeps login tokens; after force-stop + 8s splash_wait
-        # the home screen is usually loaded, so 4s/check finds "Cart" in first poll.
-        # iOS noReset=False always starts fresh so this always returns False quickly.
-        if self._is_already_logged_in(timeout=4):
+        # Android noReset=True: 4s/check × 8 indicators = 32s max.
+        #   After force-stop + 8s splash_wait, home screen loaded → finds "Cart" fast.
+        # iOS noReset=False: always fresh, never logged in → all 8 checks fail.
+        #   Use 2s on iOS to keep check overhead at 16s not 32s.
+        check_timeout = 2 if is_ios() else 4
+        if self._is_already_logged_in(timeout=check_timeout):
             return self
 
         self._switch_to_english()
