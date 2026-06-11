@@ -151,7 +151,7 @@ jobs:
           | Status | Test |
           |--------|------|
           {rows if rows else "| — | No results — check Maestro logs |\n"}"""
-          with open(os.environ.get("GITHUB_STEP_SUMMARY",""), "a") as fh:
+          with open(os.environ.get("GITHUB_STEP_SUMMARY") or "/dev/null", "a") as fh:
               fh.write(summary)
           EOF
 

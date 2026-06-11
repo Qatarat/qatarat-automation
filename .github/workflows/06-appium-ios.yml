@@ -230,7 +230,7 @@ jobs:
           import xml.etree.ElementTree as ET, os, pathlib, textwrap
           f = "testing/appium/reports/results.xml"
           if not pathlib.Path(f).exists():
-              with open(os.environ.get("GITHUB_STEP_SUMMARY",""), "a") as fh:
+              with open(os.environ.get("GITHUB_STEP_SUMMARY") or "/dev/null", "a") as fh:
                   fh.write("## 🍎 Appium iOS\n\n> No results file — check logs.\n")
               exit(0)
           root = ET.parse(f).getroot()
@@ -272,7 +272,7 @@ jobs:
           | Status | Suite | Test | Reason |
           |--------|-------|------|--------|
           {rows}"""
-          with open(os.environ.get("GITHUB_STEP_SUMMARY",""), "a") as fh:
+          with open(os.environ.get("GITHUB_STEP_SUMMARY") or "/dev/null", "a") as fh:
               fh.write(textwrap.dedent(summary))
           PYEOF
 
