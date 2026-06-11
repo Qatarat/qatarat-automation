@@ -84,6 +84,12 @@ class LoginPage(BasePage):
         self.tap_optional("Select your language")
         self.tap_optional(language)
         wait_for_animation(self.driver, 1)
+        # Some builds show a "Get Started" / "Next" / "Proceed" button after selection
+        # before showing the phone entry screen. Tap it if visible.
+        for label in ["Get Started", "Next", "Proceed", "Continue", "Start", "Let's Go",
+                      "ابدأ", "التالي", "متابعة"]:
+            self.tap_optional(label, timeout=2)
+        wait_for_animation(self.driver, 1)
         return self
 
     def _select_bangladesh_country_code(self):
@@ -119,7 +125,7 @@ class LoginPage(BasePage):
             phone_local = phone[3:] if len(phone) > 3 else phone  # strip 880 prefix
         else:
             phone_local = phone
-        el = WebDriverWait(self.driver, 20).until(
+        el = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located((AppiumBy.XPATH, text_field_xpath()))
         )
         el.click()

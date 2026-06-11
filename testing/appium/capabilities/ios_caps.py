@@ -61,6 +61,11 @@ IOS_SIMULATOR_CAPS = {
     # Prevent slow Safari/webview context enumeration on every session
     "appium:includeSafariInWebviews": False,
     "appium:fullContextList": False,
+    # Pre-set simulator language/locale so the app skips the country/language
+    # selection screen on first launch (otherwise app stays on that screen
+    # and the phone text field is never reachable)
+    "appium:language": "en",
+    "appium:locale": "en_US",
 }
 
 # ── Real device ───────────────────────────────────────────────────────────────

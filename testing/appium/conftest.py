@@ -253,13 +253,20 @@ def pytest_runtest_makereport(item, call):
         driver = item.funcargs.get("driver") or item.funcargs.get("driver_module")
         if driver:
             try:
-                png = driver.get_screenshot_as_png()
-                allure.attach(
-                    png,
-                    name=f"FAIL — {item.name}",
-                    attachment_type=allure.attachment_type.PNG,
-                )
+                # One screenshot — attach to Allure AND save to file.
+                # Two separate screenshot() calls each take ~25s on iOS simulator;
+                # reuse the same PNG bytes to avoid the duplicate overhead.
                 os.makedirs("reports/screenshots", exist_ok=True)
-                screenshot(driver, f"FAIL_{item.name}")
+                path = os.path.join(
+                    "reports/screenshots",
+                    f"FAIL_{item.name}_{int(__import__('time').time())}.png"
+                )
+                driver.save_screenshot(path)
+                with open(path, "rb") as fh:
+                    allure.attach(
+                        fh.read(),
+                        name=f"FAIL — {item.name}",
+                        attachment_type=allure.attachment_type.PNG,
+                    )
             except Exception:
                 pass
