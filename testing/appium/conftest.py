@@ -211,7 +211,11 @@ def driver():
     except Exception as exc:
         _ios_skip_if_infra_error(exc)
         raise
-    d.implicitly_wait(10)
+    # implicitly_wait=0: do NOT use implicit wait with WebDriverWait (Selenium anti-pattern).
+    # With implicit_wait=10, every WebDriverWait(2s) call actually takes 10s because
+    # find_element inside each poll waits the full implicit timeout before returning.
+    # All timeout logic lives in find_by_text() which uses explicit WebDriverWait.
+    d.implicitly_wait(0)
     # iOS simulator needs longer than Android emulator to fully render app after launch
     splash_wait = 7 if PLATFORM == "ios" else 4
     _time.sleep(splash_wait)
@@ -231,7 +235,7 @@ def driver_module():
     except Exception as exc:
         _ios_skip_if_infra_error(exc)
         raise
-    d.implicitly_wait(10)
+    d.implicitly_wait(0)  # see driver fixture comment — must be 0 to not break WebDriverWait
     splash_wait = 7 if PLATFORM == "ios" else 4
     _time.sleep(splash_wait)
     yield d
