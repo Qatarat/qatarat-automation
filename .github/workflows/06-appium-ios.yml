@@ -181,7 +181,9 @@ jobs:
 
       - name: Run Appium Tests (iOS Simulator)
         id: run_tests
-        timeout-minutes: ${{ github.event.inputs.marker == '' && 150 || 120 }}
+        # account suite = 27 tests × ~5 min each = ~135 min on slow macOS CI simulator
+        # WDA pre-warm + setup adds ~20 min → total ~155 min needed
+        timeout-minutes: 160
         env:
           PLATFORM: ios
           DEVICE_MODE: simulator
