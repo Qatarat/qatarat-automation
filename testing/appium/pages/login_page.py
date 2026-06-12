@@ -84,12 +84,6 @@ class LoginPage(BasePage):
         self.tap_optional("Select your language")
         self.tap_optional(language)
         wait_for_animation(self.driver, 1)
-        # Some builds show a "Get Started" / "Next" / "Proceed" button after selection
-        # before showing the phone entry screen. Tap it if visible.
-        for label in ["Get Started", "Next", "Proceed", "Continue", "Start", "Let's Go",
-                      "ابدأ", "التالي", "متابعة"]:
-            self.tap_optional(label, timeout=2)
-        wait_for_animation(self.driver, 1)
         return self
 
     def _select_bangladesh_country_code(self):
@@ -117,30 +111,37 @@ class LoginPage(BasePage):
         return self
 
     def _advance_onboarding_screen(self):
-        """Tap through any blocking screen (country/language selection, splash, etc.).
-        Used as a fallback when the phone text field can't be found — tries known
-        labels first, then falls back to tapping the last visible XCUIElementTypeButton
-        (which is usually the action/proceed button on Flutter onboarding screens).
+        """Advance through onboarding steps: country → language → proceed button.
+        Taps up to 3 matching labels per call so a single call can navigate
+        through multi-step onboarding (country → language → Get Started).
+        Falls back to tapping the last XCUIElementTypeButton on iOS if nothing found.
         """
-        proceeded = False
-        for label in ["Saudi Arabia", "English", "Get Started", "Next", "Proceed",
-                      "Continue", "Start", "Skip", "Done", "OK",
-                      "ابدأ", "التالي", "متابعة", "تخطي"]:
+        # All labels are instant (find_elements, no wait) — no time wasted on misses
+        advance_labels = [
+            "Saudi Arabia", "English", "Get Started", "Next", "Proceed",
+            "Continue", "Start", "Skip", "Done", "OK",
+            "ابدأ", "التالي", "متابعة", "تخطي",
+        ]
+        tapped = 0
+        for label in advance_labels:
             els = find_elements_by_label(self.driver, label)
             if els:
                 els[0].click()
                 wait_for_animation(self.driver, 1.5)
-                proceeded = True
-                break
-        if not proceeded and is_ios():
-            # Brute force: tap the last XCUIElementTypeButton (usually the action button)
+                tapped += 1
+                if tapped >= 3:
+                    break
+        if tapped == 0 and is_ios():
+            # Brute force: tap last visible button (action/proceed on Flutter screens)
             try:
                 buttons = self.driver.find_elements(AppiumBy.XPATH, "//XCUIElementTypeButton")
                 if buttons:
                     buttons[-1].click()
                     wait_for_animation(self.driver, 1.5)
+                    tapped = 1
             except Exception:
                 pass
+        return tapped > 0
 
     def enter_phone(self, phone):
         self._navigate_to_login_screen()
@@ -151,10 +152,12 @@ class LoginPage(BasePage):
             phone_local = phone[3:] if len(phone) > 3 else phone  # strip 880 prefix
         else:
             phone_local = phone
-        # Retry up to 3 times: if phone field not found, try to advance past blocking
-        # screens (country/language selection on iOS fresh install)
+        # Retry up to 5 times (4 advance attempts) — multi-step onboarding on iOS
+        # needs: country → language → confirm → phone screen (3-4 taps total).
+        # _advance_onboarding_screen() taps up to 3 labels per call, so
+        # 2 calls can navigate: country+language+confirm → phone field appears.
         last_exc = None
-        for attempt in range(3):
+        for attempt in range(5):
             try:
                 el = WebDriverWait(self.driver, 10).until(
                     EC.presence_of_element_located((AppiumBy.XPATH, text_field_xpath()))
@@ -165,7 +168,7 @@ class LoginPage(BasePage):
                 return self
             except Exception as exc:
                 last_exc = exc
-                if attempt < 2:
+                if attempt < 4:
                     self._advance_onboarding_screen()
         raise last_exc  # type: ignore
 
