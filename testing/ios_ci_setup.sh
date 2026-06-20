@@ -167,6 +167,15 @@ install_app() {
   fi
   echo "App installed successfully"
   xcrun simctl get_app_container "$SIM_ID" com.qatarat.app 2>/dev/null && echo "App verified" || true
+
+  # Pre-grant permissions so system dialogs never block tests mid-run.
+  # Location dialog overlays the home screen after login and causes all tests to timeout.
+  echo "Granting permissions to com.qatarat.app..."
+  xcrun simctl privacy "$SIM_ID" grant location-always com.qatarat.app 2>/dev/null || true
+  xcrun simctl privacy "$SIM_ID" grant camera         com.qatarat.app 2>/dev/null || true
+  xcrun simctl privacy "$SIM_ID" grant photos         com.qatarat.app 2>/dev/null || true
+  xcrun simctl privacy "$SIM_ID" grant notifications  com.qatarat.app 2>/dev/null || true
+  echo "Permissions granted"
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────

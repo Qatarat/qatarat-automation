@@ -77,6 +77,9 @@ IOS_SIMULATOR_CAPS = {
     # and the phone text field is never reachable)
     "appium:language": "en",
     "appium:locale": "en_US",
+    # Pre-grant permissions so system dialogs never appear mid-test.
+    # Location dialog blocks all tests when it overlays the home screen.
+    "appium:permissions": '{"com.qatarat.app": {"location": "inuse", "notifications": "YES", "camera": "YES", "photos": "YES"}}',
 }
 
 # ── Real device ───────────────────────────────────────────────────────────────
