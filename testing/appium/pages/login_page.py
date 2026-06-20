@@ -51,11 +51,26 @@ class LoginPage(BasePage):
 
     def _dismiss_system_dialogs(self):
         """Tap through system permission / alert dialogs."""
-        for label in ["While using the app", "Only this time", "Allow", "OK", "ALLOW"]:
+        for label in [
+            "Allow While Using App",   # iOS 17+ location dialog exact text
+            "While Using App",         # iOS older phrasing
+            "While using the app",     # iOS alternate phrasing
+            "Only this time",          # iOS one-time permission
+            "Allow Once",              # iOS one-time (location)
+            "Allow",                   # generic Android/iOS grant
+            "OK", "ALLOW",
+        ]:
             els = find_elements_by_label(self.driver, label)
             if els:
                 els[0].click()
                 wait_for_animation(self.driver, 1)
+        # Also try Appium native alert accept for system dialogs XCUITest can't see
+        if is_ios():
+            try:
+                self.driver.execute_script('mobile: alert', {'action': 'accept'})
+                wait_for_animation(self.driver, 0.5)
+            except Exception:
+                pass
         return self
 
     def _switch_to_english(self):
@@ -401,6 +416,10 @@ class LoginPage(BasePage):
 
         self.enter_otp(otp)
         self.tap_verify()
+        # Dismiss any system dialogs that appear post-login on home screen
+        # (location permission dialog on iOS overlays home and blocks all navigation)
+        self._dismiss_system_dialogs()
+        wait_for_animation(self.driver, 1)
         return self
 
     def assert_logged_in(self):

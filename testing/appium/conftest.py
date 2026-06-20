@@ -253,6 +253,16 @@ def driver():
     #   triggering the full login flow unnecessarily
     splash_wait = 7 if PLATFORM == "ios" else 8
     _time.sleep(splash_wait)
+    # iOS: dismiss any system alerts that appear at cold-start (location, notifications).
+    # The location dialog on iOS 17+ overlays the home screen and blocks all XCUITest
+    # interactions. autoAcceptAlerts cap is unreliable for SpringBoard-level dialogs.
+    if PLATFORM == "ios":
+        for _ in range(4):
+            try:
+                d.execute_script('mobile: alert', {'action': 'accept'})
+                _time.sleep(0.5)
+            except Exception:
+                break
     yield d
     try:
         d.quit()
@@ -272,6 +282,13 @@ def driver_module():
     d.implicitly_wait(0)  # see driver fixture comment — must be 0 to not break WebDriverWait
     splash_wait = 7 if PLATFORM == "ios" else 4
     _time.sleep(splash_wait)
+    if PLATFORM == "ios":
+        for _ in range(4):
+            try:
+                d.execute_script('mobile: alert', {'action': 'accept'})
+                _time.sleep(0.5)
+            except Exception:
+                break
     yield d
     try:
         d.quit()
