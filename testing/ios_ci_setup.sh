@@ -171,10 +171,12 @@ install_app() {
   # Pre-grant permissions so system dialogs never block tests mid-run.
   # Location dialog overlays the home screen after login and causes all tests to timeout.
   echo "Granting permissions to com.qatarat.app..."
-  xcrun simctl privacy "$SIM_ID" grant location-always com.qatarat.app 2>/dev/null || true
-  xcrun simctl privacy "$SIM_ID" grant camera         com.qatarat.app 2>/dev/null || true
-  xcrun simctl privacy "$SIM_ID" grant photos         com.qatarat.app 2>/dev/null || true
-  xcrun simctl privacy "$SIM_ID" grant notifications  com.qatarat.app 2>/dev/null || true
+  # Valid simctl privacy services: location, location-when-in-use, photos, camera, microphone
+  xcrun simctl privacy "$SIM_ID" grant location            com.qatarat.app 2>/dev/null || true
+  xcrun simctl privacy "$SIM_ID" grant location-when-in-use com.qatarat.app 2>/dev/null || true
+  xcrun simctl privacy "$SIM_ID" grant camera              com.qatarat.app 2>/dev/null || true
+  xcrun simctl privacy "$SIM_ID" grant photos              com.qatarat.app 2>/dev/null || true
+  xcrun simctl privacy "$SIM_ID" grant microphone          com.qatarat.app 2>/dev/null || true
   echo "Permissions granted"
 }
 

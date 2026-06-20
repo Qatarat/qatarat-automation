@@ -79,7 +79,7 @@ IOS_SIMULATOR_CAPS = {
     "appium:locale": "en_US",
     # Pre-grant permissions so system dialogs never appear mid-test.
     # Location dialog blocks all tests when it overlays the home screen.
-    "appium:permissions": '{"com.qatarat.app": {"location": "inuse", "notifications": "YES", "camera": "YES", "photos": "YES"}}',
+    "appium:permissions": '{"com.qatarat.app": {"location": "yes", "notifications": "yes", "camera": "yes", "photos": "yes"}}',
 }
 
 # ── Real device ───────────────────────────────────────────────────────────────

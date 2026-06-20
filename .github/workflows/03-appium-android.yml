@@ -20,9 +20,9 @@ jobs:
   appium-tests:
     name: Appium Deep Tests (Android API 33)
     runs-on: ubuntu-latest
-    # emulator boot ~20 min + 27 account tests ~3-4 min each = ~100-128 min → cap 150
-    # schedule (full suite, no marker) needs 240 min
-    timeout-minutes: ${{ github.event_name == 'schedule' && 240 || 150 }}
+    # emulator boot ~20-40 min + 27 account tests ~4-5 min each on CI = ~130-175 min
+    # Use 240 for all — same headroom regardless of trigger
+    timeout-minutes: 240
 
     steps:
       - name: Checkout
