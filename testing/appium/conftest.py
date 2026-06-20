@@ -9,8 +9,10 @@ from capabilities.android_caps import ANDROID_DEVICE_CAPS, ANDROID_EMULATOR_CAPS
 from capabilities.ios_caps import IOS_DEVICE_CAPS, IOS_SIMULATOR_CAPS
 from utils.helpers import APPIUM_SERVER, screenshot
 
-PLATFORM = os.environ.get("PLATFORM", "android").lower()
+PLATFORM    = os.environ.get("PLATFORM", "android").lower()
 DEVICE_MODE = os.environ.get("DEVICE_MODE", "emulator").lower()
+# BrowserStack mode: DEVICE_MODE=browserstack + BS_USERNAME + BS_ACCESS_KEY
+_BS_MODE = PLATFORM == "ios" and DEVICE_MODE == "browserstack"
 
 # ── AppiumOptions compat shim ─────────────────────────────────────────────────
 # appium-python-client changed the export path several times across major versions:
@@ -72,6 +74,9 @@ def get_caps():
     if PLATFORM == "android":
         return ANDROID_DEVICE_CAPS if DEVICE_MODE == "device" else ANDROID_EMULATOR_CAPS
     elif PLATFORM == "ios":
+        if DEVICE_MODE == "browserstack":
+            from capabilities.browserstack_caps import BROWSERSTACK_IOS_CAPS
+            return BROWSERSTACK_IOS_CAPS
         return IOS_DEVICE_CAPS if DEVICE_MODE == "device" else IOS_SIMULATOR_CAPS
     raise ValueError(f"Unknown platform: {PLATFORM}")
 
@@ -129,7 +134,19 @@ def _ios_skip_if_infra_error(exc: Exception) -> None:
             "iOS Simulator build required — the IPA is a device build (arm64-apple-ios) "
             "that cannot run on the iOS Simulator. "
             "Fix: build the app with 'flutter build ios --simulator --debug' and store "
-            "Runner.app under 'Qatarat (Lambda-Stage-IOS-1.8.2).ipa/Payload/Runner.app'. "
+            "Runner.app under ipa_extracted/Payload/Runner.app. "
+            f"[Appium: {msg[:200].strip()}]"
+        )
+
+    # x86_64 app on arm64 iOS 26+ simulator (macOS Tahoe / macos-15+)
+    if "failed to find matching arch" in msg_lower or \
+       ("arch" in msg_lower and "x86_64" in msg_lower and "arm64" in msg_lower):
+        pytest.skip(
+            "Architecture mismatch: the IPA is an x86_64 simulator build but the available "
+            "simulator runtime (iOS 26+) requires arm64. "
+            "Fix options: (1) download iOS 17.x runtime in Xcode → Settings → Platforms, "
+            "or (2) get an arm64 simulator build of the app via "
+            "'flutter build ios --simulator --debug'. "
             f"[Appium: {msg[:200].strip()}]"
         )
 
@@ -198,16 +215,30 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(skip_android)
 
 
+def _get_server_url() -> str:
+    """Return Appium server URL — BrowserStack hub or local server."""
+    if _BS_MODE:
+        bs_user = os.environ.get("BS_USERNAME", "")
+        bs_key  = os.environ.get("BS_ACCESS_KEY", "")
+        if not bs_user or not bs_key:
+            pytest.skip(
+                "BrowserStack mode active but BS_USERNAME / BS_ACCESS_KEY not set. "
+                "Export those env vars and re-run."
+            )
+        return f"https://{bs_user}:{bs_key}@hub-cloud.browserstack.com/wd/hub"
+    return APPIUM_SERVER
+
+
 @pytest.fixture(scope="function")
 def driver():
     import time as _time
     if PLATFORM == "android":
         _reset_android_app()
-    elif PLATFORM == "ios":
+    elif PLATFORM == "ios" and not _BS_MODE:
         # Brief pause before new iOS session — allows WDA to fully settle after previous quit
         _time.sleep(1)
     try:
-        d = webdriver.Remote(APPIUM_SERVER, options=_build_options(get_caps()))
+        d = webdriver.Remote(_get_server_url(), options=_build_options(get_caps()))
     except Exception as exc:
         _ios_skip_if_infra_error(exc)
         raise
@@ -234,7 +265,7 @@ def driver_module():
     import time as _time
     caps = {**get_caps(), "appium:noReset": True}
     try:
-        d = webdriver.Remote(APPIUM_SERVER, options=_build_options(caps))
+        d = webdriver.Remote(_get_server_url(), options=_build_options(caps))
     except Exception as exc:
         _ios_skip_if_infra_error(exc)
         raise

@@ -8,9 +8,9 @@ on:
         required: false
         default: ""
       ios_version:
-        description: "iOS simulator version"
+        description: "iOS simulator version override (leave blank to auto-detect from runner)"
         required: false
-        default: "17.0"
+        default: ""
       record_video:
         description: "Record screen video (true/false) — disabled by default to prevent OOM"
         required: false
@@ -129,7 +129,7 @@ jobs:
           DEVICE_MODE: simulator
           SIM_ID: ${{ env.SIM_ID }}
           IOS_APP_PATH: ${{ env.IOS_APP_PATH }}
-          IOS_VERSION: ${{ github.event.inputs.ios_version || '17.0' }}
+          IOS_VERSION: ${{ env.IOS_VERSION || github.event.inputs.ios_version || '17.5' }}
           IOS_SIM_NAME: ${{ env.SIM_NAME }}
           APPIUM_SERVER: http://localhost:4723
         run: |
@@ -189,7 +189,7 @@ jobs:
           DEVICE_MODE: simulator
           SIM_ID: ${{ env.SIM_ID }}
           IOS_SIM_NAME: ${{ env.SIM_NAME }}
-          IOS_VERSION: ${{ github.event.inputs.ios_version || '17.0' }}
+          IOS_VERSION: ${{ env.IOS_VERSION || github.event.inputs.ios_version || '17.5' }}
           IOS_APP_PATH: ${{ env.IOS_APP_PATH }}
           IOS_SIM_COMPATIBLE: ${{ env.IOS_SIM_COMPATIBLE }}
           APPIUM_SERVER: http://localhost:4723

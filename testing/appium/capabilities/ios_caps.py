@@ -1,17 +1,28 @@
 import os
+import platform
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 
 # .app bundle extracted from the IPA (works on Simulator)
 _APP_BUNDLE = os.path.join(
     _ROOT,
-    "Qatarat (Lambda-Stage-IOS-1.8.2).ipa",
+    "ipa_extracted",
     "Payload",
     "Runner.app",
 )
 
 # Original IPA (for real-device installs via tidevice / Xcode)
-_IPA_PATH = os.path.join(_ROOT, "Qatarat (Lambda-Stage-IOS-1.8.2).ipa.zip")
+_IPA_PATH = os.path.join(_ROOT, "qatarat-stage-ios.ipa")
+
+# Detect macOS Tahoe (26.x) — iOS 26.5 simulator only, arm64-only, no Rosetta sim.
+# The bundled IPA is x86_64 so it requires iOS 17.x runtime or a new arm64 build.
+_macos_ver = tuple(int(x) for x in platform.mac_ver()[0].split(".")[:2])
+_ON_TAHOE  = _macos_ver[0] >= 26       # macOS 26.x = Tahoe
+
+# Default iOS version: 17.5 on older macOS (has Rosetta sim for x86_64 IPA),
+# fall back to 26.5 on Tahoe if no iOS 17 runtime is installed.
+_DEFAULT_IOS_VER = "26.5" if _ON_TAHOE else "17.5"
+_DEFAULT_SIM_NAME = "iPhone 17 Pro" if _ON_TAHOE else "iPhone 15 Pro"
 
 IOS_CAPS = {
     "platformName": "iOS",
@@ -43,8 +54,8 @@ IOS_CAPS = {
 _sim_id = os.environ.get("SIM_ID", "")
 IOS_SIMULATOR_CAPS = {
     **IOS_CAPS,
-    "appium:deviceName": os.environ.get("IOS_SIM_NAME", "iPhone 15 Pro"),
-    "appium:platformVersion": os.environ.get("IOS_VERSION", "17.5"),
+    "appium:deviceName": os.environ.get("IOS_SIM_NAME", _DEFAULT_SIM_NAME),
+    "appium:platformVersion": os.environ.get("IOS_VERSION", _DEFAULT_IOS_VER),
     "appium:app": os.environ.get("IOS_APP_PATH", _APP_BUNDLE),
     **({"appium:udid": _sim_id} if _sim_id else {}),
     # Extended timeouts for macOS CI runners (macos-14 is slower than local Mac)

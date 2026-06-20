@@ -12,7 +12,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 IPA_FILE="${1:-$ROOT/qatarat-stage-ios.ipa}"
-IPA_DIR="$ROOT/Qatarat (Lambda-Stage-IOS-1.8.2).ipa"
+IPA_EXTRACTED="$ROOT/ipa_extracted"
 
 export_env() {
   export "$1=$2"
@@ -31,8 +31,8 @@ install_rosetta() {
 }
 
 extract_app() {
-  if [ -d "$IPA_DIR/Payload/Runner.app" ]; then
-    APP_PATH="$IPA_DIR/Payload/Runner.app"
+  if [ -d "$IPA_EXTRACTED/Payload/Runner.app" ]; then
+    APP_PATH="$IPA_EXTRACTED/Payload/Runner.app"
     echo "Using pre-extracted Runner.app"
   elif [ -f "$IPA_FILE" ]; then
     echo "Extracting IPA from $IPA_FILE..."
@@ -63,15 +63,23 @@ detect_arch() {
 
   IS_SIM=false
   WANT_ROSETTA=false
-  if echo "$ARCH_INFO" | grep -qiE "x86_64"; then
+  HAS_X86=false
+  HAS_ARM64=false
+  echo "$ARCH_INFO" | grep -qi "x86_64" && HAS_X86=true
+  echo "$ARCH_INFO" | grep -qi "arm64"  && HAS_ARM64=true
+
+  if [ "$HAS_X86" = "true" ]; then
     IS_SIM=true
-    WANT_ROSETTA=true
-    install_rosetta
-  elif echo "$ARCH_INFO" | grep -qiE "arm64.*simulator|simulator"; then
-    IS_SIM=true
-  elif otool -l "$binary" 2>/dev/null | grep -A 4 "LC_BUILD_VERSION" | grep -q "platform 7"; then
-    IS_SIM=true
-    echo "$ARCH_INFO" | grep -qi x86_64 && WANT_ROSETTA=true
+    # Rosetta only needed when x86_64-only — universal (arm64+x86_64) runs natively
+    if [ "$HAS_ARM64" = "false" ]; then
+      WANT_ROSETTA=true
+      install_rosetta
+    fi
+  elif [ "$HAS_ARM64" = "true" ]; then
+    # arm64 could be device or simulator — check LC_BUILD_VERSION platform 7 (iPhoneSimulator)
+    if otool -l "$binary" 2>/dev/null | grep -A 4 "LC_BUILD_VERSION" | grep -q "platform 7"; then
+      IS_SIM=true
+    fi
   fi
 
   if [ "$IS_SIM" != "true" ]; then
@@ -126,6 +134,18 @@ pick_simulator() {
   export_env SIM_ID "$sim_id"
   export_env SIM_NAME "$sim_name"
   export_env IOS_SIM_NAME "$sim_name"
+
+  # Detect the actual iOS version for this simulator so Appium gets an exact match.
+  # Parse the section header above the device line: "-- iOS 17.5 --"
+  local ios_ver
+  ios_ver=$(xcrun simctl list devices available | awk -v id="$sim_id" '
+    /^-- iOS / { ver = $3 }
+    index($0, id) { if (ver != "") print ver; exit }
+  ')
+  if [ -n "${ios_ver:-}" ]; then
+    echo "Detected iOS version: $ios_ver"
+    export_env IOS_VERSION "$ios_ver"
+  fi
 }
 
 boot_simulator() {

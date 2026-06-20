@@ -21,14 +21,14 @@ mkdir -p "$REPORTS_DIR/screenshots" "$ALLURE_DIR"
 if [ -z "${IOS_APP_PATH:-}" ]; then
   # Try auto-detect from project root
   ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-  CANDIDATE="$ROOT/Qatarat (Lambda-Stage-IOS-1.8.2).ipa/Payload/Runner.app"
+  CANDIDATE="$ROOT/ipa_extracted/Payload/Runner.app"
   if [ -d "$CANDIDATE" ]; then
     export IOS_APP_PATH="$CANDIDATE"
     echo "Auto-detected IOS_APP_PATH: $IOS_APP_PATH"
   else
     echo "ERROR: IOS_APP_PATH not set and Runner.app not found at expected path."
     echo "  Expected: $CANDIDATE"
-    echo "  Unzip the IPA first: unzip 'Qatarat (Lambda-Stage-IOS-1.8.2).ipa.zip'"
+    echo "  Extract the IPA first: unzip qatarat-stage-ios.ipa -d ipa_extracted/"
     exit 1
   fi
 fi
