@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       marker:
-        description: "pytest marker (payment | gift | subscription | account | streaming | empty=all)"
+        description: "pytest marker (payment | gift | subscription | account | streaming | empty=all). Defaults to 'account' if blank."
         required: false
-        default: ""
+        default: "account"
 
 concurrency:
   group: appium-android-${{ github.ref }}
@@ -20,9 +20,9 @@ jobs:
   appium-tests:
     name: Appium Deep Tests (Android API 33)
     runs-on: ubuntu-latest
-    # push runs account-marker subset — emulator setup ~15 min + 27 tests ~3 min each = ~96 min
-    # schedule/dispatch runs full suite ~150 min
-    timeout-minutes: ${{ github.event_name == 'push' && 100 || 150 }}
+    # account marker: emulator setup ~15 min + 27 tests ~3 min each = ~96 min → cap 120
+    # schedule (full suite) needs more headroom
+    timeout-minutes: ${{ github.event_name == 'schedule' && 240 || 120 }}
 
     steps:
       - name: Checkout
@@ -116,7 +116,7 @@ jobs:
           DEVICE_MODE: emulator
           # Evaluate marker here (single-line expression) so the script field
           # never contains ${{ }} syntax that bash would misinterpret
-          TEST_MARKER: ${{ github.event_name == 'push' && 'account' || github.event.inputs.marker || '' }}
+          TEST_MARKER: ${{ github.event.inputs.marker || 'account' }}
         with:
           api-level: 33
           arch: x86_64
