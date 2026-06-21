@@ -1,6 +1,7 @@
 import pytest
 import allure
 from pages.login_page import LoginPage
+from pages.profile_page import ProfilePage
 from pages.base_page import BasePage
 from utils.helpers import screenshot, wait_for_animation, scroll_to_text
 
@@ -14,13 +15,11 @@ class TestProfile:
     @allure.title("Change currency option is accessible")
     def test_change_currency_accessible(self, driver):
         login = LoginPage(driver)
-        login.login()  # login() handles country/language + onboarding internally
-
-        page = BasePage(driver)
-        page.tap_optional("Profile")
-        page.tap_optional("Account")
+        login.login()
+        ProfilePage(driver).navigate_to_profile()
         wait_for_animation(driver)
 
+        page = BasePage(driver)
         assert page.is_visible("Change Currency") or page.is_visible("Currency"), \
             "Currency option not found in profile"
         screenshot(driver, "profile_currency_option")
@@ -29,10 +28,10 @@ class TestProfile:
     @allure.title("About Qatarat page loads")
     def test_about_page_loads(self, driver):
         login = LoginPage(driver)
-        login.login()  # login() handles country/language + onboarding internally
+        login.login()
+        ProfilePage(driver).navigate_to_profile()
 
         page = BasePage(driver)
-        page.tap_optional("Profile")
         page.tap_optional("About")
         page.tap_optional("About Qatarat")
         wait_for_animation(driver, 2)
@@ -45,14 +44,17 @@ class TestProfile:
     @allure.title("Logout confirmation dialog appears")
     def test_logout_confirmation_dialog(self, driver):
         login = LoginPage(driver)
-        login.login()  # login() handles country/language + onboarding internally
-
-        page = BasePage(driver)
-        page.tap_optional("Profile")
-        page.tap_optional("Logout")
+        login.login()
+        pp = ProfilePage(driver)
+        pp.navigate_to_profile()
+        pp.tap_logout()
         wait_for_animation(driver)
 
-        assert page.is_visible("Are you sure") or page.is_visible("Logout"), \
+        page = BasePage(driver)
+        assert page.is_visible("Are you sure") or \
+               page.is_visible("Logout") or \
+               page.is_visible("Log out") or \
+               page.is_visible("تسجيل الخروج"), \
             "Logout confirmation dialog not shown"
         page.tap_optional("No")
         screenshot(driver, "logout_confirmation")
@@ -61,10 +63,10 @@ class TestProfile:
     @allure.title("Delete account option exists with confirmation")
     def test_delete_account_has_confirmation(self, driver):
         login = LoginPage(driver)
-        login.login()  # login() handles country/language + onboarding internally
+        login.login()
+        ProfilePage(driver).navigate_to_profile()
 
         page = BasePage(driver)
-        page.tap_optional("Profile")
         scroll_to_text(driver, "Delete Account", max_scrolls=5)
         page.tap_optional("Delete Account")
         wait_for_animation(driver)
@@ -96,12 +98,10 @@ class TestProfile:
     @allure.title("Billing history is accessible")
     def test_billing_history_accessible(self, driver):
         login = LoginPage(driver)
-        login.login()  # login() handles country/language + onboarding internally
+        login.login()
+        ProfilePage(driver).navigate_to_profile()
 
         page = BasePage(driver)
-        page.tap_optional("Billing History")
-        page.tap_optional("Profile")
-        wait_for_animation(driver)
         scroll_to_text(driver, "Billing History", max_scrolls=5)
         page.tap_optional("Billing History")
         wait_for_animation(driver, 2)

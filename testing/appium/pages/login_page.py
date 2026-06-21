@@ -387,6 +387,14 @@ class LoginPage(BasePage):
         self.tap_continue()
         return self
 
+    def _still_on_phone_screen(self) -> bool:
+        """True if the app is showing the phone-entry login screen."""
+        fields = self.driver.find_elements(
+            __import__('appium.webdriver.common.appiumby', fromlist=['AppiumBy']).AppiumBy.XPATH,
+            text_field_xpath()
+        )
+        return bool(fields) and not self._is_already_logged_in(timeout=1)
+
     def login(self, phone="8801685220417", otp=None):
         # Resolve OTP: env var > explicit arg > default
         if otp is None:
@@ -394,10 +402,6 @@ class LoginPage(BasePage):
 
         # Short-circuit if already on home screen (persisted login token)
         self._dismiss_system_dialogs()
-        # Android noReset=True: 4s/check × 8 indicators = 32s max.
-        #   After force-stop + 8s splash_wait, home screen loaded → finds "Cart" fast.
-        # iOS noReset=False: always fresh, never logged in → all 8 checks fail.
-        #   Use 2s on iOS to keep check overhead at 16s not 32s.
         check_timeout = 2 if is_ios() else 4
         if self._is_already_logged_in(timeout=check_timeout):
             return self
@@ -416,10 +420,23 @@ class LoginPage(BasePage):
 
         self.enter_otp(otp)
         self.tap_verify()
+
         # Dismiss any system dialogs that appear post-login on home screen
-        # (location permission dialog on iOS overlays home and blocks all navigation)
         self._dismiss_system_dialogs()
         wait_for_animation(self.driver, 1)
+
+        # Retry once if OTP step silently failed and we're still on phone screen
+        if is_ios() and self._still_on_phone_screen():
+            wait_for_animation(self.driver, 2)
+            self.tap_continue()
+            self._dismiss_system_dialogs()
+            if os.environ.get("TEST_OTP") and not is_ios():
+                self._inject_sms_to_emulator(otp)
+            self.enter_otp(otp)
+            self.tap_verify()
+            self._dismiss_system_dialogs()
+            wait_for_animation(self.driver, 1)
+
         return self
 
     def assert_logged_in(self):

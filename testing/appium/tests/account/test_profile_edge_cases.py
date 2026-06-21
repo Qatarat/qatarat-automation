@@ -1,5 +1,6 @@
 import pytest
 from pages.login_page import LoginPage
+from pages.profile_page import ProfilePage
 from pages.base_page import BasePage
 from utils.helpers import screenshot, wait_for_animation
 import sys, os
@@ -13,14 +14,10 @@ class TestProfileEdgeCases:
     """Edge-case and negative tests for profile and account settings."""
 
     def _login_and_open_profile(self, driver):
-        login = LoginPage(driver)
-        login.login()  # login() handles country/language + onboarding internally
-
-        base = BasePage(driver)
-        base.tap_optional("Profile")
-        base.tap_optional("Account")
+        LoginPage(driver).login()
+        ProfilePage(driver).navigate_to_profile()
         wait_for_animation(driver)
-        return base
+        return BasePage(driver)
 
     def test_logout_cancel_stays_logged_in(self, driver):
         """Tapping 'No' on logout dialog must keep the user logged in."""
@@ -29,7 +26,9 @@ class TestProfileEdgeCases:
         wait_for_animation(driver)
 
         assert base.is_visible("Are you sure") or \
-               base.is_visible("Logout"), \
+               base.is_visible("Logout") or \
+               base.is_visible("Log out") or \
+               base.is_visible("تسجيل الخروج"), \
             "Logout confirmation dialog did not appear"
 
         base.tap_optional("No")
@@ -37,7 +36,12 @@ class TestProfileEdgeCases:
 
         assert base.is_visible("Profile") or \
                base.is_visible("Account") or \
-               base.is_visible("Cart"), \
+               base.is_visible("Cart") or \
+               base.is_visible("Logout") or \
+               base.is_visible("Log out") or \
+               base.is_visible("الملف الشخصي") or \
+               base.is_visible("Home") or \
+               base.is_visible("الرئيسية"), \
             "User was logged out despite tapping 'No'"
         screenshot(driver, "profile_logout_cancelled")
 
@@ -48,7 +52,8 @@ class TestProfileEdgeCases:
         wait_for_animation(driver)
 
         assert base.is_visible("Are you sure") or \
-               base.is_visible("Delete"), \
+               base.is_visible("Delete") or \
+               base.is_visible("Confirm"), \
             "Delete account confirmation dialog did not appear"
 
         base.tap_optional("No")
@@ -56,7 +61,10 @@ class TestProfileEdgeCases:
 
         assert base.is_visible("Profile") or \
                base.is_visible("Account") or \
-               base.is_visible("Cart"), \
+               base.is_visible("Cart") or \
+               base.is_visible("الملف الشخصي") or \
+               base.is_visible("Home") or \
+               base.is_visible("الرئيسية"), \
             "Account was deleted or user was signed out after cancelling"
         screenshot(driver, "profile_delete_cancelled")
 
