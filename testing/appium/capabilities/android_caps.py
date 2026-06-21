@@ -30,11 +30,12 @@ ANDROID_DEVICE_CAPS = {
     "appium:platformVersion": os.environ.get("ANDROID_VERSION", "13"),
 }
 
-# Caps for emulator
+# Caps for emulator — API 29 (Android 10) boots in 3-5 min with KVM;
+# API 33 google_apis was timing out at 4 hours on ubuntu-latest CI
 ANDROID_EMULATOR_CAPS = {
     **ANDROID_CAPS,
-    "appium:deviceName": os.environ.get("ANDROID_EMU_NAME", "Pixel_7_API_34"),
-    "appium:avd": os.environ.get("ANDROID_AVD", "Pixel_7_API_34"),
-    "appium:platformVersion": "13",    # api-level 33 = Android 13
+    "appium:deviceName": os.environ.get("ANDROID_EMU_NAME", "Pixel_4_API_29"),
+    "appium:avd": os.environ.get("ANDROID_AVD", "Pixel_4_API_29"),
+    "appium:platformVersion": os.environ.get("ANDROID_VERSION", "10"),  # api-level 29
     "appium:isHeadless": False,
 }

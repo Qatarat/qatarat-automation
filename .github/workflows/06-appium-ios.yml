@@ -81,6 +81,12 @@ jobs:
           appium driver install --source=npm appium-flutter-driver
           appium driver list --installed
           brew install ffmpeg --quiet 2>/dev/null || true
+          # applesimutils required by appium:permissions capability to pre-grant
+          # location/camera/notifications so system dialogs never block tests
+          brew tap wix/brew 2>/dev/null || true
+          brew install wix/brew/applesimutils 2>/dev/null || \
+            brew install applesimutils 2>/dev/null || true
+          which applesimutils && applesimutils --version || echo "applesimutils not in PATH"
 
       - name: Boot Simulator and install app
         run: bash testing/ios_ci_setup.sh qatarat-stage-ios.ipa

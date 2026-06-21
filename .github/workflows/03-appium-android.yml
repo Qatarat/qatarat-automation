@@ -76,33 +76,17 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Pre-install Android system image (retry on corrupt download)
+      - name: Pre-install Android system image
         run: |
-          # android-emulator-runner installs this internally, but can fail with
-          # "ZipFile unknown archive" on a transient bad download. Pre-installing
-          # with retry here so the emulator runner finds it already present.
-          #
-          # sdkmanager is not on PATH at this stage — use the full ANDROID_SDK_ROOT path.
+          # API 29 default is ~half the size of API 33 google_apis and boots
+          # in 3-5 min with KVM — API 33 google_apis was timing out at 4h.
           SDKMAN="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}/cmdline-tools/latest/bin/sdkmanager"
-          echo "sdkmanager path: $SDKMAN"
           if [ ! -f "$SDKMAN" ]; then
-            echo "::warning::sdkmanager not found at $SDKMAN — skipping pre-install (emulator runner will install)"
+            echo "::warning::sdkmanager not found — emulator runner will install"
             exit 0
           fi
-          set +e
-          for attempt in 1 2 3; do
-            echo "SDK install attempt $attempt/3..."
-            OUT=$("$SDKMAN" --install 'system-images;android-33;google_apis;x86_64' --channel=0 2>&1)
-            RC=$?
-            echo "$OUT"
-            if [ $RC -eq 0 ] && ! echo "$OUT" | grep -qi "ZipFile\|unknown archive\|Error on"; then
-              echo "✅ system-images;android-33;google_apis;x86_64 ready"
-              exit 0
-            fi
-            [ "$attempt" -eq 3 ] && { echo "::error::SDK install failed after 3 attempts"; exit 1; }
-            echo "Retrying in 20s..."
-            sleep 20
-          done
+          "$SDKMAN" --install 'system-images;android-29;default;x86_64' 2>&1 | tail -5 || true
+          echo "✅ system-images;android-29;default;x86_64 ready"
 
       - name: Start Appium server
         run: |
@@ -114,17 +98,18 @@ jobs:
         env:
           PLATFORM: android
           DEVICE_MODE: emulator
-          # Evaluate marker here (single-line expression) so the script field
-          # never contains ${{ }} syntax that bash would misinterpret
           TEST_MARKER: ${{ github.event.inputs.marker || 'account' }}
+          ANDROID_EMU_NAME: Pixel_4_API_29
+          ANDROID_AVD: Pixel_4_API_29
+          ANDROID_VERSION: "10"
         with:
-          api-level: 33
+          api-level: 29
           arch: x86_64
-          profile: pixel_6
-          target: google_apis
-          avd-name: Pixel_7_API_34
-          force-avd-creation: true
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          profile: pixel_4
+          target: default
+          avd-name: Pixel_4_API_29
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 2048
           disable-animations: true
           script: |
             set -e
