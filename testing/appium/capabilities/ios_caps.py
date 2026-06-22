@@ -16,7 +16,8 @@ _IPA_PATH = os.path.join(_ROOT, "qatarat-stage-ios.ipa")
 
 # Detect macOS Tahoe (26.x) — iOS 26.5 simulator only, arm64-only, no Rosetta sim.
 # The bundled IPA is x86_64 so it requires iOS 17.x runtime or a new arm64 build.
-_macos_ver = tuple(int(x) for x in platform.mac_ver()[0].split(".")[:2])
+_mac_ver_str = platform.mac_ver()[0]  # empty string on Linux — guard against ValueError
+_macos_ver = tuple(int(x) for x in _mac_ver_str.split(".")[:2]) if _mac_ver_str else (0, 0)
 _ON_TAHOE  = _macos_ver[0] >= 26       # macOS 26.x = Tahoe
 
 # Default iOS version: 17.5 on older macOS (has Rosetta sim for x86_64 IPA),
