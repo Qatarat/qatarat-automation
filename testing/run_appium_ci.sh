@@ -16,11 +16,11 @@ mkdir -p "$REPORTS_DIR/screenshots" "$ALLURE_DIR"
 
 cd "$APPIUM_DIR"
 
-# iOS: 420s per test — login flow on slow CI simulator takes ~260s (multi-strategy
-# element search + OTP round-trip + navigation). 300s was too tight.
+# iOS: 540s per test — login (OTP round-trip ~260s) + navigation + action + assertion.
+# Some profile tests take 400-430s on macos-14 slow simulator; 420s was too tight.
 # Android: 300s unchanged.
 if [ "$PLATFORM" = "ios" ]; then
-  PER_TEST_TIMEOUT=420
+  PER_TEST_TIMEOUT=540
 else
   PER_TEST_TIMEOUT=300
 fi

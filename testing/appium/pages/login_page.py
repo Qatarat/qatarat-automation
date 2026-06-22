@@ -180,6 +180,14 @@ class LoginPage(BasePage):
                 el.click()
                 el.clear()
                 el.send_keys(phone_local)
+                # Dismiss iOS keyboard — it covers the "Log In" button.
+                # tap_continue() must be able to tap the button without keyboard overlay.
+                if is_ios():
+                    try:
+                        self.driver.hide_keyboard()
+                    except Exception:
+                        pass
+                    wait_for_animation(self.driver, 0.5)
                 return self
             except Exception as exc:
                 last_exc = exc
@@ -222,6 +230,14 @@ class LoginPage(BasePage):
         return False
 
     def tap_continue(self):
+        # Ensure keyboard is dismissed before tapping — on iOS the soft keyboard
+        # covers the "Log In" button; tapping while keyboard is up hits keyboard instead.
+        if is_ios():
+            try:
+                self.driver.hide_keyboard()
+            except Exception:
+                pass
+            wait_for_animation(self.driver, 0.3)
         # Only tap the first matching label — multiple taps cause multiple OTP requests
         for label in _CONTINUE_LABELS:
             els = find_elements_by_label(self.driver, label)
@@ -336,13 +352,17 @@ class LoginPage(BasePage):
         # Check home indicators are visible
         if not any(self.is_visible(t, timeout=timeout) for t in self._HOME_INDICATORS):
             return False
-        # Guest mode shows a "Log In" CTA on the home screen — real login does not
-        guest_btns = (
-            find_elements_by_label(self.driver, "Log In")
-            or find_elements_by_label(self.driver, "Sign in")
-            or find_elements_by_label(self.driver, "تسجيل الدخول")
-        )
-        return len(guest_btns) == 0
+        # Guest mode shows a "Log In" CTA on the home screen — real login does not.
+        # Use is_visible() (has timeout) NOT find_elements_by_label() (instant/no-wait).
+        # Race condition: "Log In" button renders ~0.5s after home indicators appear.
+        # Instant lookup returns [] → incorrectly returns True (logged in) → login() skipped.
+        if self.is_visible("Log In", timeout=2):
+            return False
+        if self.is_visible("Sign in", timeout=1):
+            return False
+        if self.is_visible("تسجيل الدخول", timeout=1):
+            return False
+        return True
 
     @staticmethod
     def _inject_sms_to_emulator(otp: str, sender: str = "Qatarat"):

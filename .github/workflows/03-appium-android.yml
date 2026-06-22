@@ -85,8 +85,8 @@ jobs:
             echo "::warning::sdkmanager not found — emulator runner will install"
             exit 0
           fi
-          "$SDKMAN" --install 'system-images;android-29;default;x86_64' 2>&1 | tail -5 || true
-          echo "✅ system-images;android-29;default;x86_64 ready"
+          "$SDKMAN" --install 'system-images;android-29;google_apis;x86_64' 2>&1 | tail -5 || true
+          echo "✅ system-images;android-29;google_apis;x86_64 ready"
 
       - name: Start Appium server
         run: |
@@ -106,32 +106,23 @@ jobs:
           api-level: 29
           arch: x86_64
           profile: pixel_4
-          target: default
+          target: google_apis
           avd-name: Pixel_4_API_29
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 2048
+          force-avd-creation: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 3072
           disable-animations: true
           script: |
+            # recording removed — screenrecord on emulator hangs wait() indefinitely,
+            # causing the entire script to block after tests complete and losing all results
             set -e
-            adb install -r "Qatarat (Lambda-Stage).apk"
-            touch /tmp/android_rec_on
-            mkdir -p /tmp/adb_segs
-            bash testing/record_android.sh /tmp/adb_segs &
-            REC_PID=$!
+            echo "=== Waiting for device ==="
+            adb wait-for-device
+            echo "=== Installing APK ==="
+            timeout 120 adb install -r "Qatarat (Lambda-Stage).apk" || { echo "::error::adb install failed"; exit 1; }
+            echo "=== APK installed — running tests ==="
             set +e
             bash testing/run_appium_ci.sh "$TEST_MARKER"
-            TEST_RC=$?
-            rm -f /tmp/android_rec_on
-            wait "$REC_PID" 2>/dev/null || true
-            if ls /tmp/adb_segs/seg_*.mp4 2>/dev/null | grep -q .; then
-              find /tmp/adb_segs -name "seg_*.mp4" | sort -V | awk '{print "file \x27" $0 "\x27"}' > /tmp/adb_segs/list.txt
-              mkdir -p testing/appium/reports
-              ffmpeg -f concat -safe 0 -i /tmp/adb_segs/list.txt \
-                -vf "scale=480:-2,setsar=1" -r 15 -crf 35 -preset fast \
-                -movflags +faststart -y testing/appium/reports/android-appium.mp4 2>&1 | tail -3 || true
-              echo "Recording: $(du -sh testing/appium/reports/android-appium.mp4 2>/dev/null || echo 'n/a')"
-            fi
-            exit $TEST_RC
+            exit $?
 
       - name: Publish step summary
         if: always()
