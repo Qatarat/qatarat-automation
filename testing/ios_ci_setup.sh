@@ -116,8 +116,11 @@ pick_simulator() {
   fi
 
   if [ -z "$sim_id" ]; then
-    for prefer in "iPhone 15 Pro" "iPhone 16 Pro" "iPhone 15" "iPhone 16" "iPhone 17 Pro" "iPhone"; do
-      line=$(echo "$devices" | grep "$prefer" | grep -v "Max\|Plus" | head -1 || true)
+    # Preference order: newer device families first so we get iOS 18+ on macos-15,
+    # iOS 26+ on macOS Tahoe, or iOS 17 on macos-14. The tail -1 trick picks the
+    # NEWEST available iOS version for a given device name (xcrun lists ascending).
+    for prefer in "iPhone 16 Pro" "iPhone 15 Pro" "iPhone 16" "iPhone 15" "iPhone 17 Pro" "iPhone 14 Pro" "iPhone"; do
+      line=$(echo "$devices" | grep "$prefer" | grep -v "Max\|Plus" | tail -1 || true)
       if [ -n "$line" ]; then
         sim_id=$(echo "$line" | grep -oE "[A-F0-9-]{36}" | head -1)
         sim_name=$(echo "$line" | sed 's/(.*//' | xargs)

@@ -14,16 +14,26 @@ _APP_BUNDLE = os.path.join(
 # Original IPA (for real-device installs via tidevice / Xcode)
 _IPA_PATH = os.path.join(_ROOT, "qatarat-stage-ios.ipa")
 
-# Detect macOS Tahoe (26.x) — iOS 26.5 simulator only, arm64-only, no Rosetta sim.
-# The bundled IPA is x86_64 so it requires iOS 17.x runtime or a new arm64 build.
+# Detect macOS version to choose the right default simulator.
+# The IPA is an x86_64 simulator build; Rosetta 2 runs it on Apple Silicon for any macOS.
+# macOS 26 (Tahoe) = Xcode 26 + iOS 26.x sims; macOS 15 (Sequoia) = Xcode 16 + iOS 18.x sims;
+# macOS 14 (Sonoma) = Xcode 15 + iOS 17.x sims.
 _mac_ver_str = platform.mac_ver()[0]  # empty string on Linux — guard against ValueError
 _macos_ver = tuple(int(x) for x in _mac_ver_str.split(".")[:2]) if _mac_ver_str else (0, 0)
-_ON_TAHOE  = _macos_ver[0] >= 26       # macOS 26.x = Tahoe
+_ON_TAHOE    = _macos_ver[0] >= 26   # macOS 26.x = Tahoe
+_ON_SEQUOIA  = _macos_ver[0] == 15   # macOS 15.x = Sequoia
 
-# Default iOS version: 17.5 on older macOS (has Rosetta sim for x86_64 IPA),
-# fall back to 26.5 on Tahoe if no iOS 17 runtime is installed.
-_DEFAULT_IOS_VER = "26.5" if _ON_TAHOE else "17.5"
-_DEFAULT_SIM_NAME = "iPhone 17 Pro" if _ON_TAHOE else "iPhone 15 Pro"
+# ios_ci_setup.sh exports IOS_VERSION from xcrun simctl — that always overrides these defaults.
+# These only apply when running locally without ios_ci_setup.sh.
+if _ON_TAHOE:
+    _DEFAULT_IOS_VER = "26.5"
+    _DEFAULT_SIM_NAME = "iPhone 17 Pro"
+elif _ON_SEQUOIA:
+    _DEFAULT_IOS_VER = "18.4"
+    _DEFAULT_SIM_NAME = "iPhone 16 Pro"
+else:
+    _DEFAULT_IOS_VER = "17.5"
+    _DEFAULT_SIM_NAME = "iPhone 15 Pro"
 
 IOS_CAPS = {
     "platformName": "iOS",

@@ -32,15 +32,34 @@ jobs:
 
       - name: Download APK from GitHub Release
         run: |
-          gh release download android-apk-v1.8.2 \
-            --repo Qatarat/qatarat-automation \
-            --pattern "*.apk" \
-            --dir . \
-            --clobber
-          if [ -f Qatarat.Lambda-Stage.apk ]; then
-            mv Qatarat.Lambda-Stage.apk "Qatarat (Lambda-Stage).apk"
+          set -e
+          LATEST_TAG=$(gh release list --limit 30 --json tagName,assets \
+            --jq '.[] | select(any(.assets[]; .name | endswith(".apk"))) | .tagName' \
+            2>/dev/null | head -1 || echo "")
+          TAGS="${LATEST_TAG:-android-apk-v1.8.2} android-apk-v1.8.2"
+          APK_OK=false
+          for TAG in $TAGS; do
+            [ -z "$TAG" ] && continue
+            echo "Trying release tag: $TAG"
+            if gh release download "$TAG" \
+              --repo "${{ github.repository }}" \
+              --pattern "*.apk" \
+              --dir . \
+              --clobber 2>/dev/null; then
+              if [ -f Qatarat.Lambda-Stage.apk ]; then
+                mv Qatarat.Lambda-Stage.apk "Qatarat (Lambda-Stage).apk"
+              fi
+              if [ -f "Qatarat (Lambda-Stage).apk" ]; then
+                echo "✅ APK from release $TAG ($(du -sh 'Qatarat (Lambda-Stage).apk' | cut -f1))"
+                APK_OK=true
+                break
+              fi
+            fi
+          done
+          if [ "$APK_OK" = "false" ]; then
+            echo "::error::Could not download APK from any release. Tags tried: $TAGS"
+            exit 1
           fi
-          echo "✅ APK downloaded ($(du -sh 'Qatarat (Lambda-Stage).apk' | cut -f1))"
         env:
           GH_TOKEN: ${{ github.token }}
 

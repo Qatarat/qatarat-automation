@@ -11,6 +11,10 @@ on:
         description: "iOS simulator version"
         required: false
         default: "17"
+      release_tag:
+        description: "GitHub Release tag containing the IPA (leave blank to auto-detect latest)"
+        required: false
+        default: ""
   schedule:
     - cron: "0 3 * * 2"   # Every Tuesday 03:00 UTC — runs smoke (see suite resolution below)
 
@@ -21,7 +25,7 @@ concurrency:
 jobs:
   ios-maestro:
     name: Maestro ${{ github.event.inputs.suite || (github.event_name == 'schedule' && 'smoke' || 'regression') }} — iOS Simulator
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 300
 
     steps:
@@ -30,28 +34,51 @@ jobs:
         with:
           lfs: false
 
-      - name: Download IPA from GitHub Release
+      - name: Obtain IPA from GitHub Release
         run: |
           set -e
-          for attempt in 1 2 3; do
-            echo "Download attempt $attempt/3..."
-            if gh release download ios-ipa-v1.8.2 \
-              --repo Qatarat/qatarat-automation \
-              --pattern "qatarat-stage-ios.ipa" \
-              --output qatarat-stage-ios.ipa \
-              --clobber; then
-              break
-            fi
-            [ "$attempt" -eq 3 ] && { echo "::error::Failed to download IPA after 3 attempts"; exit 1; }
-            sleep 10
+          # Resolve which release tag to use:
+          #   1. Workflow input (if provided)
+          #   2. Auto-detect: latest release that has a .ipa asset
+          #   3. Hard-coded fallback: ios-ipa-v1.8.2
+          INPUT_TAG="${{ github.event.inputs.release_tag }}"
+          if [ -n "$INPUT_TAG" ]; then
+            TAGS="$INPUT_TAG ios-ipa-v1.8.2"
+          else
+            echo "Auto-detecting latest release with iOS IPA..."
+            LATEST_TAG=$(gh release list --limit 30 --json tagName,assets \
+              --jq '.[] | select(any(.assets[]; .name | endswith(".ipa"))) | .tagName' \
+              2>/dev/null | head -1 || echo "")
+            TAGS="${LATEST_TAG:-ios-ipa-v1.8.2} ios-ipa-v1.8.2"
+          fi
+
+          IPA_OK=false
+          for TAG in $TAGS; do
+            [ -z "$TAG" ] && continue
+            echo "Trying release tag: $TAG"
+            for attempt in 1 2 3; do
+              if gh release download "$TAG" \
+                --repo "${{ github.repository }}" \
+                --pattern "qatarat-stage-ios.ipa" \
+                --output qatarat-stage-ios.ipa \
+                --clobber 2>/dev/null; then
+                SIZE=$(stat -f%z qatarat-stage-ios.ipa 2>/dev/null || stat -c%s qatarat-stage-ios.ipa || echo 0)
+                if [ "${SIZE:-0}" -ge 1000000 ]; then
+                  echo "✅ IPA from release $TAG ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
+                  IPA_OK=true
+                  break 2
+                fi
+                echo "File too small (${SIZE} bytes) — might be LFS pointer, trying next tag"
+              fi
+              [ "$attempt" -lt 3 ] && sleep 10
+            done
           done
-          SIZE=$(stat -f%z qatarat-stage-ios.ipa 2>/dev/null || stat -c%s qatarat-stage-ios.ipa)
-          if [ "$SIZE" -lt 1000000 ]; then
-            echo "::error::Downloaded file too small ($SIZE bytes) — likely LFS pointer"
-            head -5 qatarat-stage-ios.ipa
+
+          if [ "$IPA_OK" = "false" ]; then
+            echo "::error::Could not obtain a valid IPA from any release. Tags tried: $TAGS"
+            echo "::error::Create a GitHub Release (e.g. ios-ipa-v1.8.3) and upload qatarat-stage-ios.ipa to it."
             exit 1
           fi
-          echo "✅ IPA downloaded ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
         env:
           GH_TOKEN: ${{ github.token }}
 
