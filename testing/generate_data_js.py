@@ -41,6 +41,32 @@ FLOWS_DEF = [
     # Extended edge-case flows
     (24, "Browse Search Edges",   "Catalog",    "Empty, Arabic, XSS, SQL, gibberish",       21, 5,  58),
     (25, "Payment Input Edges",   "Commerce",   "Spaces, CAPS, far-future expiry, zeros",   20, 4,  54),
+    # Flows 26–50
+    (26, "Mosque Profile View",      "Catalog",    "View mosque profile, about section, donation history",  18, 5,  54),
+    (27, "Donation — Zakat Flow",    "Donation",   "Zakat calculator, wealth amount entry, payment proceed",22, 7,  71),
+    (28, "Donation — Sadaqah",       "Donation",   "Quick Sadaqah donation, amount select, confirm",         16, 5,  48),
+    (29, "Donation — Recurring",     "Donation",   "Monthly recurring donation subscription setup",          19, 6,  62),
+    (30, "Donation Gift Card",       "Donation",   "Gift donation, recipient details, WhatsApp share",       21, 6,  68),
+    (31, "Wallet Top-Up",            "Commerce",   "Wallet top-up, amount entry, payment method select",    17, 5,  52),
+    (32, "Wallet Balance View",      "Commerce",   "Check balance, transaction history list",                12, 4,  38),
+    (33, "Payment Methods — Manage", "Commerce",   "Add new card, verify it appears in list",               20, 5,  64),
+    (34, "Promo Code — Valid",       "Commerce",   "Apply valid promo code during checkout",                 14, 4,  44),
+    (35, "Promo Code — Invalid",     "Commerce",   "Expired, wrong-format, SQL injection codes rejected",   18, 5,  56),
+    (36, "Language — Switch Arabic", "i18n",       "Switch to Arabic, verify RTL layout changes",           15, 5,  47),
+    (37, "Language — Switch Back",   "i18n",       "Restore English from Arabic mode",                      12, 4,  38),
+    (38, "Profile Edit",             "Account",    "Edit name and email, save, verify updated",             16, 5,  51),
+    (39, "Logout",                   "Account",    "Logout flow, redirect to login screen",                  9, 3,  28),
+    (40, "OTP Resend",               "Auth",       "Resend OTP button during login flow",                   11, 3,  34),
+    (41, "Search — Mosque Name",     "Catalog",    "Search by mosque name, results list",                   13, 4,  41),
+    (42, "Search — Empty Results",   "Catalog",    "No-results state UI for nonsense query",                 9, 2,  28),
+    (43, "Search — Special Chars",   "Catalog",    "@#$%^&* search — no crash",                             8, 2,  24),
+    (44, "Notifications View",       "Account",    "Notification panel, mark read, timestamps",             14, 4,  43),
+    (45, "Deep Link Handling",       "Resilience", "qatarat:// URI scheme → mosque profile",                12, 3,  38),
+    (46, "Live Broadcast View",      "Live",       "Navigate to stream section, Agora RTC join",            15, 4,  46),
+    (47, "Dark Mode Toggle",         "Account",    "Dark mode in settings, visual change",                  10, 3,  31),
+    (48, "Background Resume",        "Resilience", "Background 5s, resume, state preserved",                10, 2,  29),
+    (49, "Accessibility Labels",     "Quality",    "Key elements have accessibility text",                  16, 5,  50),
+    (50, "Session Handling",         "Resilience", "Session persists after app restart (noReset)",          13, 3,  40),
 ]
 FLOW_FILE_NAMES = [
     "01_splash_onboarding", "02_login_otp", "03_guest_user", "04_browse_services",
@@ -50,6 +76,15 @@ FLOW_FILE_NAMES = [
     "17_login_invalid_phone", "18_login_wrong_otp", "19_invalid_promo",
     "20_empty_cart_checkout", "21_gift_card_validation", "22_cart_quantity_boundary",
     "23_app_background_resume", "24_browse_search_edge_cases", "25_payment_input_edge_cases",
+    "26_mosque_profile_view", "27_donation_zakat_flow", "28_donation_sadaqah",
+    "29_donation_recurring", "30_donation_gift_card", "31_wallet_topup",
+    "32_wallet_balance_view", "33_payment_methods_manage", "34_promo_code_valid",
+    "35_promo_code_invalid", "36_language_switch_arabic", "37_language_switch_back",
+    "38_profile_edit", "39_logout_success", "40_otp_resend",
+    "41_search_mosque_name", "42_search_empty_results", "43_search_special_characters",
+    "44_notifications_view", "45_deep_link_handling", "46_live_broadcast_view",
+    "47_dark_mode_toggle", "48_app_background_resume", "49_accessibility_labels",
+    "50_session_handling",
 ]
 # Screenshot names as used in takeScreenshot: commands in each flow's YAML
 FLOW_SCREENSHOT_NAMES = [
@@ -78,6 +113,31 @@ FLOW_SCREENSHOT_NAMES = [
     ["bg_resume_cart_before_background", "bg_resume_after_foreground", "bg_resume_cart_intact"],
     ["browse_search_edge_cases_complete"],
     ["payment_input_edge_cases_complete"],
+    ["mosque_profile_view_complete"],
+    ["donation_zakat_flow_complete"],
+    ["donation_sadaqah_complete"],
+    ["donation_recurring_complete"],
+    ["donation_gift_card_complete"],
+    ["wallet_topup_complete"],
+    ["wallet_balance_view_complete"],
+    ["payment_methods_manage_complete"],
+    ["promo_code_valid_complete"],
+    ["promo_code_invalid_complete"],
+    ["language_switch_arabic_complete"],
+    ["language_switch_back_complete"],
+    ["profile_edit_complete"],
+    ["logout_success_complete"],
+    ["otp_resend_complete"],
+    ["search_mosque_name_complete"],
+    ["search_empty_results_complete"],
+    ["search_special_characters_complete"],
+    ["notifications_view_complete"],
+    ["deep_link_handling_complete"],
+    ["live_broadcast_view_complete"],
+    ["dark_mode_toggle_complete"],
+    ["app_background_resume_complete"],
+    ["accessibility_labels_complete"],
+    ["session_handling_complete"],
 ]
 
 APPIUM_DEF = [
@@ -362,109 +422,6 @@ def xml_test_map(xml_path):
     except Exception:
         pass
     return out
-
-# ─── Demo data — shown on GitHub Pages before any CI run completes ────────
-def _build_demo_data(now):
-    import math
-    def _seed(n):
-        x = math.sin(n) * 10000
-        return x - math.floor(x)
-
-    run_meta = {
-        "id": "run-demo", "commit": "8af3c12", "branch": "main",
-        "triggeredBy": "mejbaurbahar", "startedAt": "2026-05-21T08:42:11Z",
-        "duration": 2147, "device": "Pixel 7 · Android 14 · API 34",
-        "flutterVersion": "3.24.5", "neverRan": False, "isMockData": True,
-    }
-    flows = []
-    statuses = [
-        "pass","pass","pass","pass","pass","pass","flaky","pass","pass","pass",
-        "pass","pass","pass","fail","pass","pass",
-        # negative / boundary flows (17-23)
-        "pass","pass","pass","pass","pass","pass","pass",
-        # edge-case flows (24-25)
-        "pass","pass",
-    ]
-    notes = {6: "Retry passed on attempt 2/3",
-             13: "Element 'cancel_confirm_btn' not found after 8000ms"}
-    for i, (fid, name, group, coverage, steps, screens, dur) in enumerate(FLOWS_DEF):
-        row = {"id": fid, "name": name, "group": group, "coverage": coverage,
-               "duration": dur, "steps": steps, "status": statuses[i], "screens": screens}
-        if i in notes:
-            row["note"] = notes[i]
-        flows.append(row)
-
-    appium = []
-    demo_statuses = {
-        "test_cancel_flow":                          "flaky",
-        "test_unavailable_items":                    "fail",
-        "test_past_year_expiry_shows_error":         "flaky",
-        "test_wrong_otp_shows_error":                "flaky",
-        "test_maximum_quantity_does_not_crash":      "flaky",
-        "test_sql_injection_in_promo_is_safe":       "pass",
-        "test_xss_in_message_is_safe":               "pass",
-        "test_cancel_active_subscription_declined":  "flaky",
-        "test_help_search_sql_injection_is_safe":    "pass",
-        "test_search_sql_injection_is_safe":         "pass",
-    }
-    demo_errors = {
-        "test_unavailable_items": "AssertionError: 'sold_out' label not visible after 8000ms",
-        "test_past_year_expiry_shows_error": "StaleElementReferenceException on retry attempt 2/3",
-        "test_wrong_otp_shows_error": "StaleElementReferenceException: element detached after OTP screen transition",
-        "test_maximum_quantity_does_not_crash": "StaleElementReferenceException: '+' button re-bound after scroll",
-        "test_cancel_active_subscription_declined": "TimeoutException: 'No' button took >8s to appear",
-    }
-    for af in APPIUM_DEF:
-        tests = []
-        for t in af["tests"]:
-            st = demo_statuses.get(t["name"], "pass")
-            entry = {"name": t["name"], "duration": t["dur"], "status": st}
-            if t["name"] in demo_errors:
-                entry["error"] = demo_errors[t["name"]]
-            tests.append(entry)
-        appium.append({"file": af["file"], "group": af["group"],
-                       "icon": af["icon"], "tests": tests})
-
-    ci_workflows = [
-        {"name": "Maestro Smoke",      "trigger": "Every push / PR",    "duration": "~10 min",
-         "coverage": "Login, cart, checkout",                 "status": "pass", "lastRun": "12 min ago", "runs": 284, "passRate": 97.5},
-        {"name": "Maestro Regression", "trigger": "Nightly 01:00 UTC",  "duration": "~30 min",
-         "coverage": "All 16 flows",                          "status": "pass", "lastRun": "7h ago",     "runs": 64,  "passRate": 93.8},
-        {"name": "Appium Deep Tests",  "trigger": "Every Monday",       "duration": "~60 min",
-         "coverage": "Payment, gift, subscriptions, account", "status": "fail", "lastRun": "3 days ago", "runs": 28,  "passRate": 89.3},
-        {"name": "Maestro iOS",        "trigger": "Manual only",        "duration": "~20 min",
-         "coverage": "Smoke on iOS Simulator",                "status": "idle", "lastRun": "11 days ago","runs": 9,   "passRate": 100},
-        {"name": "Publish Report",     "trigger": "After any test run", "duration": "~3 min",
-         "coverage": "Deploys to GitHub Pages",               "status": "pass", "lastRun": "12 min ago", "runs": 312, "passRate": 99.7},
-    ]
-
-    history = []
-    for i in range(29, -1, -1):
-        s = _seed(i + 1)
-        total = 38
-        fail  = int(s * 4)
-        flaky = int(_seed(i + 100) * 3)
-        history.append({"day": i, "total": total, "pass": total - fail - flaky,
-                         "fail": fail, "flaky": flaky,
-                         "duration": 1800 + int(_seed(i + 50) * 900)})
-
-    commits = [
-        {"sha": "8af3c12", "msg": "fix(checkout): retry HyperPay timeout with backoff",
-         "author": "mejbaurbahar", "time": "12 min ago", "tests": 38, "pass": 36, "fail": 1, "flaky": 1, "hasData": True},
-        {"sha": "1d92f04", "msg": "feat(subscription): weekly cadence skip-week button",
-         "author": "mejbaurbahar", "time": "4h ago",     "tests": 38, "pass": 37, "fail": 0, "flaky": 1, "hasData": True},
-        {"sha": "9bc4e87", "msg": "chore(maestro): bump driver to 2.4.1",
-         "author": "ci-bot",       "time": "8h ago",     "tests": 38, "pass": 38, "fail": 0, "flaky": 0, "hasData": True},
-        {"sha": "44a1b2e", "msg": "fix(i18n): Urdu RTL alignment on cart page",
-         "author": "mejbaurbahar", "time": "yesterday",  "tests": 38, "pass": 35, "fail": 2, "flaky": 1, "hasData": True},
-        {"sha": "c0ef551", "msg": "test(appium): gift card preview snapshot",
-         "author": "mejbaurbahar", "time": "2 days ago", "tests": 36, "pass": 36, "fail": 0, "flaky": 0, "hasData": True},
-        {"sha": "7711aaf", "msg": "feat(profile): delete account confirmation dialog",
-         "author": "mejbaurbahar", "time": "3 days ago", "tests": 36, "pass": 34, "fail": 1, "flaky": 1, "hasData": True},
-    ]
-    return {"RUN_META": run_meta, "MAESTRO_FLOWS": flows, "APPIUM_TESTS": appium,
-            "CI_WORKFLOWS": ci_workflows, "HISTORY": history, "COMMITS": commits}
-
 
 # ─── Main ─────────────────────────────────────────────────────────────────
 def main():
@@ -789,28 +746,6 @@ def main():
         "total": today_pass + today_fail,
         "ran": today_ran,
     }
-    # ── 10. If nothing ran yet, inject demo statuses into LIVE_DATA ──────────
-    if never_ran:
-        _demo = _build_demo_data(now)
-        # Inject demo maestro statuses (keyed "01".."25")
-        for row in _demo["MAESTRO_FLOWS"]:
-            live_maestro_statuses[f'{row["id"]:02d}'] = row["status"]
-        # Inject demo appium statuses
-        for group in _demo["APPIUM_TESTS"]:
-            for t in group["tests"]:
-                live_test_results[t["name"]] = {
-                    "status": t["status"],
-                    "duration": t.get("duration", 5.0),
-                    "error": t.get("error"),
-                }
-        live_current_run = {
-            "number": "demo",
-            "date": now,
-            "passed": sum(1 for s in live_maestro_statuses.values() if s in ("pass", "flaky")),
-            "failed": sum(1 for s in live_maestro_statuses.values() if s == "fail"),
-            "total": len(live_maestro_statuses),
-            "ran": True,
-        }
 
     js = f"""// Auto-generated by generate_data_js.py — do not edit.
 // Generated: {now}
