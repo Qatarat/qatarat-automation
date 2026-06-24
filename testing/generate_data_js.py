@@ -399,26 +399,43 @@ def _humanize_error(raw: str) -> str:
 
 
 def xml_test_map(xml_path):
-    """Return {test_name: (status, duration_s, error_msg)} from a JUnit XML."""
+    """Return {test_name: (status, duration_s, error_msg)} from a JUnit XML.
+
+    Parametrized tests produce entries like test_foo[bar] in JUnit XML.
+    Strip the [param] suffix so dashboard lookup against bare function names works.
+    Aggregation: any-fail wins over pass; pass wins over skip.
+    """
     out = {}
     try:
         root = ET.parse(xml_path).getroot()
         for tc in root.iter("testcase"):
-            name = tc.get("name", "")
+            raw_name = tc.get("name", "")
+            # Strip parametrize suffix: "test_foo[bar baz]" → "test_foo"
+            name = re.sub(r'\[.*\]$', '', raw_name)
             dur  = float(tc.get("time", "0") or "0")
             _fe = tc.find("failure"); fail_el = _fe if _fe is not None else tc.find("error")
             if fail_el is not None:
                 raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
                 msg = _humanize_error(raw) or " ".join(raw.split())[:400] or "Test failed — the app or driver did not behave as expected. Check the screenshot or recording for what happened on screen."
-                out[name] = ("fail", dur, msg)
+                new_entry = ("fail", dur, msg)
             elif tc.find("skipped") is not None:
                 skip_el = tc.find("skipped")
-                skip_msg = ""
-                if skip_el is not None:
-                    skip_msg = (skip_el.get("message") or "").strip()[:300]
-                out[name] = ("skip", dur, skip_msg)
+                skip_msg = (skip_el.get("message") or "").strip()[:300] if skip_el is not None else ""
+                new_entry = ("skip", dur, skip_msg)
             else:
-                out[name] = ("pass", dur, "")
+                new_entry = ("pass", dur, "")
+
+            # Aggregate parametrized variants: fail > skip > pass
+            if name not in out:
+                out[name] = new_entry
+            else:
+                existing = out[name]
+                # keep worst status; use max duration
+                rank = {"fail": 2, "skip": 1, "pass": 0}
+                if rank.get(new_entry[0], 0) > rank.get(existing[0], 0):
+                    out[name] = (new_entry[0], max(dur, existing[1]), new_entry[2])
+                else:
+                    out[name] = (existing[0], max(dur, existing[1]), existing[2])
     except Exception:
         pass
     return out

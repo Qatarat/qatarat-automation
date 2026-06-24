@@ -95,8 +95,8 @@ class TestSubscriptionBoundary:
             "After declining cancel, subscription screen not maintained"
         screenshot(driver, "subscription_cancel_declined")
 
-    def test_billing_history_accessible(self, driver):
-        """Billing history page must load without error."""
+    def test_subscription_billing_history_accessible(self, driver):
+        """Billing history page must load without error (accessed from subscription area)."""
         login = LoginPage(driver)
         login.select_country_and_language()
         login.skip_onboarding()
