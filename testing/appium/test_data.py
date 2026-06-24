@@ -101,3 +101,22 @@ class BoundaryValues:
     ORDER_SEARCH_NO_RESULTS = "ORDERNOTEXIST9999"
     PROFILE_LONG_NAME = "A" * 200
     PROFILE_SPECIAL_CHARS = "User!@#$%^&*()"
+    LOCATION_SEARCH_CITY = "Doha"
+    LOCATION_SEARCH_ARABIC = "الدوحة"
+    LOCATION_SEARCH_SPECIAL = "@#$%^"
+    LOCATION_SEARCH_LONG = "A" * 200
+
+
+class WalletData:
+    VALID_TOPUP_AMOUNT = "50"
+    ZERO_AMOUNT = "0"
+    NEGATIVE_AMOUNT = "-10"
+    ALPHA_AMOUNT = "abc"
+    MAX_AMOUNT = "999999"
+    DECIMAL_AMOUNT = "25.50"
+
+
+class SubscriptionData:
+    WEEKLY = "Weekly"
+    MONTHLY = "Monthly"
+    SKIP = "Skip"

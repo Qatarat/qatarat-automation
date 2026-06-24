@@ -325,7 +325,8 @@ jobs:
           # Pull history from the previously deployed gh-pages so trend graphs persist
           mkdir -p allure-results/history
           OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.event.repository.name }}"
+          REPO="${{ github.repository }}"
+          REPO="${REPO##*/}"
           BASE="https://${OWNER}.github.io/${REPO}/allure-report/history"
           for f in categories.json environment.json history.json history-trend.json; do
             curl -sf "${BASE}/${f}" -o "allure-results/history/${f}" 2>/dev/null \
@@ -364,7 +365,8 @@ jobs:
         run: |
           # Fetch previous run-history.json from gh-pages (if exists)
           OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.event.repository.name }}"
+          REPO="${{ github.repository }}"
+          REPO="${REPO##*/}"
           curl -sf "https://${OWNER}.github.io/${REPO}/run-history.json" \
             -o gh-pages/run-history.json 2>/dev/null || echo "[]" > gh-pages/run-history.json
 
