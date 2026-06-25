@@ -1,32 +1,46 @@
 #!/usr/bin/env bash
-# Appium CI runner — called from reactivecircus/android-emulator-runner script:
-#   bash testing/run_appium_ci.sh [pytest_marker]
-# Pass a pytest marker (payment|gift|subscription|account|streaming) as $1
-# to run only that subset; omit for the full test suite.
+# Appium CI runner — used by both Android and iOS matrix jobs.
+#
+# Environment variables (all optional):
+#   PLATFORM         android | ios  (default: android)
+#   TEST_MARKER      pytest -m expression (overrides positional arg $1)
+#   TEST_PATHS       space-separated test paths for matrix jobs (default: tests/)
+#   GROUP_NAME       label for this matrix group (used in result filenames)
+#
+# Positional arg $1: marker (legacy, TEST_MARKER env takes precedence)
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APPIUM_DIR="$SCRIPT_DIR/appium"
 REPORTS_DIR="$APPIUM_DIR/reports"
 ALLURE_DIR="$APPIUM_DIR/allure-results"
-MARKER="${1:-}"
+
+# Marker: env var takes precedence over positional arg
+MARKER="${TEST_MARKER:-${1:-}}"
 PLATFORM="${PLATFORM:-android}"
+GROUP_NAME="${GROUP_NAME:-}"
+
+# TEST_PATHS: space-separated paths (e.g. "tests/auth/ tests/account/")
+# When set by matrix jobs, restricts which test files this job runs.
+# Split into array for safe pytest invocation.
+read -ra TEST_PATHS_ARR <<< "${TEST_PATHS:-tests/}"
 
 mkdir -p "$REPORTS_DIR/screenshots" "$ALLURE_DIR"
-
 cd "$APPIUM_DIR"
 
-# iOS: 540s per test — login (OTP round-trip ~260s) + navigation + action + assertion.
-# Some profile tests take 400-430s on macos-14 slow simulator; 420s was too tight.
-# Android: 300s unchanged.
+# iOS tests take longer: login OTP round-trip + WDA session overhead.
 if [ "$PLATFORM" = "ios" ]; then
   PER_TEST_TIMEOUT=540
 else
   PER_TEST_TIMEOUT=300
 fi
 
+# Result file: unique name per matrix group so all groups can be merged by the
+# publish workflow without one group's results.xml overwriting another.
+RESULT_XML="$REPORTS_DIR/results${GROUP_NAME:+-$GROUP_NAME}.xml"
+
 PYTEST_ARGS=(
-  tests/
+  "${TEST_PATHS_ARR[@]}"
   -v
   --timeout="$PER_TEST_TIMEOUT"
   --timeout-method=signal
@@ -34,22 +48,22 @@ PYTEST_ARGS=(
   --self-contained-html
   --tb=short
   -o "junit_family=xunit2"
-  --junit-xml="$REPORTS_DIR/results.xml"
+  --junit-xml="$RESULT_XML"
   --alluredir="$ALLURE_DIR"
 )
 
 if [ -n "$MARKER" ]; then
-  echo "Running Appium tests with marker: $MARKER (platform: $PLATFORM)"
+  echo "Running Appium tests — paths: ${TEST_PATHS_ARR[*]} | marker: $MARKER | platform: $PLATFORM"
   python3 -m pytest "${PYTEST_ARGS[@]}" -m "$MARKER"
 else
-  echo "Running full Appium test suite (platform: $PLATFORM)"
+  echo "Running Appium tests — paths: ${TEST_PATHS_ARR[*]} | all tests | platform: $PLATFORM"
   python3 -m pytest "${PYTEST_ARGS[@]}"
 fi
 
 RC=$?
 echo ""
 echo "Appium run complete (exit $RC)."
-echo "  JUnit:  $REPORTS_DIR/results.xml"
+echo "  JUnit:  $RESULT_XML"
 echo "  HTML:   $REPORTS_DIR/report.html"
 echo "  Allure: $ALLURE_DIR"
 exit $RC

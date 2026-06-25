@@ -472,10 +472,15 @@ def main():
                     pass
             break
 
-    # ── 2. Appium test statuses from Android appium results.xml ──────────
+    # ── 2. Appium test statuses from Android appium results*.xml ─────────
+    # Matrix jobs produce results-{group}.xml (e.g. results-auth-account.xml).
+    # The glob results*.xml matches both results.xml (single-job) and results-*.xml (matrix).
     appium_map = {}
-    for xml_path in glob.glob(f"{artifacts_dir}/**/results.xml", recursive=True):
+    for xml_path in glob.glob(f"{artifacts_dir}/**/results*.xml", recursive=True):
         if f"{os.sep}appium-ios{os.sep}" in xml_path:
+            continue
+        # Exclude Maestro per-flow XMLs (named NNN_flow_name-results.xml)
+        if re.search(r'\d{2}_.*-results\.xml', os.path.basename(xml_path)):
             continue
         appium_map.update(xml_test_map(xml_path))
     for xml_path in glob.glob(f"{artifacts_dir}/**/*appium*.xml", recursive=True):

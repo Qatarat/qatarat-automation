@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       marker:
-        description: "pytest marker (payment | gift | subscription | account | streaming | empty=all). Defaults to 'account' if blank."
+        description: "pytest marker to filter (leave blank = run ALL 257 tests across all groups)"
         required: false
-        default: "account"
+        default: ""
 
 concurrency:
   group: appium-android-${{ github.ref }}
@@ -18,11 +18,25 @@ concurrency:
 
 jobs:
   appium-tests:
-    name: Appium Deep Tests (Android API 33)
+    name: Android Appium — ${{ matrix.group.name }}
     runs-on: ubuntu-latest
-    # emulator boot ~20-40 min + 27 account tests ~4-5 min each on CI = ~130-175 min
-    # Use 240 for all — same headroom regardless of trigger
+    # Each group: ~60 tests × 3 min avg + 40 min emulator boot = ~220 min
     timeout-minutes: 240
+
+    strategy:
+      fail-fast: false   # one group failing must not cancel others
+      matrix:
+        group:
+          - name: "auth-account"
+            paths: "tests/auth/ tests/account/"
+          - name: "payment-commerce"
+            paths: "tests/payment/ tests/wallet/ tests/checkout/ tests/promo/"
+          - name: "donation-commerce"
+            paths: "tests/donation/ tests/gift/ tests/subscription/ tests/cart/"
+          - name: "browse-misc"
+            paths: "tests/browse/ tests/mosque/ tests/home/ tests/notifications/ tests/streaming/ tests/booking/ tests/orders/"
+          - name: "new-features"
+            paths: "tests/favourites/ tests/location/ tests/rating/"
 
     steps:
       - name: Checkout
@@ -97,8 +111,6 @@ jobs:
 
       - name: Pre-install Android system image
         run: |
-          # API 29 default is ~half the size of API 33 google_apis and boots
-          # in 3-5 min with KVM — API 33 google_apis was timing out at 4h.
           SDKMAN="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}/cmdline-tools/latest/bin/sdkmanager"
           if [ ! -f "$SDKMAN" ]; then
             echo "::warning::sdkmanager not found — emulator runner will install"
@@ -120,15 +132,17 @@ jobs:
             echo "Waiting for Appium... ($i/20)"
           done
           echo "::error::Appium failed to start within 40s"
-          cat /tmp/appium.log | tail -20
+          tail -20 /tmp/appium.log
           exit 1
 
-      - name: Run Appium Tests on Emulator
+      - name: Run Appium Tests on Emulator — ${{ matrix.group.name }}
         uses: reactivecircus/android-emulator-runner@v2
         env:
           PLATFORM: android
           DEVICE_MODE: emulator
-          TEST_MARKER: ${{ github.event.inputs.marker || 'account' }}
+          TEST_MARKER: ${{ github.event.inputs.marker || '' }}
+          TEST_PATHS: ${{ matrix.group.paths }}
+          GROUP_NAME: ${{ matrix.group.name }}
           ANDROID_EMU_NAME: Pixel_4_API_29
           ANDROID_AVD: Pixel_4_API_29
           ANDROID_VERSION: "10"
@@ -142,106 +156,102 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 3072
           disable-animations: true
           script: |
-            # recording removed — screenrecord on emulator hangs wait() indefinitely,
-            # causing the entire script to block after tests complete and losing all results
             set -e
             echo "=== Waiting for device ==="
             adb wait-for-device
             echo "=== Installing APK ==="
             timeout 120 adb install -r "Qatarat (Lambda-Stage).apk" || { echo "::error::adb install failed"; exit 1; }
-            echo "=== APK installed — running tests ==="
+            echo "=== APK installed — running group: $GROUP_NAME | paths: $TEST_PATHS ==="
             set +e
-            bash testing/run_appium_ci.sh "$TEST_MARKER"
+            bash testing/run_appium_ci.sh
             exit $?
 
-      - name: Publish step summary
+      - name: Publish step summary — ${{ matrix.group.name }}
         if: always()
         run: |
           python3 - <<'EOF'
-          import xml.etree.ElementTree as ET, os, pathlib
-          f = "testing/appium/reports/results.xml"
-          if not pathlib.Path(f).exists():
-              print("No results file found"); exit()
-          root = ET.parse(f).getroot()
-          suites = root.findall(".//testsuite") or [root]
+          import xml.etree.ElementTree as ET, os, pathlib, glob
+          group = os.environ.get("GROUP_NAME", "")
+          pat = f"testing/appium/reports/results-{group}.xml" if group else "testing/appium/reports/results.xml"
+          files = glob.glob(pat) or glob.glob("testing/appium/reports/results*.xml")
+          if not files:
+              with open(os.environ.get("GITHUB_STEP_SUMMARY") or "/dev/null", "a") as fh:
+                  fh.write(f"## 🤖 Android Appium — {group}\n\n> No results file — check logs.\n")
+              exit(0)
+          root = ET.parse(files[0]).getroot()
           total = passed = failed = skipped = 0
           rows = ""
-          for ts in suites:
-              for tc in ts.findall("testcase"):
-                  total += 1
-                  name = tc.get("name","")
-                  if tc.find("failure") is not None or tc.find("error") is not None:
-                      failed += 1; icon = "❌"
-                  elif tc.find("skipped") is not None:
-                      skipped += 1; icon = "⏭️"
-                  else:
-                      passed += 1; icon = "✅"
-                  rows += f"| {icon} | {name} |\n"
+          for tc in root.iter("testcase"):
+              total += 1
+              name = tc.get("name", "")
+              if tc.find("failure") is not None or tc.find("error") is not None:
+                  failed += 1; icon = "❌"
+                  el = tc.find("failure") or tc.find("error")
+                  reason = (el.get("message") or "")[:100].replace("|","\\|") if el is not None else ""
+                  rows += f"| {icon} | {name} | {reason} |\n"
+              elif tc.find("skipped") is not None:
+                  skipped += 1
+              else:
+                  passed += 1; icon = "✅"
+                  rows += f"| {icon} | {name} |  |\n"
           pct = int(passed/total*100) if total else 0
           bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
-          summary = f"""## 🤖 Appium Deep Test Results
+          summary = f"""## 🤖 Android Appium — {group}: {passed}/{total} ({pct}%)
           {bar}
-          | Metric | Value |
-          |--------|-------|
-          | ✅ Passed  | {passed} |
-          | ❌ Failed  | {failed} |
-          | ⏭️ Skipped | {skipped} |
-          | 📊 Total   | {total} |
-          | 📈 Pass rate | {pct}% |
+          | ✅ Passed | ❌ Failed | ⏭️ Skipped | 📊 Total |
+          |----------|----------|-----------|---------|
+          | {passed} | {failed} | {skipped} | {total} |
 
-          ### Test Details
-          | Status | Test |
-          |--------|------|
-          {rows}"""
-          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as fh:
+          | Status | Test | Reason |
+          |--------|------|--------|
+          {rows if rows else "| — | No test details |\n"}"""
+          with open(os.environ.get("GITHUB_STEP_SUMMARY") or "/dev/null", "a") as fh:
               fh.write(summary)
           EOF
+        env:
+          GROUP_NAME: ${{ matrix.group.name }}
 
       - name: Upload Allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-allure-results-${{ github.run_number }}
+          name: appium-allure-results-${{ matrix.group.name }}-${{ github.run_number }}
           path: testing/appium/allure-results/
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload JUnit XML
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-junit-${{ github.run_number }}
-          path: testing/appium/reports/results.xml
+          name: appium-junit-${{ matrix.group.name }}-${{ github.run_number }}
+          path: testing/appium/reports/results-${{ matrix.group.name }}.xml
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-html-report-${{ github.run_number }}
+          name: appium-html-report-${{ matrix.group.name }}-${{ github.run_number }}
           path: testing/appium/reports/report.html
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload failure screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-screenshots-${{ github.run_number }}
+          name: appium-screenshots-${{ matrix.group.name }}-${{ github.run_number }}
           path: testing/appium/reports/screenshots/
           retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload Appium log on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-server-log-${{ github.run_number }}
+          name: appium-server-log-${{ matrix.group.name }}-${{ github.run_number }}
           path: /tmp/appium.log
-          retention-days: 7
-
-      - name: Upload Android recording
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-appium-recording-${{ github.run_number }}
-          path: testing/appium/reports/android-appium.mp4
           retention-days: 7
           if-no-files-found: warn

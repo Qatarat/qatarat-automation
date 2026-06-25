@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       marker:
-        description: "pytest marker (donation | payment | mosque | wallet | account | streaming | empty=all)"
+        description: "pytest marker to filter (leave blank = run ALL tests across all groups)"
         required: false
         default: ""
       ios_version:
@@ -24,14 +24,30 @@ on:
 
 concurrency:
   group: appium-ios-${{ github.ref }}
-  cancel-in-progress: true   # supersede stale queued/in-progress runs (macOS queue is slow)
+  cancel-in-progress: true
 
 jobs:
   appium-ios:
-    name: Appium Deep Tests (iOS Simulator)
+    name: iOS Appium — ${{ matrix.group.name }}
     runs-on: macos-15
-    # account suite ~60–90 min; full suite needs more headroom on Rosetta sim
-    timeout-minutes: ${{ github.event.inputs.marker == '' && 240 || 180 }}
+    # Each iOS group: ~50 tests × 5 min avg + 60 min WDA pre-warm/setup = ~310 min
+    # Use 360 (GitHub max) for the heavier groups (auth+account)
+    timeout-minutes: 360
+
+    strategy:
+      fail-fast: false   # one group failing must not cancel others
+      matrix:
+        group:
+          - name: "auth-account"
+            paths: "tests/auth/ tests/account/"
+          - name: "payment-commerce"
+            paths: "tests/payment/ tests/wallet/ tests/checkout/ tests/promo/"
+          - name: "donation-commerce"
+            paths: "tests/donation/ tests/gift/ tests/subscription/ tests/cart/"
+          - name: "browse-misc"
+            paths: "tests/browse/ tests/mosque/ tests/home/ tests/notifications/ tests/streaming/ tests/booking/ tests/orders/"
+          - name: "new-features"
+            paths: "tests/favourites/ tests/location/ tests/rating/"
 
     steps:
       - name: Checkout
@@ -98,15 +114,13 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install Appium + XCUITest + Flutter drivers + ffmpeg
+      - name: Install Appium + XCUITest + ffmpeg
         run: |
           npm install -g appium
           appium driver install xcuitest
           appium driver install --source=npm appium-flutter-driver || true
           appium driver list --installed
           brew install ffmpeg --quiet 2>/dev/null || true
-          # applesimutils required by appium:permissions capability to pre-grant
-          # location/camera/notifications so system dialogs never block tests
           brew tap wix/brew 2>/dev/null || true
           brew install wix/brew/applesimutils 2>/dev/null || \
             brew install applesimutils 2>/dev/null || true
@@ -115,25 +129,17 @@ jobs:
       - name: Boot Simulator and install app
         run: bash testing/ios_ci_setup.sh qatarat-stage-ios.ipa
 
-      - name: Log system resources before tests
-        run: |
-          echo "=== Memory ===" && vm_stat | head -20
-          echo "=== Disk ===" && df -h /
-          echo "=== Processes ===" && top -l 1 -n 15 -o mem 2>/dev/null | head -25 || true
-
       - name: Start iOS screen recording (optional)
-        if: ${{ github.event.inputs.record_video == 'true' }}
+        if: ${{ github.event.inputs.record_video == 'true' && matrix.group.name == 'auth-account' }}
         run: |
           mkdir -p testing/appium/reports
           xcrun simctl io "$SIM_ID" recordVideo \
             testing/appium/reports/ios-appium-raw.mp4 \
             --codec h264 &
           echo $! > /tmp/ios_rec_pid
-          echo "Screen recording started (PID $(cat /tmp/ios_rec_pid))"
 
       - name: Start Appium server
         run: |
-          # Raise file descriptor limit — prevents EMFILE errors under heavy test load
           ulimit -n 65536 || true
           appium --port 4723 \
             --log /tmp/appium-ios.log \
@@ -149,7 +155,7 @@ jobs:
             echo "Waiting for Appium... ($i/30)"
           done
           echo "::error::Appium failed to start within 60s"
-          cat /tmp/appium-ios.log | tail -30
+          tail -30 /tmp/appium-ios.log
           exit 1
 
       - name: Pre-warm WebDriverAgent (compile + launch WDA before tests)
@@ -163,14 +169,9 @@ jobs:
           IOS_SIM_NAME: ${{ env.SIM_NAME }}
           APPIUM_SERVER: http://localhost:4723
         run: |
-          # Create one Appium session that forces XCUITest to compile and install
-          # WebDriverAgent on the simulator (takes 3-5 min cold). All subsequent
-          # pytest sessions (useNewWDA: False) reuse the running WDA instance
-          # and create in <10s instead of timing out at 120s.
           python3 - <<'PYEOF'
           import os, sys, time
           sys.path.insert(0, 'testing/appium')
-
           try:
               from appium.options import AppiumOptions
           except ImportError:
@@ -178,17 +179,13 @@ jobs:
                   from appium.options.common.base import AppiumOptions
               except ImportError:
                   from appium.options.android.uiautomator2.base import UiAutomator2Options as AppiumOptions
-
           from appium import webdriver
           from capabilities.ios_caps import IOS_SIMULATOR_CAPS
-
           APPIUM_SERVER = os.environ.get("APPIUM_SERVER", "http://localhost:4723")
-
           caps = dict(IOS_SIMULATOR_CAPS)
-          caps["appium:wdaLaunchTimeout"]       = 600000  # 10 min — enough for first build
-          caps["appium:simulatorStartupTimeout"] = 60000  # sim already booted
-          caps["appium:newCommandTimeout"]       = 60     # quit quickly after connect
-
+          caps["appium:wdaLaunchTimeout"]        = 600000
+          caps["appium:simulatorStartupTimeout"] = 60000
+          caps["appium:newCommandTimeout"]        = 60
           try:
               opts = AppiumOptions()
               opts.load_capabilities(caps)
@@ -196,7 +193,6 @@ jobs:
               opts = AppiumOptions()
               for k, v in caps.items():
                   opts.set_capability(k, v)
-
           print("Pre-warming WDA — first session compiles WebDriverAgent (~3-5 min)...")
           t0 = time.time()
           try:
@@ -209,11 +205,9 @@ jobs:
               print("Continuing — pytest will attempt sessions anyway")
           PYEOF
 
-      - name: Run Appium Tests (iOS Simulator)
+      - name: Run iOS Appium Tests — ${{ matrix.group.name }}
         id: run_tests
-        # account suite = 27 tests × ~5 min each = ~135 min on slow macOS CI simulator
-        # WDA pre-warm + setup adds ~20 min → total ~155 min needed
-        timeout-minutes: 160
+        timeout-minutes: 290
         env:
           PLATFORM: ios
           DEVICE_MODE: simulator
@@ -223,19 +217,19 @@ jobs:
           IOS_APP_PATH: ${{ env.IOS_APP_PATH }}
           IOS_SIM_COMPATIBLE: ${{ env.IOS_SIM_COMPATIBLE }}
           APPIUM_SERVER: http://localhost:4723
-          TEST_MARKER: ${{ github.event.inputs.marker || 'account' }}
-          # Static OTP used by test backend (same as Android CI)
+          TEST_MARKER: ${{ github.event.inputs.marker || '' }}
+          TEST_PATHS: ${{ matrix.group.paths }}
+          GROUP_NAME: ${{ matrix.group.name }}
           TEST_OTP: "1234"
         run: |
-          # Raise file descriptor limit for the test process
           ulimit -n 65536 || true
-          bash testing/run_appium_ci.sh "$TEST_MARKER"
+          bash testing/run_appium_ci.sh
 
       - name: Log system resources after tests
         if: always()
         run: |
-          echo "=== Memory after tests ===" && vm_stat | head -20 || true
-          echo "=== Disk after tests ===" && df -h / || true
+          echo "=== Memory ===" && vm_stat | head -20 || true
+          echo "=== Disk ===" && df -h / || true
 
       - name: Stop and compress iOS recording
         if: always()
@@ -255,17 +249,19 @@ jobs:
             rm -f "$RAW"
           fi
 
-      - name: Publish step summary
+      - name: Publish step summary — ${{ matrix.group.name }}
         if: always()
         run: |
           python3 - <<'PYEOF'
-          import xml.etree.ElementTree as ET, os, pathlib, textwrap
-          f = "testing/appium/reports/results.xml"
-          if not pathlib.Path(f).exists():
+          import xml.etree.ElementTree as ET, os, glob, textwrap
+          group = os.environ.get("GROUP_NAME", "")
+          pat = f"testing/appium/reports/results-{group}.xml" if group else "testing/appium/reports/results.xml"
+          files = glob.glob(pat) or glob.glob("testing/appium/reports/results*.xml")
+          if not files:
               with open(os.environ.get("GITHUB_STEP_SUMMARY") or "/dev/null", "a") as fh:
-                  fh.write("## 🍎 Appium iOS\n\n> No results file — check logs.\n")
+                  fh.write(f"## 🍎 iOS Appium — {group}\n\n> No results file — check logs.\n")
               exit(0)
-          root = ET.parse(f).getroot()
+          root = ET.parse(files[0]).getroot()
           total = passed = failed = skipped = 0
           rows = ""
           for tc in root.iter("testcase"):
@@ -274,45 +270,36 @@ jobs:
               classname = tc.get("classname", "").split(".")[-1]
               if tc.find("failure") is not None or tc.find("error") is not None:
                   failed += 1; icon = "❌"
-                  reason = ""
                   el = tc.find("failure") or tc.find("error")
-                  if el is not None:
-                      reason = (el.get("message") or "")[:120].replace("|", "\\|")
+                  reason = (el.get("message") or "")[:120].replace("|","\\|") if el is not None else ""
                   rows += f"| {icon} | `{classname}` | {name} | {reason} |\n"
               elif tc.find("skipped") is not None:
-                  skipped += 1; icon = "⏭️"
-                  el = tc.find("skipped")
-                  reason = (el.get("message") or "")[:80].replace("|", "\\|") if el is not None else ""
-                  rows += f"| {icon} | `{classname}` | {name} | {reason} |\n"
+                  skipped += 1
               else:
                   passed += 1; icon = "✅"
                   rows += f"| {icon} | `{classname}` | {name} |  |\n"
           pct = int(passed/total*100) if total else 0
           bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
-          summary = f"""## 🍎 Appium iOS — {passed}/{total} passed ({pct}%)
+          summary = f"""## 🍎 iOS Appium — {group}: {passed}/{total} ({pct}%)
           {bar}
+          | ✅ Passed | ❌ Failed | ⏭️ Skipped | 📊 Total |
+          |----------|----------|-----------|---------|
+          | {passed} | {failed} | {skipped} | {total} |
 
-          | Metric | Value |
-          |--------|-------|
-          | ✅ Passed  | {passed} |
-          | ❌ Failed  | {failed} |
-          | ⏭️ Skipped | {skipped} |
-          | 📊 Total   | {total} |
-          | 📈 Pass rate | {pct}% |
-
-          ### Test Details
           | Status | Suite | Test | Reason |
           |--------|-------|------|--------|
-          {rows}"""
+          {rows if rows else "| — | — | No test details | |\n"}"""
           with open(os.environ.get("GITHUB_STEP_SUMMARY") or "/dev/null", "a") as fh:
               fh.write(textwrap.dedent(summary))
           PYEOF
+        env:
+          GROUP_NAME: ${{ matrix.group.name }}
 
       - name: Upload Allure results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-ios-allure-${{ github.run_number }}
+          name: appium-ios-allure-${{ matrix.group.name }}-${{ github.run_number }}
           path: testing/appium/allure-results/
           retention-days: 30
           if-no-files-found: warn
@@ -321,8 +308,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-ios-junit-${{ github.run_number }}
-          path: testing/appium/reports/results.xml
+          name: appium-ios-junit-${{ matrix.group.name }}-${{ github.run_number }}
+          path: testing/appium/reports/results-${{ matrix.group.name }}.xml
           retention-days: 30
           if-no-files-found: warn
 
@@ -330,7 +317,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-ios-html-report-${{ github.run_number }}
+          name: appium-ios-html-report-${{ matrix.group.name }}-${{ github.run_number }}
           path: testing/appium/reports/report.html
           retention-days: 30
           if-no-files-found: warn
@@ -339,7 +326,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-ios-screenshots-${{ github.run_number }}
+          name: appium-ios-screenshots-${{ matrix.group.name }}-${{ github.run_number }}
           path: testing/appium/reports/screenshots/
           retention-days: 14
           if-no-files-found: warn
@@ -348,13 +335,13 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: appium-ios-server-log-${{ github.run_number }}
+          name: appium-ios-server-log-${{ matrix.group.name }}-${{ github.run_number }}
           path: /tmp/appium-ios.log
           retention-days: 7
           if-no-files-found: warn
 
-      - name: Upload iOS Appium recording
-        if: ${{ github.event.inputs.record_video == 'true' }}
+      - name: Upload iOS recording
+        if: ${{ github.event.inputs.record_video == 'true' && matrix.group.name == 'auth-account' }}
         uses: actions/upload-artifact@v4
         with:
           name: ios-appium-recording-${{ github.run_number }}
