@@ -30,7 +30,7 @@ cd "$APPIUM_DIR"
 
 # iOS tests take longer: login OTP round-trip + WDA session overhead.
 if [ "$PLATFORM" = "ios" ]; then
-  PER_TEST_TIMEOUT=540
+  PER_TEST_TIMEOUT=180
 else
   PER_TEST_TIMEOUT=300
 fi
