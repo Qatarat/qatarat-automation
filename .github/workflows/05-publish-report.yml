@@ -422,6 +422,34 @@ jobs:
           mkdir -p gh-pages
           cp docs/index.html gh-pages/index.html
           cp docs/.nojekyll  gh-pages/.nojekyll 2>/dev/null || touch gh-pages/.nojekyll
+          python3 - <<'EOF'
+          from pathlib import Path
+          path = Path("gh-pages/index.html")
+          html = path.read_text()
+          html = html.replace("__REPORT_DATA_VERSION__", "${{ github.run_id }}-${{ github.sha }}")
+          path.write_text(html)
+          EOF
+
+      - name: Verify generated dashboard payload
+        run: |
+          test -s gh-pages/data.js
+          grep -q "window.QATARAT_LIVE = LIVE_DATA" gh-pages/data.js
+          if grep -q "QATARAT_LIVE = null" gh-pages/data.js; then
+            echo "Generated dashboard payload is null; refusing to publish empty report."
+            exit 1
+          fi
+          python3 - <<'EOF'
+          from pathlib import Path
+          data = Path("gh-pages/data.js").read_text()
+          index = Path("gh-pages/index.html").read_text()
+          if "__REPORT_DATA_VERSION__" in index:
+              raise SystemExit("Dashboard data cache buster was not replaced")
+          required_sections = ["testResults:", "iosTestResults:", "maestroStatuses:", "currentRun:"]
+          missing = [section for section in required_sections if section not in data]
+          if missing:
+              raise SystemExit(f"Dashboard payload is missing expected result sections: {missing}")
+          print("Dashboard payload verified")
+          EOF
 
       - name: Copy Allure report
         run: cp -r allure-report/ gh-pages/allure-report/ 2>/dev/null || mkdir -p gh-pages/allure-report
