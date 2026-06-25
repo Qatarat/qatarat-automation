@@ -667,10 +667,14 @@ def main():
     now     = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     # Total test duration from XML testsuite times
-    total_duration = sum(flow_durations.values()) + sum(
-        round(v[1]) for v in appium_map.values()
+    ios_maestro_ran = bool(ios_flow_statuses)
+    ios_appium_ran = bool(ios_appium_map)
+    total_duration = (
+        sum(flow_durations.values())
+        + sum(round(v[1]) for v in appium_map.values())
+        + sum(round(v[1]) for v in ios_appium_map.values())
     )
-    never_ran = not maestro_ran and not appium_ran
+    never_ran = not (maestro_ran or appium_ran or ios_maestro_ran or ios_appium_ran)
     run_meta = {
         "id":             f"run-{run_num}",
         "commit":         sha,
@@ -678,7 +682,7 @@ def main():
         "triggeredBy":    actor,
         "startedAt":      now if not never_ran else "",
         "duration":       total_duration or 0,
-        "device":         "Pixel 6 · Android 13 · API 33",
+        "device":         "Android emulator + iOS simulator",
         "flutterVersion": "3.24.5",
         "neverRan":       never_ran,
     }
@@ -719,9 +723,13 @@ def main():
     m_fail_today = sum(1 for s in flow_statuses.values() if s == "fail")
     a_pass_today = sum(1 for s in appium_map.values() if s[0] == "pass")
     a_fail_today = sum(1 for s in appium_map.values() if s[0] == "fail")
-    today_pass   = m_pass_today + a_pass_today
-    today_fail   = m_fail_today + a_fail_today
-    today_ran    = maestro_ran or appium_ran
+    ios_m_pass_today = sum(1 for s in ios_flow_statuses.values() if s == "pass")
+    ios_m_fail_today = sum(1 for s in ios_flow_statuses.values() if s == "fail")
+    ios_a_pass_today = sum(1 for s in ios_appium_map.values() if s[0] == "pass")
+    ios_a_fail_today = sum(1 for s in ios_appium_map.values() if s[0] == "fail")
+    today_pass   = m_pass_today + a_pass_today + ios_m_pass_today + ios_a_pass_today
+    today_fail   = m_fail_today + a_fail_today + ios_m_fail_today + ios_a_fail_today
+    today_ran    = maestro_ran or appium_ran or ios_maestro_ran or ios_appium_ran
 
     history = []
     for day in range(29, -1, -1):

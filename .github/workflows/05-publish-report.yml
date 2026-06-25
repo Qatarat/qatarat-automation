@@ -44,10 +44,12 @@ jobs:
         with:
           python-version: "3.12"
 
-      # Resolve which run's artifacts to download:
-      #   workflow_run  → use the triggering run's ID (has the test XMLs/screenshots)
-      #   push / dispatch → find the most recent successful smoke or regression run
-      # Resolve the latest Android Maestro run (smoke or regression) for flow results
+      - name: Validate report inventory
+        run: python3 testing/validate_report_inventory.py
+
+      # Resolve which completed run's artifacts to download.
+      # Cancelled runs are ignored for dashboard data because they commonly have
+      # partial/no XML and can wipe a previously valid Pages report.
       - name: Resolve Maestro source run ID
         id: source-run
         env:
@@ -55,19 +57,16 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ] && \
              echo "${{ github.event.workflow_run.name }}" | grep -qi "maestro" && \
-             echo "${{ github.event.workflow_run.name }}" | grep -qvi "ios"; then
+             echo "${{ github.event.workflow_run.name }}" | grep -qvi "ios" && \
+             [ "${{ github.event.workflow_run.conclusion }}" != "cancelled" ]; then
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
             echo "Triggered by Android Maestro workflow_run: ${{ github.event.workflow_run.id }}"
           else
             echo "Searching for latest Android Maestro run..."
             pick_run() {
               local wf="$1"
-              # Use the most-recent completed run regardless of conclusion.
-              # Old priority (success > non-cancelled > any) was broken: it picked ancient
-              # failure/success runs over recent cancelled runs that have actual test data.
-              # "cancelled" covers job-timeout and concurrency-kill — both may have artifacts.
               ID=$(gh api "repos/${{ github.repository }}/actions/workflows/${wf}/runs?per_page=20" \
-                --jq '[.workflow_runs[] | select(.status == "completed")] | first | .id // empty' 2>/dev/null || true)
+                --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "cancelled")] | first | .id // empty' 2>/dev/null || true)
               echo "$ID"
             }
             ID=$(pick_run "02-maestro-regression.yml")
@@ -84,13 +83,14 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ] && \
              echo "${{ github.event.workflow_run.name }}" | grep -qi "appium" && \
-             echo "${{ github.event.workflow_run.name }}" | grep -qvi "ios"; then
+             echo "${{ github.event.workflow_run.name }}" | grep -qvi "ios" && \
+             [ "${{ github.event.workflow_run.conclusion }}" != "cancelled" ]; then
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
             echo "Triggered by Android Appium workflow_run: ${{ github.event.workflow_run.id }}"
           else
             echo "Searching for latest Android Appium run..."
             ID=$(gh api "repos/${{ github.repository }}/actions/workflows/03-appium-android.yml/runs?per_page=20" \
-              --jq '[.workflow_runs[] | select(.status == "completed")] | first | .id // empty' 2>/dev/null || echo "")
+              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "cancelled")] | first | .id // empty' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
             echo "Latest Android Appium run ID: ${ID:-none found}"
           fi
@@ -103,12 +103,13 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ] && \
              echo "${{ github.event.workflow_run.name }}" | grep -qi "maestro" && \
-             echo "${{ github.event.workflow_run.name }}" | grep -qi "ios"; then
+             echo "${{ github.event.workflow_run.name }}" | grep -qi "ios" && \
+             [ "${{ github.event.workflow_run.conclusion }}" != "cancelled" ]; then
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
             echo "Triggered by Maestro iOS workflow_run: ${{ github.event.workflow_run.id }}"
           else
             ID=$(gh api "repos/${{ github.repository }}/actions/workflows/04-maestro-ios.yml/runs?per_page=20" \
-              --jq '[.workflow_runs[] | select(.status == "completed")] | first | .id // empty' 2>/dev/null || echo "")
+              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "cancelled")] | first | .id // empty' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
             echo "Latest Maestro iOS run ID: ${ID:-none found}"
           fi
@@ -121,12 +122,13 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_run" ] && \
              echo "${{ github.event.workflow_run.name }}" | grep -qi "appium" && \
-             echo "${{ github.event.workflow_run.name }}" | grep -qi "ios"; then
+             echo "${{ github.event.workflow_run.name }}" | grep -qi "ios" && \
+             [ "${{ github.event.workflow_run.conclusion }}" != "cancelled" ]; then
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
             echo "Triggered by Appium iOS workflow_run: ${{ github.event.workflow_run.id }}"
           else
             ID=$(gh api "repos/${{ github.repository }}/actions/workflows/06-appium-ios.yml/runs?per_page=20" \
-              --jq '[.workflow_runs[] | select(.status == "completed")] | first | .id // empty' 2>/dev/null || echo "")
+              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "cancelled")] | first | .id // empty' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
             echo "Latest Appium iOS run ID: ${ID:-none found}"
           fi
