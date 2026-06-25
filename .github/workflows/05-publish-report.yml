@@ -517,6 +517,11 @@ jobs:
               fh.write(summary)
           EOF
 
+      - name: Wait for legacy docs Pages deployment
+        run: |
+          echo "Waiting for the repository /docs Pages deployment to finish before publishing generated data..."
+          sleep 180
+
       - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
 
