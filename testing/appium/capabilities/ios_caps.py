@@ -69,10 +69,10 @@ IOS_SIMULATOR_CAPS = {
     "appium:platformVersion": os.environ.get("IOS_VERSION", _DEFAULT_IOS_VER),
     "appium:app": os.environ.get("IOS_APP_PATH", _APP_BUNDLE),
     **({"appium:udid": _sim_id} if _sim_id else {}),
-    # Extended timeouts for macOS CI runners (macos-14 is slower than local Mac)
-    "appium:simulatorStartupTimeout": 300000,   # 5 min (was 3 min)
-    "appium:wdaLaunchTimeout": 180000,          # 3 min (was 2 min)
-    "appium:wdaConnectionTimeout": 180000,      # 3 min (was 2 min)
+    # Extended timeouts for macOS CI runners (macos-15 with iOS 18 needs more headroom)
+    "appium:simulatorStartupTimeout": 300000,   # 5 min
+    "appium:wdaLaunchTimeout": 300000,          # 5 min — WDA re-compilation on cold sessions
+    "appium:wdaConnectionTimeout": 300000,      # 5 min — iOS 18 sim connects slower than 17
     # usePreinstalledWDA: False (default) — build+install WDA on first session.
     # True would skip the build step but requires WDA already compiled, which
     # fails on fresh CI runners with FBSOpenApplicationServiceErrorDomain code=4.

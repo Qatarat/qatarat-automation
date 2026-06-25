@@ -235,8 +235,9 @@ def driver():
     if PLATFORM == "android":
         _reset_android_app()
     elif PLATFORM == "ios" and not _BS_MODE:
-        # Brief pause before new iOS session — allows WDA to fully settle after previous quit
-        _time.sleep(1)
+        # Allow WDA to fully settle between sessions — iOS 18 sim needs more time
+        # than the pre-warm quit before accepting a new session without timeout
+        _time.sleep(5)
     try:
         d = webdriver.Remote(_get_server_url(), options=_build_options(get_caps()))
     except Exception as exc:

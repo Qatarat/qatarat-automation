@@ -1,6 +1,11 @@
 name: "Appium — Deep Tests (Android)"
 
 on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "testing/appium/**"
+      - ".github/workflows/03-appium-android.yml"
   pull_request:
     branches: [main, develop]
   schedule:

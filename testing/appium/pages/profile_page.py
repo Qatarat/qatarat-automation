@@ -24,26 +24,48 @@ class ProfilePage(BasePage):
     ]
 
     _CONFIRM_LOGOUT_LABELS = [
-        "Yes", "Confirm", "Logout", "Log out", "OK",
-        "تأكيد", "نعم", "موافق",          # Arabic
+        "Yes", "Confirm", "Logout", "Log out", "OK", "Sign Out",
+        "تأكيد", "نعم", "موافق", "تسجيل الخروج",   # Arabic
+    ]
+
+    _CANCEL_LOGOUT_LABELS = [
+        "No", "Cancel", "Keep me logged in", "Stay", "Back",
+        "لا", "إلغاء",   # Arabic
+    ]
+
+    # Settings labels that appear after reaching the profile/settings section
+    _SETTINGS_INDICATORS = [
+        "Logout", "Log out", "Currency", "Change Currency",
+        "About", "Language", "Settings", "تسجيل الخروج",
     ]
 
     def navigate_to_profile(self):
+        """Navigate to profile/account screen including the settings section."""
         if is_ios():
-            # iOS: find first visible label from the extended set (includes Arabic variants)
             for label in self._PROFILE_TAB_LABELS:
                 if self.is_visible(label, timeout=2):
                     self.tap_optional(label, timeout=3)
                     wait_for_animation(self.driver, 1)
                     return self
-            # None quickly visible — fall back to trying all labels
             for label in self._PROFILE_TAB_LABELS:
                 self.tap_optional(label, timeout=3)
         else:
-            # Android: tap Profile tab then the Account sub-section (original behaviour)
+            # Android: tap Profile tab then try sub-section labels
             self.tap_optional("Profile")
-            self.tap_optional("Account")
+            wait_for_animation(self.driver, 1)
+            # Try various section names — app may show different sub-sections
+            for sub in ["Account", "Me", "My Account", "Settings", "الملف الشخصي"]:
+                self.tap_optional(sub, timeout=2)
         wait_for_animation(self.driver)
+
+        # If settings indicators aren't visible yet, scroll to reveal them
+        size = self.driver.get_window_size()
+        w, h = size["width"], size["height"]
+        for _ in range(5):
+            if any(self.is_visible(lbl, timeout=2) for lbl in self._SETTINGS_INDICATORS):
+                break
+            self.driver.swipe(w // 2, int(h * 0.7), w // 2, int(h * 0.3), 600)
+            wait_for_animation(self.driver, 0.5)
         return self
 
     def tap_edit_profile(self):
