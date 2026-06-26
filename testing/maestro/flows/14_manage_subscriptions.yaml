@@ -59,7 +59,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Subscriptions"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: active_subscriptions
 
@@ -67,14 +68,16 @@ appId: com.qatarat.app
 - tapOn:
     text: "Billing History"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - takeScreenshot: billing_history
 
 # Cancel subscription dialog — don't confirm
 - tapOn:
     text: "Cancel Subscription"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "No"
     optional: true

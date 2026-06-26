@@ -31,7 +31,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Skip"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Login
 - tapOn:
@@ -67,4 +68,5 @@ appId: com.qatarat.app
 
 # Dismiss share sheet
 - pressKey: Back
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000

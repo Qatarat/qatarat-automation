@@ -10,7 +10,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Skip"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - tapOn:
     text: "Select your country"

@@ -56,23 +56,27 @@ appId: com.qatarat.app
 - tapOn:
     text: "My Orders"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "See All Orders"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Open first order
 - tapOn:
     index: 0
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Cancel order dialog
 - tapOn:
     text: "Cancel Order"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: cancel_order_dialog
 

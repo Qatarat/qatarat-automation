@@ -300,6 +300,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
 .modal-status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;border-radius:20px;padding:3px 10px;margin-bottom:8px;}
 .modal-status.pass{background:var(--green-dim);color:var(--green);}
 .modal-status.fail{background:var(--red-dim);color:var(--red);}
+.modal-status.skip{background:var(--amber-dim);color:var(--amber);}
 .modal-status.idle{background:var(--surface3);color:var(--text3);}
 .modal-title{font-size:17px;font-weight:700;margin-bottom:5px;line-height:1.3;}
 .modal-file{color:var(--text2);font-size:11px;font-family:'JetBrains Mono',monospace;}
@@ -352,7 +353,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
     <a href="#history" class="sb-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Run History</a>
     <a href="#recordings" class="sb-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Recordings</a>
     <a href="#maestro" class="sb-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>Maestro <span class="sb-badge">50</span></a>
-    <a href="#appium" class="sb-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Appium <span class="sb-badge">251</span></a>
+    <a href="#appium" class="sb-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>Appium <span class="sb-badge">252</span></a>
     <a href="#scenarios" class="sb-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Scenarios</a>
     <a href="#pipeline" class="sb-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Pipeline</a>
   </nav>
@@ -362,9 +363,9 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
     <div class="sb-plat"><span class="status-dot pass" id="sb-ios-dot"></span><span class="sb-plat-name">🍎 iOS</span><span class="sb-plat-val" id="sb-ios-status">—</span></div>
   </div>
   <div class="sb-stats">
-    <div class="sb-stat"><span class="sb-stat-label">Total Tests</span><span class="sb-stat-val c-teal">301</span></div>
+    <div class="sb-stat"><span class="sb-stat-label">Total Tests</span><span class="sb-stat-val c-teal">302</span></div>
     <div class="sb-stat"><span class="sb-stat-label">Maestro Flows</span><span class="sb-stat-val c-blue">50</span></div>
-    <div class="sb-stat"><span class="sb-stat-label">Appium Tests</span><span class="sb-stat-val c-amber">251</span></div>
+    <div class="sb-stat"><span class="sb-stat-label">Appium Tests</span><span class="sb-stat-val c-amber">252</span></div>
     <div class="sb-stat"><span class="sb-stat-label">Platforms</span><span class="sb-stat-val c-purple">Android + iOS</span></div>
   </div>
 </aside>
@@ -377,10 +378,10 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
   <div class="hero-eyebrow">Mobile App Test Suite — Android &amp; iOS</div>
   <h1 class="hero-title">Qatarat <span>(قطرات)</span></h1>
   <div class="hero-arabic">منصة التبرعات الخيرية للمساجد</div>
-  <p class="hero-sub">301 automated checks — 50 Maestro YAML flows + 251 Appium/pytest deep tests. Full Android + iOS coverage for the Qatarat mosque &amp; charity donation platform.</p>
+  <p class="hero-sub">302 automated checks — 50 Maestro YAML flows + 252 Appium/pytest deep tests. Full Android + iOS coverage for the Qatarat mosque &amp; charity donation platform.</p>
   <div class="hero-chips">
     <span class="chip teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg>50 Maestro Flows</span>
-    <span class="chip teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg>251 Appium Tests</span>
+    <span class="chip teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg>252 Appium Tests</span>
     <span class="chip gold">🤖 Android 14 · Pixel 7</span>
     <span class="chip gold">🍎 iOS 17 · iPhone 15 Pro</span>
     <span class="chip">com.qatarat.app · GitHub Actions CI</span>
@@ -415,12 +416,12 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
 
   <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-num c-teal">301</div>
+      <div class="stat-num c-teal">302</div>
       <div class="stat-label">Total Tests</div>
-      <div class="stat-sub">50 flows + 251 deep tests</div>
+      <div class="stat-sub">50 flows + 252 deep tests</div>
     </div>
     <div class="stat-card">
-      <div class="stat-num c-green">97%</div>
+      <div class="stat-num c-green" id="latest-pass-rate">—</div>
       <div class="stat-label">Pass Rate</div>
       <div class="stat-sub">Latest CI run</div>
     </div>
@@ -430,7 +431,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
       <div class="stat-sub">25 happy-path + 25 post-login</div>
     </div>
     <div class="stat-card">
-      <div class="stat-num c-amber">251</div>
+      <div class="stat-num c-amber">252</div>
       <div class="stat-label">Appium Tests</div>
       <div class="stat-sub">32 test files, 12 modules</div>
     </div>
@@ -456,13 +457,13 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
           stroke-dasharray="0 377" stroke-dashoffset="-257" stroke-linecap="round" class="donut-arc" data-target="12 365"/>
         <circle cx="80" cy="80" r="60" fill="none" stroke="var(--amber)" stroke-width="20"
           stroke-dasharray="0 377" stroke-dashoffset="-269" stroke-linecap="round" class="donut-arc" data-target="18 359"/>
-        <text x="80" y="74" text-anchor="middle" fill="var(--green)" font-size="24" font-weight="800" font-family="Inter">97%</text>
+        <text x="80" y="74" text-anchor="middle" fill="var(--green)" font-size="24" font-weight="800" font-family="Inter" id="donut-pass-rate">—</text>
         <text x="80" y="92" text-anchor="middle" fill="var(--text2)" font-size="10" font-family="Inter">Pass Rate</text>
       </svg>
       <div class="donut-legend">
-        <div class="donut-item"><div class="donut-dot" style="background:var(--green)"></div> Passed <div class="donut-pct c-green">234</div></div>
-        <div class="donut-item"><div class="donut-dot" style="background:var(--red)"></div> Failed <div class="donut-pct" style="color:var(--red)">5</div></div>
-        <div class="donut-item"><div class="donut-dot" style="background:var(--amber)"></div> Skipped <div class="donut-pct" style="color:var(--amber)">2</div></div>
+        <div class="donut-item"><div class="donut-dot" style="background:var(--green)"></div> Passed <div class="donut-pct c-green" id="donut-passed">—</div></div>
+        <div class="donut-item"><div class="donut-dot" style="background:var(--red)"></div> Failed <div class="donut-pct" style="color:var(--red)" id="donut-failed">—</div></div>
+        <div class="donut-item"><div class="donut-dot" style="background:var(--amber)"></div> Skipped <div class="donut-pct" style="color:var(--amber)" id="donut-skipped">—</div></div>
       </div>
     </div>
 
@@ -682,7 +683,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
       Appium Deep Tests
     </div>
-    <div class="section-sub">251 Python/pytest tests across 32 files — every validation type covered</div>
+    <div class="section-sub">252 Python/pytest tests across 32 files — every validation type covered</div>
   </div>
 
   <div class="plat-tabs" id="appium-plat-tabs">
@@ -702,12 +703,12 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
     <div id="appium-ios-pending" class="ios-pending-box">
       <div class="ios-pending-icon">🍎</div>
       <h3>iOS Appium results pending</h3>
-      <p>The iOS Appium suite (251 tests) runs daily at 12:00 UTC (6:00 PM BDT) on an iPhone 15 Pro simulator. Results appear here automatically after the first CI run completes.</p>
+      <p>The iOS Appium suite (252 tests) runs daily at 12:00 UTC (6:00 PM BDT) on an iPhone 15 Pro simulator. Results appear here automatically after the first CI run completes.</p>
       <p style="font-size:12px;color:var(--amber);margin-top:10px;max-width:480px;">
         <strong>If tests show as skipped:</strong> the IPA is a device build (arm64-apple-ios).
         Run <code>flutter build ios --simulator --debug</code> in the app repo and update Runner.app to fix.
       </p>
-      <span class="badge badge-ios">251 tests · same suite as Android · XCUITest driver</span>
+      <span class="badge badge-ios">252 tests · same suite as Android · XCUITest driver</span>
     </div>
   </div>
 </div>
@@ -750,7 +751,7 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         Qatarat Test Suite
       </div>
-      <p class="ft-desc">Full-stack mobile automation — 50 Maestro flows + 251 Appium tests covering Android &amp; iOS. Mosque donations, Zakat, subscriptions, live broadcast &amp; more.</p>
+      <p class="ft-desc">Full-stack mobile automation — 50 Maestro flows + 252 Appium tests covering Android &amp; iOS. Mosque donations, Zakat, subscriptions, live broadcast &amp; more.</p>
     </div>
     <div class="ft-links">
       <a href="https://github.com/Qatarat/qatarat-automation" target="_blank" rel="noopener">GitHub Repository</a>
@@ -1103,6 +1104,7 @@ var APPIUM_GROUPS = [
       {name:'test_tap_notification_opens_detail',tags:['happy','notifications'],status:'idle'},
       {name:'test_scroll_notifications_no_crash',tags:['boundary','notifications'],status:'idle'},
       {name:'test_notifications_require_login',tags:['happy','notifications'],status:'idle'},
+      {name:'test_clear_all_notifications_no_crash',tags:['boundary','notifications'],status:'idle'},
       {name:'test_live_broadcast_screen_accessible',tags:['happy','streaming'],status:'idle'},
       {name:'test_visual_documentation_section_loads',tags:['happy','streaming'],status:'idle'},
       {name:'test_live_broadcast_permissions_requested',tags:['happy','streaming'],status:'idle'}
@@ -1299,7 +1301,7 @@ var PIPELINES = [
     icon:'🧪', bg:'rgba(188,140,255,.15)',
     name:'Appium Deep Tests',
     trigger:'Every Monday 02:00 UTC',
-    pills:['up to 240 min','Android','251 tests'],
+    pills:['up to 240 min','Android','252 tests'],
     steps:['Checkout repo','Start emulator','Install APK','Run pytest suite','Generate Allure','Upload results']
   },
   {
@@ -1313,8 +1315,8 @@ var PIPELINES = [
     icon:'🧪', bg:'rgba(188,140,255,.15)',
     name:'Appium iOS Simulator',
     trigger:'Daily 12:00 UTC (6:00 PM BDT) + manual',
-    pills:['up to 360 min','iOS 17','251 tests'],
-    steps:['Checkout repository','Boot iPhone 15 Pro sim','Install XCUITest + Flutter drivers','Install Runner.app','Start Appium server','Run 251 pytest tests','Upload Allure + JUnit + screenshots']
+    pills:['up to 360 min','iOS 17','252 tests'],
+    steps:['Checkout repository','Boot iPhone 15 Pro sim','Install XCUITest + Flutter drivers','Install Runner.app','Start Appium server','Run 252 pytest tests','Upload Allure + JUnit + screenshots']
   },
   {
     icon:'📊', bg:'rgba(0,212,170,.15)',
@@ -1324,6 +1326,85 @@ var PIPELINES = [
     steps:['Download Android + iOS artifacts','Generate Allure report','Deploy docs/index.html','Deploy to GitHub Pages','Post step summary']
   }
 ];
+
+function liveResultToTest(name, info, platform){
+  var status='idle', duration=null, error=null;
+  if(info&&typeof info==='object'){
+    status=info.status||'idle';
+    duration=info.duration||null;
+    error=info.error||null;
+  } else if(info){
+    status=info;
+  }
+  var tags=[platform];
+  var n=(name||'').toLowerCase();
+  ['auth','account','payment','wallet','checkout','promo','donation','gift','subscription','cart','browse','mosque','home','notifications','streaming','booking','orders','favourites','location','rating'].forEach(function(tag){
+    if(n.indexOf(tag)>=0) tags.push(tag);
+  });
+  return {name:name,tags:tags,status:status,duration:duration,error:error};
+}
+
+function appendUnmatchedLiveTests(groups, resultMap, platform){
+  if(!resultMap) return;
+  var known={};
+  groups.forEach(function(g){
+    g.tests.forEach(function(t){known[t.name]=true;});
+  });
+  var extra=[];
+  Object.keys(resultMap).sort().forEach(function(name){
+    if(!known[name]) extra.push(liveResultToTest(name,resultMap[name],platform));
+  });
+  if(!extra.length) return;
+  groups.push({
+    icon:platform==='ios'?'🍎':'🧪',
+    color:platform==='ios'?'#f0c840':'#58a6ff',
+    iconBg:platform==='ios'?'rgba(240,200,64,.15)':'rgba(88,166,255,.15)',
+    title:platform==='ios'?'Additional iOS Appium Results':'Additional Android Appium Results',
+    file:platform+' live JUnit',
+    runtimeExtra:true,
+    tests:extra
+  });
+}
+
+function updateOverviewFromLive(live){
+  if(!live||!live.currentRun||!live.currentRun.ran) return;
+  var passed=Number(live.currentRun.passed||0);
+  var failed=Number(live.currentRun.failed||0);
+  var skipped=Number(live.currentRun.skipped||0);
+  var executed=passed+failed;
+  var total=passed+failed+skipped;
+  var rate=executed?Math.round((passed/executed)*100):0;
+  var rateText=rate+'%';
+  var rateEl=document.getElementById('latest-pass-rate');
+  var donutRate=document.getElementById('donut-pass-rate');
+  var passedEl=document.getElementById('donut-passed');
+  var failedEl=document.getElementById('donut-failed');
+  var skippedEl=document.getElementById('donut-skipped');
+  if(rateEl){
+    rateEl.textContent=rateText;
+    rateEl.style.color=failed>0?'var(--red)':'var(--green)';
+  }
+  if(donutRate){
+    donutRate.textContent=rateText;
+    donutRate.setAttribute('fill', failed>0?'var(--red)':'var(--green)');
+  }
+  if(passedEl) passedEl.textContent=String(passed);
+  if(failedEl) failedEl.textContent=String(failed);
+  if(skippedEl) skippedEl.textContent=String(skipped);
+  var arcs=document.querySelectorAll('.donut-arc');
+  if(arcs.length>=3&&total>0){
+    var circumference=377;
+    var passArc=Math.round(circumference*passed/total);
+    var failArc=Math.round(circumference*failed/total);
+    var skipArc=Math.max(0,circumference-passArc-failArc);
+    arcs[0].setAttribute('stroke-dasharray',passArc+' '+Math.max(0,circumference-passArc));
+    arcs[0].setAttribute('stroke-dashoffset','90');
+    arcs[1].setAttribute('stroke-dasharray',failArc+' '+Math.max(0,circumference-failArc));
+    arcs[1].setAttribute('stroke-dashoffset',String(90-passArc));
+    arcs[2].setAttribute('stroke-dasharray',skipArc+' '+Math.max(0,circumference-skipArc));
+    arcs[2].setAttribute('stroke-dashoffset',String(90-passArc-failArc));
+  }
+}
 
 // ── APPLY LIVE CI DATA ────────────────────────────────────────────────────────
 (function(){
@@ -1356,6 +1437,7 @@ var PIPELINES = [
         }
       });
     });
+    appendUnmatchedLiveTests(APPIUM_GROUPS, live.testResults, 'android');
   }
 
   if(live.maestroStatuses && Object.keys(live.maestroStatuses).length>0){
@@ -1609,7 +1691,7 @@ function openModal(cfg){
   var modal=document.getElementById('detail-modal');
   var content=document.getElementById('modal-content');
   var statusLabel=cfg.status==='pass'?'✓ Pass':(cfg.status==='fail'?'✗ Fail':(cfg.status==='skip'?'⏭ Skipped':'◌ Not Run'));
-  var statusClass=cfg.status==='pass'?'pass':(cfg.status==='fail'?'fail':(cfg.status==='skip'?'fail':'idle'));
+  var statusClass=cfg.status==='pass'?'pass':(cfg.status==='fail'?'fail':(cfg.status==='skip'?'skip':'idle'));
   var html='<div class="modal-header">'
     +'<div class="modal-status '+statusClass+'">'+escH(statusLabel)+'</div>'
     +'<div class="modal-title">'+escH(cfg.title)+'</div>'
@@ -2053,7 +2135,7 @@ function renderAppiumIOS(){
       title:humanizeName(t.name)+' 🍎',
       file:g.file+' · '+g.title+' · iOS Simulator',
       tags:t.tags||[],
-      status:t.status==='skip'?'fail':t.status,
+      status:t.status,
       duration:t.duration||null,
       coverage:humanizeName(t.name),
       steps:inferAppiumSteps(t,g),
@@ -2103,19 +2185,20 @@ function renderAppiumIOS(){
   }
 
   var live=window.QATARAT_LIVE;
+  updateOverviewFromLive(live);
   // Build IOS_APPIUM_GROUPS from Android groups + iOS statuses
-  window.IOS_APPIUM_GROUPS=APPIUM_GROUPS.map(function(g){
+  window.IOS_APPIUM_GROUPS=APPIUM_GROUPS.filter(function(g){return !g.runtimeExtra;}).map(function(g){
     return {
       icon:g.icon,color:g.color,iconBg:g.iconBg,title:g.title,file:g.file,
       tests:g.tests.map(function(t){
         var info=live.iosTestResults&&live.iosTestResults[t.name];
-        var st='idle',dur=null,err=null;
-        if(info&&typeof info==='object'){st=info.status||'idle';dur=info.duration||null;err=info.error||null;}
-        else if(info){st=info;}
-        return {name:t.name,tags:t.tags,status:st,duration:dur,error:err};
+        var mapped=liveResultToTest(t.name,info,'ios');
+        mapped.tags=t.tags;
+        return mapped;
       })
     };
   });
+  appendUnmatchedLiveTests(window.IOS_APPIUM_GROUPS, live.iosTestResults, 'ios');
   // iOS Maestro statuses + errors
   if(live.iosMaestroStatuses&&Object.keys(live.iosMaestroStatuses).length>0){
     MAESTRO_FLOWS.forEach(function(f){
@@ -2130,7 +2213,7 @@ function renderAppiumIOS(){
   var iosPassLive=iosHasData?(window.IOS_APPIUM_GROUPS||[]).reduce(function(acc,g){return acc+g.tests.filter(function(t){return t.status==='pass';}).length;},0):null;
   var iosMaestroRan=live.iosMaestroStatuses&&Object.keys(live.iosMaestroStatuses).length>0;
   // Always show denominator as total defined tests — same as Android.
-  // This way iOS counter matches Android: "X/251", not only the currently completed group.
+  // This way iOS counter matches Android: "X/252", not only the currently completed group.
   var iosTestsRan=live.iosTestResults?Object.keys(live.iosTestResults).length:0;
   var iosTotalDisplay=andTotalTests;
   // Recompute pass count from raw iosTestResults (not IOS_APPIUM_GROUPS which has idle entries)

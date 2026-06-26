@@ -131,10 +131,12 @@ jobs:
             echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
             echo "Triggered by Appium iOS workflow_run: ${{ github.event.workflow_run.id }}"
           else
+            # Never select an in-progress matrix run. Its artifacts are incomplete
+            # and would replace previously valid iOS data with a pending dashboard.
             ID=$(gh api "repos/${{ github.repository }}/actions/workflows/06-appium-ios.yml/runs?per_page=20" \
-              --jq '[.workflow_runs[] | select((.status == "in_progress") or (.status == "completed" and .conclusion != "cancelled"))] | first | .id // empty' 2>/dev/null || echo "")
+              --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "cancelled")] | first | .id // empty' 2>/dev/null || echo "")
             echo "id=${ID}" >> "$GITHUB_OUTPUT"
-            echo "Latest Appium iOS run ID (completed or in-progress): ${ID:-none found}"
+            echo "Latest completed Appium iOS run ID: ${ID:-none found}"
           fi
 
       - name: Install Allure CLI
@@ -402,15 +404,34 @@ jobs:
           import json, os, glob, xml.etree.ElementTree as ET
 
           # Aggregate results from all XMLs in this run
-          total = passed = failed = 0
+          def is_infra_skip(raw):
+              r = (raw or "").lower()
+              return any(p in r for p in [
+                  "android-only test", "failed on setup", "timeout >",
+                  "cannot connect to appium server", "connection refused", "could not connect",
+                  "webdriveragent", "wda", "xcuitest", "no such session", "invalid session id",
+                  "simulator not found", "simulator may not be booted",
+                  "appium session startup timed out", "ios simulator build required",
+                  "architecture mismatch",
+              ])
+
+          total = passed = failed = skipped = 0
           xmls = glob.glob("raw-artifacts/**/*.xml", recursive=True)
           for xml_path in xmls:
               try:
                   root = ET.parse(xml_path).getroot()
                   for tc in root.iter("testcase"):
                       total += 1
-                      if tc.find("failure") is not None or tc.find("error") is not None:
-                          failed += 1
+                      failure_el = tc.find("failure")
+                      fail_el = failure_el if failure_el is not None else tc.find("error")
+                      if fail_el is not None:
+                          raw = (fail_el.get("message") or "") or (fail_el.text or "")
+                          if is_infra_skip(raw):
+                              skipped += 1
+                          else:
+                              failed += 1
+                      elif tc.find("skipped") is not None:
+                          skipped += 1
                       else:
                           passed += 1
               except Exception:
@@ -424,7 +445,8 @@ jobs:
               "total":      total,
               "passed":     passed,
               "failed":     failed,
-              "pass_rate":  round(passed / total * 100, 1) if total else 0,
+              "skipped":    skipped,
+              "pass_rate":  round(passed / (passed + failed) * 100, 1) if (passed + failed) else 0,
           }
 
           history_file = "gh-pages/run-history.json"
@@ -432,7 +454,7 @@ jobs:
           history.append(entry)
           history = history[-50:]          # keep last 50 runs
           open(history_file, "w").write(json.dumps(history, indent=2))
-          print(f"Run #{entry['run_number']}: {passed}/{total} passed ({entry['pass_rate']}%)")
+          print(f"Run #{entry['run_number']}: {passed}/{total} passed, {failed} failed, {skipped} skipped ({entry['pass_rate']}%)")
           EOF
 
       - name: Generate data.js from real test results
@@ -486,6 +508,17 @@ jobs:
           python3 - <<'EOF'
           import xml.etree.ElementTree as ET, os, glob
           xmls = glob.glob("raw-artifacts/**/*.xml", recursive=True)
+          def is_infra_skip(raw):
+              r = (raw or "").lower()
+              return any(p in r for p in [
+                  "android-only test", "failed on setup", "timeout >",
+                  "cannot connect to appium server", "connection refused", "could not connect",
+                  "webdriveragent", "wda", "xcuitest", "no such session", "invalid session id",
+                  "simulator not found", "simulator may not be booted",
+                  "appium session startup timed out", "ios simulator build required",
+                  "architecture mismatch",
+              ])
+
           total = passed = failed = skipped = 0
           rows = ""
           for xml_path in sorted(xmls):
@@ -494,8 +527,14 @@ jobs:
                   for tc in root.iter("testcase"):
                       total += 1
                       name = tc.get("name", os.path.basename(xml_path).replace(".xml",""))
-                      if tc.find("failure") is not None or tc.find("error") is not None:
-                          failed += 1; icon = "❌"
+                      failure_el = tc.find("failure")
+                      fail_el = failure_el if failure_el is not None else tc.find("error")
+                      if fail_el is not None:
+                          raw = (fail_el.get("message") or "") or (fail_el.text or "")
+                          if is_infra_skip(raw):
+                              skipped += 1; icon = "⏭️"
+                          else:
+                              failed += 1; icon = "❌"
                       elif tc.find("skipped") is not None:
                           skipped += 1; icon = "⏭️"
                       else:
@@ -503,7 +542,8 @@ jobs:
                       rows += f"| {icon} | {name} |\n"
               except Exception as e:
                   print(f"Warning: {xml_path}: {e}")
-          pct = int(passed/total*100) if total else 0
+          executed = passed + failed
+          pct = int(passed/executed*100) if executed else 0
           bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
 
           # Load run history for trend table

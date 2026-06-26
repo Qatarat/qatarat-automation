@@ -31,13 +31,15 @@ appId: com.qatarat.app
 - tapOn:
     text: "Skip"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Services page
 - tapOn:
     text: "Select a Service"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Browse mosque list
 - scrollUntilVisible:
@@ -50,19 +52,22 @@ appId: com.qatarat.app
 - tapOn:
     text: "Mecca mosque"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Mosque selection confirmation
 - tapOn:
     text: "Yes"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Check More Details is accessible
 - tapOn:
     text: "More Details"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "Back"
     optional: true

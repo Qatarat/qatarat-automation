@@ -62,7 +62,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Support"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: help_support_screen
 
@@ -71,6 +72,7 @@ appId: com.qatarat.app
     text: "Search for Help"
     optional: true
 - inputText: "payment"
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: help_search_results

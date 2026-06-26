@@ -73,8 +73,8 @@ def main() -> None:
     ]:
         if workflow_name not in publish:
             fail(f"publish workflow is not subscribed to {workflow_name!r}")
-    if '.status == "in_progress"' not in publish:
-        fail("publish workflow must read in-progress iOS Appium artifacts")
+    if 'Latest completed Appium iOS run ID' not in publish:
+        fail("publish workflow must keep the last completed iOS Appium result set")
 
     print(
         f"OK: {len(flow_files)} Maestro flows, {expected_total} Appium tests, "

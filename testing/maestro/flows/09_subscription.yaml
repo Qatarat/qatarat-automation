@@ -65,29 +65,34 @@ appId: com.qatarat.app
 - tapOn:
     text: "Add"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Go to cart → checkout
 - tapOn:
     text: "Cart"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "Checkout"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Subscription prompt
 - tapOn:
     text: "Yes"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Select weekly
 - tapOn:
     text: "Weekly"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Confirm subscription
 - tapOn:
@@ -96,6 +101,7 @@ appId: com.qatarat.app
 - tapOn:
     text: "Subscribe now for Reminder"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: subscription_success

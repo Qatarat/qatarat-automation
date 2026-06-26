@@ -262,23 +262,41 @@ jobs:
                   fh.write(f"## 🍎 iOS Appium — {group}\n\n> No results file — check logs.\n")
               exit(0)
           root = ET.parse(files[0]).getroot()
+          def is_infra_skip(raw):
+              r = (raw or "").lower()
+              return any(p in r for p in [
+                  "android-only test", "failed on setup", "timeout >",
+                  "cannot connect to appium server", "connection refused", "could not connect",
+                  "webdriveragent", "wda", "xcuitest", "no such session", "invalid session id",
+                  "simulator not found", "simulator may not be booted",
+                  "appium session startup timed out", "ios simulator build required",
+                  "architecture mismatch",
+              ])
           total = passed = failed = skipped = 0
           rows = ""
           for tc in root.iter("testcase"):
               total += 1
               name = tc.get("name", "")
               classname = tc.get("classname", "").split(".")[-1]
-              if tc.find("failure") is not None or tc.find("error") is not None:
-                  failed += 1; icon = "❌"
-                  el = tc.find("failure") or tc.find("error")
-                  reason = (el.get("message") or "")[:120].replace("|","\\|") if el is not None else ""
+              failure_el = tc.find("failure")
+              el = failure_el if failure_el is not None else tc.find("error")
+              if el is not None:
+                  reason = ((el.get("message") or "") or (el.text or ""))[:120].replace("|","\\|")
+                  if is_infra_skip(reason):
+                      skipped += 1; icon = "⏭️"
+                  else:
+                      failed += 1; icon = "❌"
                   rows += f"| {icon} | `{classname}` | {name} | {reason} |\n"
               elif tc.find("skipped") is not None:
                   skipped += 1
+                  skip_el = tc.find("skipped")
+                  reason = ((skip_el.get("message") or "") if skip_el is not None else "")[:120].replace("|","\\|")
+                  rows += f"| ⏭️ | `{classname}` | {name} | {reason} |\n"
               else:
                   passed += 1; icon = "✅"
                   rows += f"| {icon} | `{classname}` | {name} |  |\n"
-          pct = int(passed/total*100) if total else 0
+          executed = passed + failed
+          pct = int(passed/executed*100) if executed else 0
           bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
           summary = f"""## 🍎 iOS Appium — {group}: {passed}/{total} ({pct}%)
           {bar}

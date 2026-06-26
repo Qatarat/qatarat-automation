@@ -56,7 +56,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "My Orders"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: my_orders_list
 
@@ -64,13 +65,15 @@ appId: com.qatarat.app
 - tapOn:
     text: "See All Orders"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Tap first order if available
 - tapOn:
     index: 0
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: order_detail
 
@@ -78,7 +81,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Rate Order"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "Type your feedback"
     optional: true
@@ -86,6 +90,7 @@ appId: com.qatarat.app
 - tapOn:
     text: "Submit Rating"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: order_rating_submitted

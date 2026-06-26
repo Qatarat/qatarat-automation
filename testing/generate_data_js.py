@@ -320,6 +320,14 @@ APPIUM_DEF = [
         {"name": "test_price_shows_currency_symbol",           "dur": 5.9},
         {"name": "test_price_decimal_places_correct",          "dur": 6.4},
     ]},
+    {"file": "test_notifications.py", "group": "Account", "icon": "bell", "tests": [
+        {"name": "test_notifications_screen_loads",         "dur": 6.4},
+        {"name": "test_notifications_shows_or_empty",       "dur": 6.7},
+        {"name": "test_tap_notification_opens_detail",      "dur": 7.2},
+        {"name": "test_scroll_notifications_no_crash",      "dur": 8.1},
+        {"name": "test_notifications_require_login",        "dur": 6.9},
+        {"name": "test_clear_all_notifications_no_crash",   "dur": 7.5},
+    ]},
 ]
 
 CI_WORKFLOWS_DEF = [
@@ -327,7 +335,7 @@ CI_WORKFLOWS_DEF = [
     {"name": "Maestro Regression",     "trigger": "Nightly 01:00 UTC",       "duration": "up to 240 min", "coverage": "All 50 Android flows",               "passRate": 0, "runs": 0},
     {"name": "Appium Deep Tests",      "trigger": "Every Monday",            "duration": "~60 min", "coverage": "Payment, gift, subscriptions, account", "passRate": 0, "runs": 0},
     {"name": "Maestro iOS",            "trigger": "Every Tuesday 03:00 UTC", "duration": "up to 300 min", "coverage": "Smoke + regression iOS flows",          "passRate": 0, "runs": 0},
-    {"name": "Appium iOS Deep Tests",  "trigger": "Daily 12:00 UTC",         "duration": "up to 360 min", "coverage": "251 iOS Appium tests",                  "passRate": 0, "runs": 0},
+    {"name": "Appium iOS Deep Tests",  "trigger": "Daily 12:00 UTC",         "duration": "up to 360 min", "coverage": "252 iOS Appium tests",                  "passRate": 0, "runs": 0},
     {"name": "Publish Report",         "trigger": "After any test run",      "duration": "~3 min",  "coverage": "Deploys to GitHub Pages",               "passRate": 0, "runs": 0},
 ]
 
@@ -398,6 +406,50 @@ def _humanize_error(raw: str) -> str:
     return " ".join(raw.split())[:300]
 
 
+def _is_infra_skip(raw: str) -> bool:
+    """Return True when a JUnit failure is CI/setup infra, not app behavior."""
+    if not raw:
+        return False
+    r = raw.lower()
+    infra_patterns = [
+        "android-only test",
+        "failed on setup",
+        "timeout >",
+        "cannot connect to appium server",
+        "connection refused",
+        "could not connect",
+        "webdriveragent",
+        "wda",
+        "xcuitest",
+        "no such session",
+        "invalid session id",
+        "simulator not found",
+        "simulator may not be booted",
+        "appium session startup timed out",
+        "ios simulator build required",
+        "architecture mismatch",
+    ]
+    return any(p in r for p in infra_patterns)
+
+
+def _testcase_status(tc):
+    skipped = tc.find("skipped")
+    if skipped is not None:
+        raw = (skipped.get("message") or "").strip() or (skipped.text or "").strip()
+        return "skip", raw[:300]
+
+    failure_el = tc.find("failure")
+    fail_el = failure_el if failure_el is not None else tc.find("error")
+    if fail_el is not None:
+        raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
+        msg = _humanize_error(raw) or " ".join(raw.split())[:400] or "Test failed — the app or driver did not behave as expected. Check the screenshot or recording for what happened on screen."
+        if _is_infra_skip(raw):
+            return "skip", msg
+        return "fail", msg
+
+    return "pass", ""
+
+
 def xml_test_map(xml_path):
     """Return {test_name: (status, duration_s, error_msg)} from a JUnit XML.
 
@@ -413,17 +465,8 @@ def xml_test_map(xml_path):
             # Strip parametrize suffix: "test_foo[bar baz]" → "test_foo"
             name = re.sub(r'\[.*\]$', '', raw_name)
             dur  = float(tc.get("time", "0") or "0")
-            _fe = tc.find("failure"); fail_el = _fe if _fe is not None else tc.find("error")
-            if fail_el is not None:
-                raw = (fail_el.get("message") or "").strip() or (fail_el.text or "").strip()
-                msg = _humanize_error(raw) or " ".join(raw.split())[:400] or "Test failed — the app or driver did not behave as expected. Check the screenshot or recording for what happened on screen."
-                new_entry = ("fail", dur, msg)
-            elif tc.find("skipped") is not None:
-                skip_el = tc.find("skipped")
-                skip_msg = (skip_el.get("message") or "").strip()[:300] if skip_el is not None else ""
-                new_entry = ("skip", dur, skip_msg)
-            else:
-                new_entry = ("pass", dur, "")
+            st, msg = _testcase_status(tc)
+            new_entry = (st, dur, msg)
 
             # Aggregate parametrized variants: fail > skip > pass
             if name not in out:
@@ -723,24 +766,27 @@ def main():
     m_fail_today = sum(1 for s in flow_statuses.values() if s == "fail")
     a_pass_today = sum(1 for s in appium_map.values() if s[0] == "pass")
     a_fail_today = sum(1 for s in appium_map.values() if s[0] == "fail")
+    a_skip_today = sum(1 for s in appium_map.values() if s[0] == "skip")
     ios_m_pass_today = sum(1 for s in ios_flow_statuses.values() if s == "pass")
     ios_m_fail_today = sum(1 for s in ios_flow_statuses.values() if s == "fail")
     ios_a_pass_today = sum(1 for s in ios_appium_map.values() if s[0] == "pass")
     ios_a_fail_today = sum(1 for s in ios_appium_map.values() if s[0] == "fail")
+    ios_a_skip_today = sum(1 for s in ios_appium_map.values() if s[0] == "skip")
     today_pass   = m_pass_today + a_pass_today + ios_m_pass_today + ios_a_pass_today
     today_fail   = m_fail_today + a_fail_today + ios_m_fail_today + ios_a_fail_today
+    today_skip   = a_skip_today + ios_a_skip_today
     today_ran    = maestro_ran or appium_ran or ios_maestro_ran or ios_appium_ran
 
     history = []
     for day in range(29, -1, -1):
         if day == 0 and today_ran:
             history.append({
-                "day": 0, "total": total_tests,
-                "pass": today_pass, "fail": today_fail, "flaky": 0,
+                "day": 0, "total": today_pass + today_fail + today_skip,
+                "pass": today_pass, "fail": today_fail, "skipped": today_skip, "flaky": 0,
                 "duration": total_duration or 0,
             })
         else:
-            history.append({"day": day, "total": 0, "pass": 0, "fail": 0, "flaky": 0, "duration": 0})
+            history.append({"day": day, "total": 0, "pass": 0, "fail": 0, "skipped": 0, "flaky": 0, "duration": 0})
 
     # ── 9.5. LIVE_DATA — real-time overlay for index.html ────────────────
     live_test_results = {
@@ -773,7 +819,8 @@ def main():
         "date": now,
         "passed": today_pass,
         "failed": today_fail,
-        "total": today_pass + today_fail,
+        "skipped": today_skip,
+        "total": today_pass + today_fail + today_skip,
         "ran": today_ran,
     }
 

@@ -77,3 +77,17 @@ class TestNotifications:
         assert is_notif or is_login, \
             "Neither notifications screen nor login redirect appeared"
         screenshot(driver, "notifications_require_login")
+
+    @allure.story("Bulk action")
+    @allure.title("Clear all notifications keeps the screen stable")
+    def test_clear_all_notifications_no_crash(self, driver):
+        page = self._login_and_open_notifications(driver)
+        page.clear_all_notifications()
+        base = BasePage(driver)
+        assert not base.is_visible("Something went wrong", timeout=3) and \
+               not base.is_visible("500", timeout=3), \
+            "Clear-all triggered an error state"
+        assert page.is_on_notifications_screen(timeout=5) or \
+               page.is_empty_state_visible(), \
+            "Notifications screen disappeared after clear-all"
+        screenshot(driver, "notifications_clear_all_no_crash")

@@ -59,7 +59,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Account"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: profile_settings_screen
 
@@ -67,7 +68,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Change Currency"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "Back"
     optional: true
@@ -79,7 +81,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "About Qatarat"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "Back"
     optional: true
@@ -88,7 +91,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Logout"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "No"
     optional: true

@@ -10,7 +10,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Skip"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - tapOn:
     text: "Select your country"
@@ -66,11 +67,13 @@ appId: com.qatarat.app
 - tapOn:
     text: "Add"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "Cart"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # ── Test 1: invalid promo code ───────────────────────
 - tapOn:

@@ -5,7 +5,7 @@
 Produce a valid, non-fabricated automation report for Android and iOS using only real CI artifacts:
 
 - Maestro UI journeys: 50 YAML flows.
-- Appium deep tests: 251 pytest tests.
+- Appium deep tests: 252 pytest tests.
 - Platforms: Android emulator and iOS simulator.
 - Outputs: JUnit XML, Allure results, screenshots, videos, GitHub Pages dashboard, run history.
 

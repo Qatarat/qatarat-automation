@@ -59,7 +59,8 @@ appId: com.qatarat.app
 - tapOn:
     text: "Gift Card"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Gift details form
 - tapOn:
@@ -86,17 +87,20 @@ appId: com.qatarat.app
 - tapOn:
     text: "Choose Relationship"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     index: 0
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Preview gift
 - tapOn:
     text: "Preview"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: gift_card_preview
 
@@ -104,6 +108,7 @@ appId: com.qatarat.app
 - tapOn:
     text: "Save Gift Details"
     optional: true
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
 - takeScreenshot: gift_card_saved
