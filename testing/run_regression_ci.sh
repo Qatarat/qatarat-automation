@@ -10,19 +10,57 @@ mkdir -p "$REPORTS_DIR"
 
 FLOW_TIMEOUT=480   # 8 min hard cap per flow for regression (some flows are heavier)
 
+write_fallback_junit() {
+  local xml_path="$1"
+  local flow_name="$2"
+  local status="$3"
+  local message="$4"
+  python3 - "$xml_path" "$flow_name" "$status" "$message" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+xml_path, flow_name, status, message = sys.argv[1:5]
+suite = ET.Element(
+    "testsuite",
+    {
+        "name": "Maestro Regression",
+        "tests": "1",
+        "failures": "1" if status == "failed" else "0",
+        "errors": "0",
+        "skipped": "0",
+    },
+)
+case = ET.SubElement(suite, "testcase", {"classname": "maestro.android", "name": flow_name})
+if status == "failed":
+    failure = ET.SubElement(case, "failure", {"message": message})
+    failure.text = message
+ET.ElementTree(suite).write(xml_path, encoding="utf-8", xml_declaration=True)
+PY
+}
+
 _run_flow() {
   local flow_file="$1"
   local name
   name="$(basename "$flow_file" .yaml)"
+  local xml="$REPORTS_DIR/${name}-results.xml"
   echo "▶  Running flow: $name"
   timeout "$FLOW_TIMEOUT" maestro test --format junit \
-    --output "$REPORTS_DIR/${name}-results.xml" \
+    --output "$xml" \
     "$flow_file" \
-    && echo "   ✓ $name" \
+    && {
+      [ -s "$xml" ] || write_fallback_junit "$xml" "$name" passed "Maestro passed but did not write JUnit XML"
+      echo "   ✓ $name"
+    } \
     || {
       RC=$?
-      [ "$RC" -eq 124 ] && echo "   ✗ $name TIMED OUT (>${FLOW_TIMEOUT}s)" \
-                        || echo "   ✗ $name FAILED (exit $RC)"
+      if [ "$RC" -eq 124 ]; then
+        msg="$name timed out after ${FLOW_TIMEOUT}s"
+        echo "   ✗ $name TIMED OUT (>${FLOW_TIMEOUT}s)"
+      else
+        msg="$name failed with exit $RC"
+        echo "   ✗ $name FAILED (exit $RC)"
+      fi
+      [ -s "$xml" ] || write_fallback_junit "$xml" "$name" failed "$msg"
       adb exec-out screencap -p > "$REPORTS_DIR/${name}-screenshot.png" 2>/dev/null || true
       return 1
     }

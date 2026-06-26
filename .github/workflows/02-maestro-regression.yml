@@ -80,6 +80,11 @@ jobs:
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -107,7 +112,7 @@ jobs:
             TEST_RC=0
             bash testing/run_regression_ci.sh "${{ github.event.inputs.flow }}" || TEST_RC=$?
             rm -f /tmp/android_rec_on
-            pkill -INT -f 'screenrecord --time-limit' 2>/dev/null || true
+            adb shell "pkill -INT screenrecord" 2>/dev/null || true
             sleep 3
             kill "$REC_PID" 2>/dev/null || true
             wait "$REC_PID" 2>/dev/null || true
