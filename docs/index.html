@@ -717,9 +717,9 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:36px
   <div class="section-header">
     <div class="section-title">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Test Scenarios
+      Test Data &amp; Scenarios
     </div>
-    <div class="section-sub">All input types tested: valid, invalid, empty, special chars, SQL injection, XSS, unicode, emoji, boundary</div>
+    <div class="section-sub">Defined inputs: valid, invalid, empty, special chars, SQL injection, XSS, unicode, emoji, boundary</div>
   </div>
 
   <div class="tabs" id="scenario-tabs"></div>
@@ -1158,6 +1158,7 @@ var APPIUM_GROUPS = [
 ];
 
 var SCENARIOS = [
+  // Test-data definitions. Execution status comes only from CI JUnit artifacts.
   {
     id:'phone', label:'Phone / OTP',
     rows:[
@@ -1284,36 +1285,36 @@ var PIPELINES = [
     icon:'🚀', bg:'rgba(63,185,80,.15)',
     name:'Maestro Smoke',
     trigger:'Every push & PR',
-    pills:['~10 min','Android','5 key flows'],
+    pills:['up to 90 min','Android','20 flows'],
     steps:['Checkout repo','Start Android emulator','Install Maestro','Run smoke suite','Upload JUnit XML','Notify on failure']
   },
   {
     icon:'🔁', bg:'rgba(88,166,255,.15)',
     name:'Maestro Full Regression',
     trigger:'Nightly 01:00 UTC',
-    pills:['~45 min','Android','All 50 flows'],
+    pills:['up to 240 min','Android','All 50 flows'],
     steps:['Checkout repo','Start emulator','Run all 50 flows','Screenshots on fail','Upload artifacts','Post step summary']
   },
   {
     icon:'🧪', bg:'rgba(188,140,255,.15)',
     name:'Appium Deep Tests',
     trigger:'Every Monday 02:00 UTC',
-    pills:['~75 min','Android','251 tests'],
+    pills:['up to 240 min','Android','251 tests'],
     steps:['Checkout repo','Start emulator','Install APK','Run pytest suite','Generate Allure','Upload results']
   },
   {
     icon:'🍎', bg:'rgba(240,192,64,.15)',
     name:'Maestro iOS Simulator',
     trigger:'Every Tuesday 03:00 UTC + manual',
-    pills:['~30 min','iOS 17','All 50 flows'],
-    steps:['Checkout repo (LFS)','Boot iPhone 15 Pro sim','Extract Runner.app from IPA','Install app on simulator','Run full 50-flow suite','Upload JUnit + screenshots']
+    pills:['up to 300 min','iOS 17','All 50 flows'],
+    steps:['Checkout repository','Boot iPhone 15 Pro sim','Extract Runner.app from IPA','Install app on simulator','Run full 50-flow suite','Upload JUnit + screenshots']
   },
   {
     icon:'🧪', bg:'rgba(188,140,255,.15)',
     name:'Appium iOS Simulator',
     trigger:'Daily 12:00 UTC (6:00 PM BDT) + manual',
-    pills:['~90 min','iOS 17','251 tests'],
-    steps:['Checkout repo (LFS)','Boot iPhone 15 Pro sim','Install XCUITest + Flutter drivers','Install Runner.app','Start Appium server','Run 251 pytest tests','Upload Allure + JUnit + screenshots']
+    pills:['up to 360 min','iOS 17','251 tests'],
+    steps:['Checkout repository','Boot iPhone 15 Pro sim','Install XCUITest + Flutter drivers','Install Runner.app','Start Appium server','Run 251 pytest tests','Upload Allure + JUnit + screenshots']
   },
   {
     icon:'📊', bg:'rgba(0,212,170,.15)',
@@ -1897,10 +1898,10 @@ function renderScenarios(){
       else if(r.type==='edge') typeClass='type-edge';
       else if(r.type==='security') typeClass='type-security';
       else if(r.type==='boundary') typeClass='type-boundary';
-      var icon=r.result==='pass'?'✅':'❌';
-      rows+='<tr><td class="text-mono">'+escH(r.input)+'</td><td><span class="type-tag '+typeClass+'">'+escH(r.type)+'</span></td><td style="color:var(--text2);font-size:12px;">'+escH(r.expected)+'</td><td>'+icon+'</td></tr>';
+      var definition='<span class="plat-status-pending">Defined</span>';
+      rows+='<tr><td class="text-mono">'+escH(r.input)+'</td><td><span class="type-tag '+typeClass+'">'+escH(r.type)+'</span></td><td style="color:var(--text2);font-size:12px;">'+escH(r.expected)+'</td><td>'+definition+'</td></tr>';
     });
-    panelsHtml+='<div class="tab-panel'+(i===0?' active':'')+'" id="panel-'+sc.id+'"><div style="overflow-x:auto;"><table class="scenario-table"><thead><tr><th>Input Value</th><th>Type</th><th>Expected Behavior</th><th>Result</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+    panelsHtml+='<div class="tab-panel'+(i===0?' active':'')+'" id="panel-'+sc.id+'"><div style="overflow-x:auto;"><table class="scenario-table"><thead><tr><th>Input Value</th><th>Type</th><th>Expected Behavior</th><th>Definition</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
   });
   tabsEl.innerHTML=tabsHtml;
   panelsEl.innerHTML=panelsHtml;

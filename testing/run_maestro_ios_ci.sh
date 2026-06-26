@@ -12,6 +12,34 @@ mkdir -p "$REPORTS_DIR"
 
 FLOW_TIMEOUT=240
 
+write_fallback_junit() {
+  local xml_path="$1"
+  local flow_name="$2"
+  local status="$3"
+  local message="$4"
+  python3 - "$xml_path" "$flow_name" "$status" "$message" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+xml_path, flow_name, status, message = sys.argv[1:5]
+suite = ET.Element(
+    "testsuite",
+    {
+        "name": "Maestro iOS",
+        "tests": "1",
+        "failures": "1" if status == "failed" else "0",
+        "errors": "0",
+        "skipped": "0",
+    },
+)
+case = ET.SubElement(suite, "testcase", {"classname": "maestro.ios", "name": flow_name})
+if status == "failed":
+    failure = ET.SubElement(case, "failure", {"message": message})
+    failure.text = message
+ET.ElementTree(suite).write(xml_path, encoding="utf-8", xml_declaration=True)
+PY
+}
+
 # macOS runners may lack GNU timeout — use gtimeout or perl alarm fallback
 run_with_timeout() {
   local secs=$1; shift
@@ -54,15 +82,25 @@ FAIL=0
 while IFS= read -r flow_yaml; do
   [ -f "$flow_yaml" ] || continue
   flow="$(basename "$flow_yaml" .yaml)"
+  xml="$REPORTS_DIR/${flow}-results.xml"
   echo "▶  Running flow: $flow"
   run_with_timeout "$FLOW_TIMEOUT" maestro test --format junit \
-    --output "$REPORTS_DIR/${flow}-results.xml" \
+    --output "$xml" \
     "$flow_yaml" \
-    && echo "   ✓ $flow" \
+    && {
+      [ -s "$xml" ] || write_fallback_junit "$xml" "$flow" passed "Maestro passed but did not write JUnit XML"
+      echo "   ✓ $flow"
+    } \
     || {
       RC=$?
-      [ "$RC" -eq 124 ] && echo "   ✗ $flow TIMED OUT (>${FLOW_TIMEOUT}s)" \
-                        || echo "   ✗ $flow FAILED (exit $RC)"
+      if [ "$RC" -eq 124 ]; then
+        message="$flow timed out after ${FLOW_TIMEOUT}s"
+        echo "   ✗ $flow TIMED OUT (>${FLOW_TIMEOUT}s)"
+      else
+        message="$flow failed with exit $RC"
+        echo "   ✗ $flow FAILED (exit $RC)"
+      fi
+      [ -s "$xml" ] || write_fallback_junit "$xml" "$flow" failed "$message"
       FAIL=$((FAIL + 1))
     }
 done < <(flows_for_suite)

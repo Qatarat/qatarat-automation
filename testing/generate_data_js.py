@@ -323,11 +323,11 @@ APPIUM_DEF = [
 ]
 
 CI_WORKFLOWS_DEF = [
-    {"name": "Maestro Smoke",          "trigger": "Every push / PR",         "duration": "~10 min", "coverage": "Login, cart, checkout",                 "passRate": 0, "runs": 0},
-    {"name": "Maestro Regression",     "trigger": "Nightly 01:00 UTC",       "duration": "~30 min", "coverage": "All 16 flows",                          "passRate": 0, "runs": 0},
+    {"name": "Maestro Smoke",          "trigger": "Every push / PR",         "duration": "up to 90 min", "coverage": "First 20 Android flows",              "passRate": 0, "runs": 0},
+    {"name": "Maestro Regression",     "trigger": "Nightly 01:00 UTC",       "duration": "up to 240 min", "coverage": "All 50 Android flows",               "passRate": 0, "runs": 0},
     {"name": "Appium Deep Tests",      "trigger": "Every Monday",            "duration": "~60 min", "coverage": "Payment, gift, subscriptions, account", "passRate": 0, "runs": 0},
-    {"name": "Maestro iOS",            "trigger": "Every Tuesday 03:00 UTC", "duration": "~30 min", "coverage": "Smoke flows on iOS Simulator",          "passRate": 0, "runs": 0},
-    {"name": "Appium iOS Deep Tests",  "trigger": "Daily 12:00 UTC",         "duration": "~90 min", "coverage": "Account suite — profile, logout, edit", "passRate": 0, "runs": 0},
+    {"name": "Maestro iOS",            "trigger": "Every Tuesday 03:00 UTC", "duration": "up to 300 min", "coverage": "Smoke + regression iOS flows",          "passRate": 0, "runs": 0},
+    {"name": "Appium iOS Deep Tests",  "trigger": "Daily 12:00 UTC",         "duration": "up to 360 min", "coverage": "251 iOS Appium tests",                  "passRate": 0, "runs": 0},
     {"name": "Publish Report",         "trigger": "After any test run",      "duration": "~3 min",  "coverage": "Deploys to GitHub Pages",               "passRate": 0, "runs": 0},
 ]
 
