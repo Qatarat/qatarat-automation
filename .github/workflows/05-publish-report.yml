@@ -43,33 +43,41 @@ jobs:
       - name: Validate report inventory
         run: python3 testing/validate_report_inventory.py
 
-      # Resolve which completed run's artifacts to download.
-      # Cancelled runs are ignored for dashboard data because they commonly have
-      # partial/no XML and can wipe a previously valid Pages report.
-      - name: Resolve Maestro source run ID
-        id: source-run
+      # Resolve smoke and full-regression artifacts independently. A single
+      # manual regression flow must not replace the published full suite.
+      - name: Resolve Android Maestro source run IDs
+        id: maestro-runs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          pick_run() {
+            local wf="$1"
+            local filter="$2"
+            gh api "repos/${{ github.repository }}/actions/workflows/${wf}/runs?per_page=30" \
+              --jq "[.workflow_runs[] | select(.status == \"completed\" and .conclusion != \"cancelled\" and (${filter}))] | first | .id // empty" \
+              2>/dev/null || true
+          }
+
+          SMOKE_ID=$(pick_run "01-maestro-smoke.yml" "true")
+          REGRESSION_ID=$(pick_run "02-maestro-regression.yml" '.event != "workflow_dispatch"')
+
           if [ "${{ github.event_name }}" = "workflow_run" ] && \
-             echo "${{ github.event.workflow_run.name }}" | grep -qi "maestro" && \
-             echo "${{ github.event.workflow_run.name }}" | grep -qvi "ios" && \
+             [ "${{ github.event.workflow_run.name }}" = "Maestro — Smoke (Android)" ] && \
              [ "${{ github.event.workflow_run.conclusion }}" != "cancelled" ]; then
-            echo "id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
-            echo "Triggered by Android Maestro workflow_run: ${{ github.event.workflow_run.id }}"
-          else
-            echo "Searching for latest Android Maestro run..."
-            pick_run() {
-              local wf="$1"
-              ID=$(gh api "repos/${{ github.repository }}/actions/workflows/${wf}/runs?per_page=20" \
-                --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "cancelled")] | first | .id // empty' 2>/dev/null || true)
-              echo "$ID"
-            }
-            ID=$(pick_run "02-maestro-regression.yml")
-            [ -z "$ID" ] && ID=$(pick_run "01-maestro-smoke.yml")
-            echo "id=${ID}" >> "$GITHUB_OUTPUT"
-            echo "Latest Android Maestro run ID: ${ID:-none found}"
+            SMOKE_ID="${{ github.event.workflow_run.id }}"
           fi
+
+          if [ "${{ github.event_name }}" = "workflow_run" ] && \
+             [ "${{ github.event.workflow_run.name }}" = "Maestro — Full Regression (Android)" ] && \
+             [ "${{ github.event.workflow_run.event }}" != "workflow_dispatch" ] && \
+             [ "${{ github.event.workflow_run.conclusion }}" != "cancelled" ]; then
+            REGRESSION_ID="${{ github.event.workflow_run.id }}"
+          fi
+
+          echo "smoke_id=${SMOKE_ID}" >> "$GITHUB_OUTPUT"
+          echo "regression_id=${REGRESSION_ID}" >> "$GITHUB_OUTPUT"
+          echo "Latest Android Maestro smoke run ID: ${SMOKE_ID:-none found}"
+          echo "Latest Android Maestro full regression run ID: ${REGRESSION_ID:-none found}"
 
       # Separately resolve the latest Android Appium run — it runs on a different schedule
       - name: Resolve Appium source run ID
@@ -138,10 +146,10 @@ jobs:
 
       # ── Maestro artifacts (flow XMLs + screenshots) ──────────────────
       - name: Download Android Maestro Smoke JUnit XMLs
-        if: steps.source-run.outputs.id != ''
+        if: steps.maestro-runs.outputs.smoke_id != ''
         uses: actions/download-artifact@v4
         with:
-          run-id: ${{ steps.source-run.outputs.id }}
+          run-id: ${{ steps.maestro-runs.outputs.smoke_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-artifacts/maestro/
           pattern: "maestro-smoke-junit*"
@@ -149,10 +157,10 @@ jobs:
         continue-on-error: true
 
       - name: Download Android Maestro Regression JUnit XMLs
-        if: steps.source-run.outputs.id != ''
+        if: steps.maestro-runs.outputs.regression_id != ''
         uses: actions/download-artifact@v4
         with:
-          run-id: ${{ steps.source-run.outputs.id }}
+          run-id: ${{ steps.maestro-runs.outputs.regression_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-artifacts/maestro/
           pattern: "maestro-regression-junit*"
@@ -170,14 +178,25 @@ jobs:
           merge-multiple: true
         continue-on-error: true
 
-      - name: Download Maestro screenshots
-        if: steps.source-run.outputs.id != ''
+      - name: Download Android Maestro Smoke screenshots
+        if: steps.maestro-runs.outputs.smoke_id != ''
         uses: actions/download-artifact@v4
         with:
-          run-id: ${{ steps.source-run.outputs.id }}
+          run-id: ${{ steps.maestro-runs.outputs.smoke_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-screenshots/
-          pattern: "maestro-*screenshots*"
+          pattern: "maestro-smoke-screenshots*"
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Download Android Maestro Regression screenshots
+        if: steps.maestro-runs.outputs.regression_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.maestro-runs.outputs.regression_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-screenshots/
+          pattern: "maestro-regression-screenshots*"
           merge-multiple: true
         continue-on-error: true
 
@@ -272,11 +291,22 @@ jobs:
           merge-multiple: true
         continue-on-error: true
 
-      - name: Download Android Maestro recording
-        if: steps.source-run.outputs.id != ''
+      - name: Download Android Maestro Smoke recording
+        if: steps.maestro-runs.outputs.smoke_id != ''
         uses: actions/download-artifact@v4
         with:
-          run-id: ${{ steps.source-run.outputs.id }}
+          run-id: ${{ steps.maestro-runs.outputs.smoke_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-recordings/
+          pattern: "android-maestro-recording-*"
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Download Android Maestro Regression recording
+        if: steps.maestro-runs.outputs.regression_id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.maestro-runs.outputs.regression_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: raw-recordings/
           pattern: "android-maestro-recording-*"
