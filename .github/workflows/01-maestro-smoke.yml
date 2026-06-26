@@ -95,21 +95,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
           script: |
-            set -e
-            adb install -r "Qatarat (Lambda-Stage).apk"
-            touch /tmp/android_rec_on
-            mkdir -p /tmp/adb_segs
-            bash testing/record_android.sh /tmp/adb_segs &
-            REC_PID=$!
-            set +e
-            TEST_RC=0
-            bash testing/run_smoke_ci.sh || TEST_RC=$?
-            rm -f /tmp/android_rec_on
-            adb shell "pkill -INT screenrecord" 2>/dev/null || true
-            sleep 3
-            kill "$REC_PID" 2>/dev/null || true
-            wait "$REC_PID" 2>/dev/null || true
-            exit $TEST_RC
+            bash testing/run_android_maestro_with_recording.sh smoke
 
       - name: Concat Android recording
         if: always()
