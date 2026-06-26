@@ -11,10 +11,6 @@ on:
     types: [completed]
   push:
     branches: [main]
-    paths:
-      - "docs/**"
-      - "testing/report-ui/**"
-      - "testing/generate_data_js.py"
   workflow_dispatch:
 
 permissions:

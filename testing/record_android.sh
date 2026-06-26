@@ -5,6 +5,18 @@
 SEGS_DIR="${1:-/tmp/adb_segs}"
 mkdir -p "$SEGS_DIR"
 SEG=0
+ADB_PID=""
+
+cleanup() {
+  rm -f /tmp/android_rec_on
+  if [ -n "${ADB_PID:-}" ]; then
+    kill "$ADB_PID" 2>/dev/null || true
+    wait "$ADB_PID" 2>/dev/null || true
+  fi
+  adb shell "pkill -INT screenrecord" 2>/dev/null || true
+}
+trap cleanup INT TERM EXIT
+
 echo "[rec] android recorder started"
 
 while [ -f /tmp/android_rec_on ]; do

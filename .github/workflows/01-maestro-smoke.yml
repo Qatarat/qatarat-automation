@@ -97,10 +97,12 @@ jobs:
             bash testing/record_android.sh /tmp/adb_segs &
             REC_PID=$!
             set +e
-            bash testing/run_smoke_ci.sh
-            TEST_RC=$?
+            TEST_RC=0
+            bash testing/run_smoke_ci.sh || TEST_RC=$?
             rm -f /tmp/android_rec_on
+            pkill -INT -f 'screenrecord --time-limit' 2>/dev/null || true
             sleep 3
+            kill "$REC_PID" 2>/dev/null || true
             wait "$REC_PID" 2>/dev/null || true
             exit $TEST_RC
 
