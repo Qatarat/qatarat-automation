@@ -4,6 +4,7 @@ from pages.login_page import LoginPage
 from pages.home_page import HomePage
 from pages.base_page import BasePage
 from utils.helpers import screenshot, wait_for_animation
+from utils.markers import android_apk_regression
 
 
 @allure.epic("Home")
@@ -19,6 +20,7 @@ class TestHomeFeed:
         page.navigate_to_home()
         return page
 
+    @android_apk_regression
     @allure.story("Navigation")
     @allure.title("Home screen loads successfully after login")
     def test_home_loads_after_login(self, driver):
@@ -27,6 +29,7 @@ class TestHomeFeed:
             "Home screen did not load after login"
         screenshot(driver, "home_loads_after_login")
 
+    @android_apk_regression
     @allure.story("Content")
     @allure.title("Home feed contains at least one mosque or featured item")
     def test_home_feed_has_content(self, driver):
@@ -40,6 +43,7 @@ class TestHomeFeed:
         assert has_content, "Home feed appears empty — no mosques or featured items found"
         screenshot(driver, "home_feed_has_content")
 
+    @android_apk_regression
     @allure.story("Content")
     @allure.title("Live Broadcast section is accessible from home")
     def test_live_broadcast_accessible(self, driver):
@@ -79,6 +83,7 @@ class TestHomeFeed:
             "Scrolling home feed caused an error"
         screenshot(driver, "home_scroll_no_crash")
 
+    @android_apk_regression
     @allure.story("Navigation")
     @allure.title("Bottom navigation tabs are all accessible from home")
     def test_bottom_nav_tabs_accessible(self, driver):

@@ -29,8 +29,10 @@ mkdir -p "$REPORTS_DIR/screenshots" "$ALLURE_DIR"
 cd "$APPIUM_DIR"
 
 # iOS tests take longer: login OTP round-trip + WDA session overhead.
+# 600s covers a worst-case WDA rebuild (~480s observed on macos-15 + iOS 26 sim)
+# even if usePreinstalledWDA misses; with prebuilt WDA most sessions are <60s.
 if [ "$PLATFORM" = "ios" ]; then
-  PER_TEST_TIMEOUT=180
+  PER_TEST_TIMEOUT=600
 else
   PER_TEST_TIMEOUT=300
 fi

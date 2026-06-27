@@ -74,9 +74,12 @@ IOS_SIMULATOR_CAPS = {
     "appium:wdaLaunchTimeout": 300000,          # 5 min — WDA re-compilation on cold sessions
     "appium:wdaConnectionTimeout": 300000,      # 5 min — iOS 18 sim connects slower than 17
     # usePreinstalledWDA: False (default) — build+install WDA on first session.
-    # True would skip the build step but requires WDA already compiled, which
-    # fails on fresh CI runners with FBSOpenApplicationServiceErrorDomain code=4.
-    "appium:usePreinstalledWDA": False,
+    # True skips the build step but requires WDA already compiled. The CI iOS
+    # workflow runs a pre-warm session that compiles WDA, then sets
+    # IOS_WDA_PREBUILT=1 via GITHUB_ENV so every subsequent test session reuses
+    # the already-installed WDA bundle. Without this, each function-scoped
+    # session re-builds WDA (~480s) and pytest-timeout kills it.
+    "appium:usePreinstalledWDA": os.environ.get("IOS_WDA_PREBUILT", "") == "1",
     # Reuse the already-running WDA between successive test sessions (safe + faster).
     # Unlike usePreinstalledWDA, this does NOT skip the initial build.
     "appium:useNewWDA": False,

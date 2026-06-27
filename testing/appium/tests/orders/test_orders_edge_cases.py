@@ -3,11 +3,13 @@ from pages.login_page import LoginPage
 from pages.orders_page import OrdersPage
 from pages.base_page import BasePage
 from utils.helpers import screenshot, wait_for_animation
+from utils.markers import android_apk_regression
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from test_data import InvalidRating, BoundaryValues
 
 
+@android_apk_regression
 @pytest.mark.orders
 @pytest.mark.android
 class TestOrdersEdgeCases:

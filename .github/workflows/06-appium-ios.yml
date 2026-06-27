@@ -195,14 +195,21 @@ jobs:
                   opts.set_capability(k, v)
           print("Pre-warming WDA — first session compiles WebDriverAgent (~3-5 min)...")
           t0 = time.time()
+          ok = False
           try:
               d = webdriver.Remote(APPIUM_SERVER, options=opts)
               print(f"WDA session ready in {time.time()-t0:.0f}s — quitting warmup session")
               d.quit()
               print("WDA pre-warm complete ✅")
+              ok = True
           except Exception as e:
               print(f"WDA pre-warm failed after {time.time()-t0:.0f}s: {e}")
               print("Continuing — pytest will attempt sessions anyway")
+          gh_env = os.environ.get("GITHUB_ENV")
+          if ok and gh_env:
+              with open(gh_env, "a") as f:
+                  f.write("IOS_WDA_PREBUILT=1\n")
+              print("Exported IOS_WDA_PREBUILT=1 — test sessions will reuse compiled WDA")
           PYEOF
 
       - name: Run iOS Appium Tests — ${{ matrix.group.name }}

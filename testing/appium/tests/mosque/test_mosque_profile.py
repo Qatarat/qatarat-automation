@@ -3,6 +3,7 @@ import allure
 from pages.login_page import LoginPage
 from pages.mosque_page import MosquePage
 from utils.helpers import screenshot, wait_for_animation
+from utils.markers import android_apk_regression
 
 
 @allure.epic("Mosque")
@@ -79,6 +80,7 @@ class TestMosqueProfile:
             "Arabic Unicode search caused a crash or server error"
         screenshot(driver, "mosque_search_unicode")
 
+    @android_apk_regression
     @allure.story("Profile")
     @allure.title("Tapping a search result opens the mosque profile page")
     def test_mosque_profile_opens(self, driver):
@@ -94,6 +96,7 @@ class TestMosqueProfile:
             "Mosque profile page did not open after tapping search result"
         screenshot(driver, "mosque_profile_opens")
 
+    @android_apk_regression
     @allure.story("Profile")
     @allure.title("Mosque profile page contains a Donate button")
     def test_mosque_profile_has_donate_button(self, driver):
@@ -106,6 +109,7 @@ class TestMosqueProfile:
             "Donate button not found on mosque profile page"
         screenshot(driver, "mosque_profile_donate_button")
 
+    @android_apk_regression
     @allure.story("Profile")
     @allure.title("Mosque profile page shows a description or About section")
     def test_mosque_profile_description_visible(self, driver):

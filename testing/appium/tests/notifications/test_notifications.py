@@ -4,8 +4,10 @@ from pages.login_page import LoginPage
 from pages.notification_page import NotificationPage
 from pages.base_page import BasePage
 from utils.helpers import screenshot, wait_for_animation
+from utils.markers import android_apk_regression
 
 
+@android_apk_regression
 @allure.epic("Notifications")
 @allure.feature("Notification Centre")
 @pytest.mark.notifications

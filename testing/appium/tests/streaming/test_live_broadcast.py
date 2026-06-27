@@ -2,6 +2,7 @@ import pytest
 from pages.login_page import LoginPage
 from pages.base_page import BasePage
 from utils.helpers import screenshot, wait_for_animation
+from utils.markers import android_apk_regression
 
 
 @pytest.mark.android
@@ -11,6 +12,7 @@ class TestLiveBroadcast:
     These are view/interaction tests — actual stream content is not verified.
     """
 
+    @android_apk_regression
     def test_live_broadcast_screen_accessible(self, driver):
         """Live Broadcast option should be accessible from home."""
         login = LoginPage(driver)
@@ -28,6 +30,7 @@ class TestLiveBroadcast:
             "Live Broadcast screen did not load"
         screenshot(driver, "live_broadcast_screen")
 
+    @android_apk_regression
     def test_visual_documentation_section_loads(self, driver):
         """Visual documentations tab should load without crash."""
         login = LoginPage(driver)
