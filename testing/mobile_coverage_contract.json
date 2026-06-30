@@ -1,0 +1,88 @@
+{
+  "domains": {
+    "onboarding_country_language": {
+      "appium": ["testing/appium/tests/auth/test_auth_edge_cases.py", "testing/appium/tests/auth/test_ios_auth.py"],
+      "maestro": ["testing/maestro/flows/01_splash_onboarding.yaml", "testing/maestro/flows/10_multilanguage.yaml"]
+    },
+    "authentication_otp_session": {
+      "appium": ["testing/appium/tests/auth/test_login_negative.py", "testing/appium/tests/auth/test_auth_edge_cases.py", "testing/appium/tests/auth/test_ios_auth.py"],
+      "maestro": ["testing/maestro/flows/02_login_otp.yaml", "testing/maestro/flows/17_login_invalid_phone.yaml", "testing/maestro/flows/18_login_wrong_otp.yaml", "testing/maestro/flows/40_otp_resend.yaml", "testing/maestro/flows/50_session_handling.yaml"]
+    },
+    "guest_browse_search": {
+      "appium": ["testing/appium/tests/browse/test_browse_search.py"],
+      "maestro": ["testing/maestro/flows/03_guest_user.yaml", "testing/maestro/flows/04_browse_services.yaml", "testing/maestro/flows/24_browse_search_edge_cases.yaml", "testing/maestro/flows/41_search_mosque_name.yaml", "testing/maestro/flows/42_search_empty_results.yaml", "testing/maestro/flows/43_search_special_characters.yaml"]
+    },
+    "home_feed_mosque_profile": {
+      "appium": ["testing/appium/tests/home/test_home_feed.py", "testing/appium/tests/mosque/test_mosque_profile.py"],
+      "maestro": ["testing/maestro/flows/26_mosque_profile_view.yaml"]
+    },
+    "cart_checkout_subscription": {
+      "appium": ["testing/appium/tests/cart/test_cart_boundary.py", "testing/appium/tests/checkout/test_checkout_edge_cases.py", "testing/appium/tests/subscription/test_subscription.py", "testing/appium/tests/subscription/test_subscription_boundary.py"],
+      "maestro": ["testing/maestro/flows/05_cart_add_items.yaml", "testing/maestro/flows/06_checkout_payment_select.yaml", "testing/maestro/flows/09_subscription.yaml", "testing/maestro/flows/14_manage_subscriptions.yaml", "testing/maestro/flows/20_empty_cart_checkout.yaml", "testing/maestro/flows/22_cart_quantity_boundary.yaml"]
+    },
+    "payment_bank_card_tabby_promo": {
+      "appium": ["testing/appium/tests/payment/test_bank_transfer.py", "testing/appium/tests/payment/test_card_payment.py", "testing/appium/tests/payment/test_payment_extended.py", "testing/appium/tests/payment/test_payment_negative.py", "testing/appium/tests/payment/test_tabby_bnpl.py", "testing/appium/tests/promo/test_promo_codes.py"],
+      "maestro": ["testing/maestro/flows/19_invalid_promo.yaml", "testing/maestro/flows/25_payment_input_edge_cases.yaml", "testing/maestro/flows/33_payment_methods_manage.yaml", "testing/maestro/flows/34_promo_code_valid.yaml", "testing/maestro/flows/35_promo_code_invalid.yaml"]
+    },
+    "donation_zakat_sadaqah_recurring": {
+      "appium": ["testing/appium/tests/donation/test_donation_flow.py", "testing/appium/tests/donation/test_zakat.py"],
+      "maestro": ["testing/maestro/flows/27_donation_zakat_flow.yaml", "testing/maestro/flows/28_donation_sadaqah.yaml", "testing/maestro/flows/29_donation_recurring.yaml"]
+    },
+    "gift_card": {
+      "appium": ["testing/appium/tests/gift/test_gift_card.py", "testing/appium/tests/gift/test_gift_card_boundary.py"],
+      "maestro": ["testing/maestro/flows/07_gift_card.yaml", "testing/maestro/flows/21_gift_card_validation.yaml", "testing/maestro/flows/30_donation_gift_card.yaml"]
+    },
+    "wallet": {
+      "appium": ["testing/appium/tests/wallet/test_wallet.py"],
+      "maestro": ["testing/maestro/flows/31_wallet_topup.yaml", "testing/maestro/flows/32_wallet_balance_view.yaml"]
+    },
+    "profile_account_help_logout": {
+      "appium": ["testing/appium/tests/account/test_edit_profile.py", "testing/appium/tests/account/test_logout.py", "testing/appium/tests/account/test_profile.py", "testing/appium/tests/account/test_profile_edge_cases.py"],
+      "maestro": ["testing/maestro/flows/12_profile_settings.yaml", "testing/maestro/flows/13_help_support.yaml", "testing/maestro/flows/38_profile_edit.yaml", "testing/maestro/flows/39_logout_success.yaml"]
+    },
+    "orders_booking_rating": {
+      "appium": ["testing/appium/tests/orders/test_orders_edge_cases.py", "testing/appium/tests/booking/test_booking_flow.py", "testing/appium/tests/rating/test_rating.py"],
+      "maestro": ["testing/maestro/flows/08_my_orders.yaml", "testing/maestro/flows/15_cancel_order.yaml"]
+    },
+    "notifications_streaming_location_favourites": {
+      "appium": ["testing/appium/tests/notifications/test_notifications.py", "testing/appium/tests/streaming/test_live_broadcast.py", "testing/appium/tests/location/test_location.py", "testing/appium/tests/favourites/test_favourites.py"],
+      "maestro": ["testing/maestro/flows/44_notifications_view.yaml", "testing/maestro/flows/46_live_broadcast_view.yaml"]
+    },
+    "share_deeplink_lifecycle_network_accessibility": {
+      "appium": ["testing/appium/tests/browse/test_browse_search.py", "testing/appium/tests/home/test_home_feed.py", "testing/appium/tests/location/test_location.py"],
+      "maestro": ["testing/maestro/flows/11_no_internet.yaml", "testing/maestro/flows/16_share_app.yaml", "testing/maestro/flows/23_app_background_resume.yaml", "testing/maestro/flows/45_deep_link_handling.yaml", "testing/maestro/flows/47_dark_mode_toggle.yaml", "testing/maestro/flows/48_app_background_resume.yaml", "testing/maestro/flows/49_accessibility_labels.yaml"]
+    }
+  },
+  "test_types": {
+    "smoke": ["testing/maestro/flows/suites/smoke.yaml", "testing/appium/pytest.ini"],
+    "regression": ["testing/maestro/flows/suites/regression.yaml", "testing/appium/pytest.ini"],
+    "negative": ["testing/maestro/flows/suites/negative.yaml", "testing/appium/tests/auth/test_login_negative.py", "testing/appium/tests/payment/test_payment_negative.py"],
+    "boundary": ["testing/appium/tests/cart/test_cart_boundary.py", "testing/appium/tests/gift/test_gift_card_boundary.py", "testing/appium/tests/subscription/test_subscription_boundary.py"],
+    "security_input_abuse": ["testing/appium/tests/browse/test_browse_search.py", "testing/appium/tests/promo/test_promo_codes.py", "testing/appium/tests/rating/test_rating.py"],
+    "localization": ["testing/maestro/flows/36_language_switch_arabic.yaml", "testing/maestro/flows/37_language_switch_back.yaml", "testing/appium/tests/auth/test_ios_auth.py"],
+    "accessibility": ["testing/maestro/flows/49_accessibility_labels.yaml"],
+    "offline_lifecycle": ["testing/maestro/flows/11_no_internet.yaml", "testing/maestro/flows/23_app_background_resume.yaml", "testing/maestro/flows/48_app_background_resume.yaml"],
+    "android": ["testing/appium/capabilities/android_caps.py", ".github/workflows/03-appium-android.yml"],
+    "ios": ["testing/appium/capabilities/ios_caps.py", ".github/workflows/06-appium-ios.yml", ".github/workflows/04-maestro-ios.yml"]
+  },
+  "test_data_classes": [
+    "ValidData",
+    "InvalidPhone",
+    "InvalidOTP",
+    "InvalidCard",
+    "InvalidPromo",
+    "InvalidGift",
+    "InvalidRating",
+    "BoundaryValues",
+    "WalletData",
+    "SubscriptionData"
+  ],
+  "required_workflows": [
+    ".github/workflows/01-maestro-smoke.yml",
+    ".github/workflows/02-maestro-regression.yml",
+    ".github/workflows/03-appium-android.yml",
+    ".github/workflows/04-maestro-ios.yml",
+    ".github/workflows/05-publish-report.yml",
+    ".github/workflows/06-appium-ios.yml"
+  ]
+}

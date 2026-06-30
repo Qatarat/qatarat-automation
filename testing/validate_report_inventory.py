@@ -6,6 +6,7 @@ and Maestro source files. It does not run devices or Appium.
 """
 from __future__ import annotations
 
+import json
 import pathlib
 import re
 import sys
@@ -15,6 +16,7 @@ APP_TESTS = ROOT / "testing" / "appium" / "tests"
 FLOWS = ROOT / "testing" / "maestro" / "flows"
 DOCS_INDEX = ROOT / "docs" / "index.html"
 PUBLISH_WORKFLOW = ROOT / ".github" / "workflows" / "05-publish-report.yml"
+COVERAGE_CONTRACT = ROOT / "testing" / "mobile_coverage_contract.json"
 
 
 def fail(message: str) -> None:
@@ -32,6 +34,41 @@ def collect_pytest_names() -> set[str]:
 def collect_dashboard_names() -> set[str]:
     html = DOCS_INDEX.read_text()
     return set(re.findall(r"\{name:'(test_[^']+)'", html))
+
+
+def validate_coverage_contract() -> None:
+    if not COVERAGE_CONTRACT.exists():
+        fail("testing/mobile_coverage_contract.json missing")
+
+    contract = json.loads(COVERAGE_CONTRACT.read_text())
+    for section in ("domains", "test_types"):
+        entries = contract.get(section, {})
+        if not entries:
+            fail(f"coverage contract section {section!r} is empty")
+        for name, value in entries.items():
+            paths: list[str] = []
+            if isinstance(value, dict):
+                for platform, platform_paths in value.items():
+                    if platform not in {"appium", "maestro"}:
+                        fail(f"{section}.{name} has unknown platform {platform!r}")
+                    paths.extend(platform_paths)
+            else:
+                paths.extend(value)
+            if not paths:
+                fail(f"{section}.{name} has no source paths")
+            for rel in paths:
+                path = ROOT / rel
+                if not path.exists():
+                    fail(f"{section}.{name} references missing path: {rel}")
+
+    test_data = (ROOT / "testing" / "appium" / "test_data.py").read_text()
+    for class_name in contract.get("test_data_classes", []):
+        if not re.search(rf"^class\s+{re.escape(class_name)}\b", test_data, re.M):
+            fail(f"test data class missing: {class_name}")
+
+    for rel in contract.get("required_workflows", []):
+        if not (ROOT / rel).exists():
+            fail(f"required workflow missing: {rel}")
 
 
 def main() -> None:
@@ -76,9 +113,11 @@ def main() -> None:
     if 'Latest completed Appium iOS run ID' not in publish:
         fail("publish workflow must keep the last completed iOS Appium result set")
 
+    validate_coverage_contract()
+
     print(
         f"OK: {len(flow_files)} Maestro flows, {expected_total} Appium tests, "
-        "publish workflow subscriptions valid"
+        "publish workflow subscriptions valid, coverage contract valid"
     )
 
 
