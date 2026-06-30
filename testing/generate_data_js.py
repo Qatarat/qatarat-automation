@@ -483,6 +483,27 @@ def xml_test_map(xml_path):
         pass
     return out
 
+
+def _is_ios_appium_artifact(xml_path: str) -> bool:
+    parts = set(os.path.normpath(xml_path).split(os.sep))
+    base = os.path.basename(os.path.dirname(xml_path))
+    return (
+        "appium-ios" in parts
+        or "ios-appium" in parts
+        or base.startswith("appium-ios-junit")
+        or base.startswith("appium-ios-allure")
+    )
+
+
+def _is_ios_maestro_artifact(xml_path: str) -> bool:
+    parts = set(os.path.normpath(xml_path).split(os.sep))
+    base = os.path.basename(os.path.dirname(xml_path))
+    return (
+        "maestro-ios" in parts
+        or "ios-maestro" in parts
+        or base.startswith("maestro-ios-junit")
+    )
+
 # ─── Main ─────────────────────────────────────────────────────────────────
 def main():
     artifacts_dir   = sys.argv[1] if len(sys.argv) > 1 else "raw-artifacts"
@@ -496,7 +517,7 @@ def main():
     flow_durations = {}  # index → seconds from XML (if available)
     for i, file_name in enumerate(FLOW_FILE_NAMES):
         for xml_path in glob.glob(f"{artifacts_dir}/**/{file_name}*.xml", recursive=True):
-            if f"{os.sep}maestro-ios{os.sep}" in xml_path:
+            if _is_ios_maestro_artifact(xml_path):
                 continue
             st, err = xml_flow_status(xml_path)
             if st:
@@ -520,30 +541,32 @@ def main():
     # The glob results*.xml matches both results.xml (single-job) and results-*.xml (matrix).
     appium_map = {}
     for xml_path in glob.glob(f"{artifacts_dir}/**/results*.xml", recursive=True):
-        if f"{os.sep}appium-ios{os.sep}" in xml_path:
+        if _is_ios_appium_artifact(xml_path):
             continue
         # Exclude Maestro per-flow XMLs (named NNN_flow_name-results.xml)
         if re.search(r'\d{2}_.*-results\.xml', os.path.basename(xml_path)):
             continue
         appium_map.update(xml_test_map(xml_path))
     for xml_path in glob.glob(f"{artifacts_dir}/**/*appium*.xml", recursive=True):
-        if f"{os.sep}appium-ios{os.sep}" in xml_path:
+        if _is_ios_appium_artifact(xml_path):
             continue
         appium_map.update(xml_test_map(xml_path))
 
     # ── 2b. iOS artifact parsing ─────────────────────────────────────────
     ios_appium_map = {}
-    ios_appium_dir = os.path.join(artifacts_dir, "appium-ios")
-    if os.path.isdir(ios_appium_dir):
-        for xml_path in glob.glob(os.path.join(ios_appium_dir, "**/*.xml"), recursive=True):
+    for xml_path in glob.glob(f"{artifacts_dir}/**/*.xml", recursive=True):
+        if _is_ios_appium_artifact(xml_path):
             ios_appium_map.update(xml_test_map(xml_path))
 
     ios_flow_statuses = {}
     ios_flow_errors   = {}
-    ios_maestro_dir = os.path.join(artifacts_dir, "maestro-ios")
-    if os.path.isdir(ios_maestro_dir):
+    ios_maestro_xmls = [
+        p for p in glob.glob(f"{artifacts_dir}/**/*.xml", recursive=True)
+        if _is_ios_maestro_artifact(p)
+    ]
+    if ios_maestro_xmls:
         # Per-flow JUnit XMLs: 01_splash_onboarding-results.xml … 50_session_handling-results.xml
-        for xml_path in glob.glob(os.path.join(ios_maestro_dir, "**", "*-results.xml"), recursive=True):
+        for xml_path in ios_maestro_xmls:
             basename = os.path.basename(xml_path).replace("-results.xml", "")
             m = re.match(r"^(\d{2})_", basename)
             if not m:
@@ -560,7 +583,7 @@ def main():
             "regression": set(range(1, 51)),
             "negative":   {17, 18, 19, 20, 21, 22, 23},
         }
-        for xml_path in sorted(glob.glob(os.path.join(ios_maestro_dir, "**/*.xml"), recursive=True)):
+        for xml_path in sorted(ios_maestro_xmls):
             basename = os.path.basename(xml_path).replace(".xml", "").replace("ios-", "").replace("-results", "")
             if re.match(r"^\d{2}_", basename):
                 continue  # already handled as per-flow XML
@@ -695,8 +718,8 @@ def main():
                 row["runs"] = 1
         else:
             # Publish Report — ran if anything else ran
-            row["status"] = "pass" if (maestro_ran or appium_ran) else "idle"
-            if maestro_ran or appium_ran:
+            row["status"] = "pass" if (maestro_ran or appium_ran or ios_maestro_ran or ios_appium_ran) else "idle"
+            if maestro_ran or appium_ran or ios_maestro_ran or ios_appium_ran:
                 row["passRate"] = 100
                 row["runs"] = 1
         row["lastRun"] = "just now" if row.get("runs") else "never"

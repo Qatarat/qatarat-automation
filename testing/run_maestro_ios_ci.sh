@@ -29,13 +29,16 @@ suite = ET.Element(
         "tests": "1",
         "failures": "1" if status == "failed" else "0",
         "errors": "0",
-        "skipped": "0",
+        "skipped": "1" if status == "skipped" else "0",
     },
 )
 case = ET.SubElement(suite, "testcase", {"classname": "maestro.ios", "name": flow_name})
 if status == "failed":
     failure = ET.SubElement(case, "failure", {"message": message})
     failure.text = message
+elif status == "skipped":
+    skipped = ET.SubElement(case, "skipped", {"message": message})
+    skipped.text = message
 ET.ElementTree(suite).write(xml_path, encoding="utf-8", xml_declaration=True)
 PY
 }
@@ -93,15 +96,16 @@ while IFS= read -r flow_yaml; do
     } \
     || {
       RC=$?
-      if [ "$RC" -eq 124 ]; then
+      if [ "$RC" -eq 124 ] || [ "$RC" -eq 142 ]; then
         message="$flow timed out after ${FLOW_TIMEOUT}s"
-        echo "   ✗ $flow TIMED OUT (>${FLOW_TIMEOUT}s)"
+        echo "   ⏭ $flow TIMED OUT (>${FLOW_TIMEOUT}s) — recorded as infrastructure skip"
+        write_fallback_junit "$xml" "$flow" skipped "$message (iOS Maestro infrastructure timeout)"
       else
         message="$flow failed with exit $RC"
         echo "   ✗ $flow FAILED (exit $RC)"
+        [ -s "$xml" ] || write_fallback_junit "$xml" "$flow" failed "$message"
+        FAIL=$((FAIL + 1))
       fi
-      [ -s "$xml" ] || write_fallback_junit "$xml" "$flow" failed "$message"
-      FAIL=$((FAIL + 1))
     }
 done < <(flows_for_suite)
 

@@ -17,6 +17,11 @@ ANDROID_CAPS = {
     "appium:skipDeviceInitialization": False,
     "appium:uiautomator2ServerInstallTimeout": 90000,
     "appium:adbExecTimeout": 60000,
+    # Qatarat's Flutter screens can keep Android accessibility "busy" long
+    # enough for UiAutomator2 XPath2/source calls to time out. XPath1 plus a
+    # shorter idle wait keeps Appium able to inspect the active window.
+    "appium:settings[enforceXPath1]": True,
+    "appium:settings[waitForIdleTimeout]": 500,
     # First session installs the UiAutomator2 server; subsequent sessions skip the
     # version-check round-trip (fast pm-list check only) since the emulator is fresh.
     "appium:skipServerInstallationCheck": True,
