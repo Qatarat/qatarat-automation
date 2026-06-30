@@ -20,6 +20,7 @@ KNOWN_APK_REGRESSION_FLOWS=(
   "08_my_orders"
   "09_subscription"
   "10_multilanguage"
+  "12_profile_settings"
   "19_invalid_promo"
 )
 

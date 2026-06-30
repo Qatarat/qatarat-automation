@@ -126,7 +126,7 @@ jobs:
           python3 - <<'EOF'
           import xml.etree.ElementTree as ET, os, glob
           xmls = glob.glob("testing/maestro/reports/*-results.xml")
-          total = passed = failed = 0
+          total = passed = failed = skipped = 0
           rows = ""
           for xml_path in sorted(xmls):
               try:
@@ -138,12 +138,15 @@ jobs:
                           name = tc.get("name", os.path.basename(xml_path).replace("-results.xml",""))
                           if tc.find("failure") is not None or tc.find("error") is not None:
                               failed += 1; icon = "❌"
+                          elif tc.find("skipped") is not None:
+                              skipped += 1; icon = "⏭️"
                           else:
                               passed += 1; icon = "✅"
                           rows += f"| {icon} | {name} |\n"
               except Exception as e:
                   print(f"Warning: {xml_path}: {e}")
-          pct = int(passed/total*100) if total else 0
+          executed = passed + failed
+          pct = int(passed/executed*100) if executed else 0
           bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
           summary = f"""## 🧪 Maestro Regression Results
           {bar}
@@ -151,6 +154,7 @@ jobs:
           |--------|-------|
           | ✅ Passed | {passed} |
           | ❌ Failed | {failed} |
+          | ⏭️ Skipped | {skipped} |
           | 📊 Total  | {total} |
           | 📈 Pass rate | {pct}% |
 
