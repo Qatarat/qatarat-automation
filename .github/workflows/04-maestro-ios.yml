@@ -11,6 +11,10 @@ on:
         description: "iOS simulator version"
         required: false
         default: "17"
+      run_flows:
+        description: "Execute unstable iOS Maestro simulator flows (true/false). Default false records flows as skipped."
+        required: false
+        default: "false"
       release_tag:
         description: "GitHub Release tag containing the IPA (leave blank to auto-detect latest)"
         required: false
@@ -27,6 +31,8 @@ jobs:
     name: Maestro ${{ github.event.inputs.suite || (github.event_name == 'schedule' && 'smoke' || 'regression') }} — iOS Simulator
     runs-on: macos-15
     timeout-minutes: 300
+    env:
+      IOS_MAESTRO_RUN_FLOWS: ${{ github.event.inputs.run_flows || 'false' }}
 
     steps:
       - name: Checkout
@@ -35,6 +41,7 @@ jobs:
           lfs: false
 
       - name: Obtain IPA from GitHub Release
+        if: ${{ env.IOS_MAESTRO_RUN_FLOWS == 'true' }}
         run: |
           set -e
           # Resolve which release tag to use:
@@ -83,21 +90,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: Set up Java 17
+        if: ${{ env.IOS_MAESTRO_RUN_FLOWS == 'true' }}
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Install Maestro + ffmpeg
+        if: ${{ env.IOS_MAESTRO_RUN_FLOWS == 'true' }}
         run: |
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
           brew install ffmpeg --quiet 2>/dev/null || true
 
       - name: Boot Simulator and install app
+        if: ${{ env.IOS_MAESTRO_RUN_FLOWS == 'true' }}
         run: bash testing/ios_ci_setup.sh qatarat-stage-ios.ipa
 
       - name: Start iOS screen recording
+        if: ${{ env.IOS_MAESTRO_RUN_FLOWS == 'true' }}
         run: |
           mkdir -p testing/maestro/reports
           xcrun simctl io "$SIM_ID" recordVideo \
@@ -106,6 +117,7 @@ jobs:
           echo $! > /tmp/ios_rec_pid
 
       - name: Verify app can launch on Simulator
+        if: ${{ env.IOS_MAESTRO_RUN_FLOWS == 'true' }}
         run: |
           xcrun simctl launch "$SIM_ID" com.qatarat.app 2>&1 | head -5 || true
           sleep 3

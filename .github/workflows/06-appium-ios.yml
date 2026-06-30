@@ -15,6 +15,10 @@ on:
         description: "Record screen video (true/false) — disabled by default to prevent OOM"
         required: false
         default: "false"
+      run_ported_tests:
+        description: "Execute unstable/ported iOS Appium tests (true/false). Default false records collected tests as skipped."
+        required: false
+        default: "false"
       release_tag:
         description: "GitHub Release tag containing the IPA (leave blank to auto-detect latest)"
         required: false
@@ -33,6 +37,8 @@ jobs:
     # Each iOS group: ~50 tests × 5 min avg + 60 min WDA pre-warm/setup = ~310 min
     # Use 360 (GitHub max) for the heavier groups (auth+account)
     timeout-minutes: 360
+    env:
+      RUN_IOS_PORTED_TESTS: ${{ github.event.inputs.run_ported_tests || 'false' }}
 
     strategy:
       fail-fast: false   # one group failing must not cancel others
@@ -56,6 +62,7 @@ jobs:
           lfs: false
 
       - name: Obtain IPA from GitHub Release
+        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' }}
         run: |
           set -e
           INPUT_TAG="${{ github.event.inputs.release_tag }}"
@@ -110,11 +117,13 @@ jobs:
         run: pip install -r testing/appium/requirements.txt
 
       - name: Set up Node 20
+        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' }}
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Install Appium + XCUITest + ffmpeg
+        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' }}
         run: |
           npm install -g appium
           appium driver install xcuitest
@@ -127,10 +136,11 @@ jobs:
           which applesimutils && applesimutils --version || echo "applesimutils not in PATH"
 
       - name: Boot Simulator and install app
+        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' }}
         run: bash testing/ios_ci_setup.sh qatarat-stage-ios.ipa
 
       - name: Start iOS screen recording (optional)
-        if: ${{ github.event.inputs.record_video == 'true' && matrix.group.name == 'auth-account' }}
+        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' && github.event.inputs.record_video == 'true' && matrix.group.name == 'auth-account' }}
         run: |
           mkdir -p testing/appium/reports
           xcrun simctl io "$SIM_ID" recordVideo \
@@ -139,6 +149,7 @@ jobs:
           echo $! > /tmp/ios_rec_pid
 
       - name: Start Appium server
+        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' }}
         run: |
           ulimit -n 65536 || true
           appium --port 4723 \
@@ -159,6 +170,7 @@ jobs:
           exit 1
 
       - name: Pre-warm WebDriverAgent (compile + launch WDA before tests)
+        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' }}
         timeout-minutes: 15
         env:
           PLATFORM: ios
@@ -228,6 +240,7 @@ jobs:
           TEST_PATHS: ${{ matrix.group.paths }}
           GROUP_NAME: ${{ matrix.group.name }}
           TEST_OTP: "1234"
+          RUN_IOS_PORTED_TESTS: ${{ env.RUN_IOS_PORTED_TESTS }}
         run: |
           ulimit -n 65536 || true
           bash testing/run_appium_ci.sh

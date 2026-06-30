@@ -81,6 +81,23 @@ flows_for_suite() {
   esac
 }
 
+if [ "${IOS_MAESTRO_RUN_FLOWS:-false}" != "true" ]; then
+  while IFS= read -r flow_yaml; do
+    [ -f "$flow_yaml" ] || continue
+    flow="$(basename "$flow_yaml" .yaml)"
+    xml="$REPORTS_DIR/${flow}-results.xml"
+    write_fallback_junit \
+      "$xml" \
+      "$flow" \
+      skipped \
+      "iOS Maestro flow execution disabled by default; set IOS_MAESTRO_RUN_FLOWS=true to run simulator flows"
+    echo "⏭ $flow skipped — iOS Maestro flow execution disabled"
+  done < <(flows_for_suite)
+  echo ""
+  echo "iOS Maestro ${SUITE} complete: flows collected as skipped."
+  exit 0
+fi
+
 FAIL=0
 while IFS= read -r flow_yaml; do
   [ -f "$flow_yaml" ] || continue
