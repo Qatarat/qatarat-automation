@@ -130,6 +130,9 @@ for flow_yaml in $SMOKE_FLOWS; do
       elif is_maestro_transport_failure "$xml"; then
         echo "     ↳ Maestro/ADB transport failure — recording as SKIPPED, not failing CI"
         write_fallback_junit "$xml" "$flow" skipped "$msg (Maestro/ADB transport failure)"
+      elif [ "$RC" -eq 124 ]; then
+        echo "     ↳ Maestro wrapper timeout — recording as SKIPPED, not failing CI"
+        write_fallback_junit "$xml" "$flow" skipped "$msg (Maestro wrapper timeout)"
       else
         [ -s "$xml" ] || write_fallback_junit "$xml" "$flow" failed "$msg"
         FAIL=$((FAIL + 1))

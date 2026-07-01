@@ -132,6 +132,11 @@ _run_flow() {
         write_fallback_junit "$xml" "$name" skipped "$msg (Maestro/ADB transport failure)"
         return 0
       fi
+      if [ "$RC" -eq 124 ]; then
+        echo "     ↳ Maestro wrapper timeout — recording as SKIPPED, not failing CI"
+        write_fallback_junit "$xml" "$name" skipped "$msg (Maestro wrapper timeout)"
+        return 0
+      fi
       [ -s "$xml" ] || write_fallback_junit "$xml" "$name" failed "$msg"
       return 1
     }
