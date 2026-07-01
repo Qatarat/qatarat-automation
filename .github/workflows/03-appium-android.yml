@@ -161,29 +161,7 @@ jobs:
           force-avd-creation: true
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -memory 3072
           disable-animations: true
-          script: |
-            set -e
-            echo "=== Waiting for device ==="
-            adb wait-for-device
-            echo "=== Installing APK ==="
-            timeout 120 adb install -r "Qatarat (Lambda-Stage).apk" || { echo "::error::adb install failed"; exit 1; }
-            echo "=== APK installed — running group: $GROUP_NAME | paths: $TEST_PATHS ==="
-            mkdir -p testing/appium/reports
-            REC_REMOTE="/sdcard/android-appium-${GROUP_NAME}.mp4"
-            REC_LOCAL="testing/appium/reports/android-appium-${GROUP_NAME}.mp4"
-            rm -f "$REC_LOCAL"
-            adb shell rm -f "$REC_REMOTE" >/dev/null 2>&1 || true
-            adb shell screenrecord --time-limit 180 "$REC_REMOTE" >/tmp/android-appium-screenrecord.log 2>&1 &
-            REC_PID=$!
-            set +e
-            bash testing/run_appium_ci.sh
-            RC=$?
-            kill -INT "$REC_PID" >/dev/null 2>&1 || true
-            wait "$REC_PID" >/dev/null 2>&1 || true
-            sleep 2
-            adb pull "$REC_REMOTE" "$REC_LOCAL" >/dev/null 2>&1 || true
-            ls -lh "$REC_LOCAL" 2>/dev/null || echo "No Android Appium recording pulled"
-            exit "$RC"
+          script: bash testing/run_android_appium_with_recording.sh
 
       - name: Publish step summary — ${{ matrix.group.name }}
         if: always()
