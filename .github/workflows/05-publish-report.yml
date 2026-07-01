@@ -382,6 +382,21 @@ jobs:
         run: |
           mkdir -p gh-pages/videos
           find raw-recordings/ -name "*.mp4" -exec cp {} gh-pages/videos/ \; 2>/dev/null || true
+          first_video() {
+            find raw-recordings/ -name "$1" -type f 2>/dev/null | sort -V | tail -1
+          }
+          for spec in \
+            "android-appium-*.mp4:android-appium.mp4" \
+            "android-maestro*.mp4:android-maestro.mp4" \
+            "ios-appium*.mp4:ios-appium.mp4" \
+            "ios-maestro*.mp4:ios-maestro.mp4"; do
+            pattern="${spec%%:*}"
+            target="${spec##*:}"
+            src="$(first_video "$pattern")"
+            if [ -n "$src" ]; then
+              cp "$src" "gh-pages/videos/$target"
+            fi
+          done
           echo "Videos: $(ls gh-pages/videos/*.mp4 2>/dev/null | wc -l) file(s)"
           ls -lh gh-pages/videos/*.mp4 2>/dev/null || echo "(none yet)"
 

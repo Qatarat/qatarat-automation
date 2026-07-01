@@ -167,9 +167,22 @@ jobs:
             echo "=== Installing APK ==="
             timeout 120 adb install -r "Qatarat (Lambda-Stage).apk" || { echo "::error::adb install failed"; exit 1; }
             echo "=== APK installed — running group: $GROUP_NAME | paths: $TEST_PATHS ==="
+            mkdir -p testing/appium/reports
+            REC_REMOTE="/sdcard/android-appium-${GROUP_NAME}.mp4"
+            REC_LOCAL="testing/appium/reports/android-appium-${GROUP_NAME}.mp4"
+            rm -f "$REC_LOCAL"
+            adb shell rm -f "$REC_REMOTE" >/dev/null 2>&1 || true
+            adb shell screenrecord --time-limit 180 "$REC_REMOTE" >/tmp/android-appium-screenrecord.log 2>&1 &
+            REC_PID=$!
             set +e
             bash testing/run_appium_ci.sh
-            exit $?
+            RC=$?
+            kill -INT "$REC_PID" >/dev/null 2>&1 || true
+            wait "$REC_PID" >/dev/null 2>&1 || true
+            sleep 2
+            adb pull "$REC_REMOTE" "$REC_LOCAL" >/dev/null 2>&1 || true
+            ls -lh "$REC_LOCAL" 2>/dev/null || echo "No Android Appium recording pulled"
+            exit "$RC"
 
       - name: Publish step summary — ${{ matrix.group.name }}
         if: always()
@@ -268,6 +281,15 @@ jobs:
           name: appium-screenshots-${{ matrix.group.name }}-${{ github.run_number }}
           path: testing/appium/reports/screenshots/
           retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload Android Appium recording
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-appium-recording-${{ matrix.group.name }}-${{ github.run_number }}
+          path: testing/appium/reports/android-appium-${{ matrix.group.name }}.mp4
+          retention-days: 7
           if-no-files-found: warn
 
       - name: Upload Appium log on failure

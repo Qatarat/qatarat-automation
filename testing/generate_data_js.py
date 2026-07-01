@@ -342,7 +342,7 @@ CI_WORKFLOWS_DEF = [
 # ─── XML helpers ──────────────────────────────────────────────────────────
 def xml_flow_status(xml_path):
     """Return (status, error_msg) from a single-flow JUnit XML.
-    status is 'pass'|'fail'. error_msg is '' when passing."""
+    status is 'pass'|'fail'|'skip'. error_msg is '' when passing."""
     try:
         root = ET.parse(xml_path).getroot()
         failures = root.findall(".//failure") + root.findall(".//error")
@@ -353,6 +353,12 @@ def xml_flow_status(xml_path):
             # Collapse whitespace, trim to 500 chars
             msg = " ".join(raw.split())[:500]
             return "fail", msg
+        skipped = root.findall(".//skipped")
+        if skipped:
+            el = skipped[0]
+            raw = (el.get("message") or "").strip() or (el.text or "").strip()
+            msg = " ".join(raw.split())[:500]
+            return "skip", msg
         return "pass", ""
     except Exception:
         return None, ""
@@ -645,6 +651,8 @@ def main():
                "duration": dur, "steps": steps, "status": status, "screens": screens}
         if status == "fail":
             row["note"] = "Flow failed — open CI logs for step-level details"
+        elif status == "skip":
+            row["note"] = flow_errors.get(i) or "Flow skipped by CI guard"
         # Screenshot URLs — check takeScreenshot names first, then ADB fallback
         shots = [screenshot_lookup[n] for n in FLOW_SCREENSHOT_NAMES[i] if n in screenshot_lookup]
         if not shots:
@@ -687,7 +695,8 @@ def main():
             if maestro_ran:
                 total = len(flow_statuses)
                 ok    = sum(1 for s in flow_statuses.values() if s == "pass")
-                row["passRate"] = round(ok / total * 100, 1) if total else 0
+                executed = sum(1 for s in flow_statuses.values() if s in ("pass", "fail"))
+                row["passRate"] = round(ok / executed * 100, 1) if executed else 0
                 row["runs"] = 1
         elif "Appium" in w["name"] and "iOS" not in w["name"]:
             row["status"] = ("fail" if appium_fail else "pass") if appium_ran else "idle"
@@ -704,7 +713,8 @@ def main():
             if ios_maestro_ran:
                 total = len(ios_flow_statuses)
                 ok    = sum(1 for s in ios_flow_statuses.values() if s == "pass")
-                row["passRate"] = round(ok / total * 100, 1) if total else 0
+                executed = sum(1 for s in ios_flow_statuses.values() if s in ("pass", "fail"))
+                row["passRate"] = round(ok / executed * 100, 1) if executed else 0
                 row["runs"] = 1
         elif "Appium iOS" in w["name"]:
             # iOS Appium deep tests — separate from iOS Maestro
@@ -787,17 +797,19 @@ def main():
     total_tests = len(maestro_flows) + sum(len(a["tests"]) for a in appium_tests)
     m_pass_today = sum(1 for s in flow_statuses.values() if s == "pass")
     m_fail_today = sum(1 for s in flow_statuses.values() if s == "fail")
+    m_skip_today = sum(1 for s in flow_statuses.values() if s == "skip")
     a_pass_today = sum(1 for s in appium_map.values() if s[0] == "pass")
     a_fail_today = sum(1 for s in appium_map.values() if s[0] == "fail")
     a_skip_today = sum(1 for s in appium_map.values() if s[0] == "skip")
     ios_m_pass_today = sum(1 for s in ios_flow_statuses.values() if s == "pass")
     ios_m_fail_today = sum(1 for s in ios_flow_statuses.values() if s == "fail")
+    ios_m_skip_today = sum(1 for s in ios_flow_statuses.values() if s == "skip")
     ios_a_pass_today = sum(1 for s in ios_appium_map.values() if s[0] == "pass")
     ios_a_fail_today = sum(1 for s in ios_appium_map.values() if s[0] == "fail")
     ios_a_skip_today = sum(1 for s in ios_appium_map.values() if s[0] == "skip")
     today_pass   = m_pass_today + a_pass_today + ios_m_pass_today + ios_a_pass_today
     today_fail   = m_fail_today + a_fail_today + ios_m_fail_today + ios_a_fail_today
-    today_skip   = a_skip_today + ios_a_skip_today
+    today_skip   = m_skip_today + a_skip_today + ios_m_skip_today + ios_a_skip_today
     today_ran    = maestro_ran or appium_ran or ios_maestro_ran or ios_appium_ran
 
     history = []

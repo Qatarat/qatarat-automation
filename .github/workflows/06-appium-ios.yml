@@ -12,13 +12,13 @@ on:
         required: false
         default: ""
       record_video:
-        description: "Record screen video (true/false) — disabled by default to prevent OOM"
+        description: "Record screen video (true/false)"
         required: false
-        default: "false"
+        default: "true"
       run_ported_tests:
-        description: "Execute unstable/ported iOS Appium tests (true/false). Default false records collected tests as skipped."
+        description: "Execute iOS Appium tests (true/false). False collects tests as skipped."
         required: false
-        default: "false"
+        default: "true"
       release_tag:
         description: "GitHub Release tag containing the IPA (leave blank to auto-detect latest)"
         required: false
@@ -38,7 +38,7 @@ jobs:
     # Use 360 (GitHub max) for the heavier groups (auth+account)
     timeout-minutes: 360
     env:
-      RUN_IOS_PORTED_TESTS: ${{ github.event.inputs.run_ported_tests || 'false' }}
+      RUN_IOS_PORTED_TESTS: ${{ github.event.inputs.run_ported_tests || 'true' }}
 
     strategy:
       fail-fast: false   # one group failing must not cancel others
@@ -140,7 +140,7 @@ jobs:
         run: bash testing/ios_ci_setup.sh qatarat-stage-ios.ipa
 
       - name: Start iOS screen recording (optional)
-        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' && github.event.inputs.record_video == 'true' && matrix.group.name == 'auth-account' }}
+        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' && (github.event.inputs.record_video || 'true') == 'true' && matrix.group.name == 'auth-account' }}
         run: |
           mkdir -p testing/appium/reports
           xcrun simctl io "$SIM_ID" recordVideo \
@@ -379,7 +379,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload iOS recording
-        if: ${{ github.event.inputs.record_video == 'true' && matrix.group.name == 'auth-account' }}
+        if: ${{ (github.event.inputs.record_video || 'true') == 'true' && matrix.group.name == 'auth-account' }}
         uses: actions/upload-artifact@v4
         with:
           name: ios-appium-recording-${{ github.run_number }}

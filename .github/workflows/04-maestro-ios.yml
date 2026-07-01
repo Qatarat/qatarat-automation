@@ -12,9 +12,9 @@ on:
         required: false
         default: "17"
       run_flows:
-        description: "Execute unstable iOS Maestro simulator flows (true/false). Default false records flows as skipped."
+        description: "Execute iOS Maestro simulator flows (true/false). False records flows as skipped."
         required: false
-        default: "false"
+        default: "true"
       release_tag:
         description: "GitHub Release tag containing the IPA (leave blank to auto-detect latest)"
         required: false
@@ -32,7 +32,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 300
     env:
-      IOS_MAESTRO_RUN_FLOWS: ${{ github.event.inputs.run_flows || 'false' }}
+      IOS_MAESTRO_RUN_FLOWS: ${{ github.event.inputs.run_flows || 'true' }}
 
     steps:
       - name: Checkout
