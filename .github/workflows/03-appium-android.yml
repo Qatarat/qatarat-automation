@@ -151,6 +151,7 @@ jobs:
           ANDROID_EMU_NAME: Pixel_4_API_29
           ANDROID_AVD: Pixel_4_API_29
           ANDROID_VERSION: "10"
+          TEST_OTP: "1234"
         with:
           api-level: 29
           arch: x86_64
