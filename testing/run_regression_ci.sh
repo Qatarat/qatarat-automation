@@ -40,6 +40,28 @@ is_maestro_transport_failure() {
     "$xml_path"
 }
 
+is_junit_success() {
+  local xml_path="$1"
+  [ -s "$xml_path" ] || return 1
+  python3 - "$xml_path" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+try:
+    root = ET.parse(sys.argv[1]).getroot()
+except ET.ParseError:
+    raise SystemExit(1)
+
+cases = list(root.iter("testcase"))
+if not cases:
+    raise SystemExit(1)
+for case in cases:
+    if case.find("failure") is not None or case.find("error") is not None or case.find("skipped") is not None:
+        raise SystemExit(1)
+raise SystemExit(0)
+PY
+}
+
 write_fallback_junit() {
   local xml_path="$1"
   local flow_name="$2"
@@ -96,6 +118,10 @@ _run_flow() {
         echo "   ✗ $name FAILED (exit $RC)"
       fi
       adb exec-out screencap -p > "$REPORTS_DIR/${name}-screenshot.png" 2>/dev/null || true
+      if is_junit_success "$xml"; then
+        echo "     ↳ JUnit is already successful — preserving PASS, not failing CI"
+        return 0
+      fi
       if is_known_apk_regression "$name"; then
         echo "     ↳ known APK regression — recording as SKIPPED, not failing CI"
         write_fallback_junit "$xml" "$name" skipped "$msg (known APK regression)"

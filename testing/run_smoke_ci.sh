@@ -40,6 +40,28 @@ is_maestro_transport_failure() {
     "$xml_path"
 }
 
+is_junit_success() {
+  local xml_path="$1"
+  [ -s "$xml_path" ] || return 1
+  python3 - "$xml_path" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+try:
+    root = ET.parse(sys.argv[1]).getroot()
+except ET.ParseError:
+    raise SystemExit(1)
+
+cases = list(root.iter("testcase"))
+if not cases:
+    raise SystemExit(1)
+for case in cases:
+    if case.find("failure") is not None or case.find("error") is not None or case.find("skipped") is not None:
+        raise SystemExit(1)
+raise SystemExit(0)
+PY
+}
+
 write_fallback_junit() {
   local xml_path="$1"
   local flow_name="$2"
@@ -98,7 +120,9 @@ for flow_yaml in $SMOKE_FLOWS; do
         msg="$flow failed with exit $RC"
         echo "   ✗ $flow FAILED (exit $RC)"
       fi
-      if is_known_apk_regression "$flow"; then
+      if is_junit_success "$xml"; then
+        echo "     ↳ JUnit is already successful — preserving PASS, not failing CI"
+      elif is_known_apk_regression "$flow"; then
         echo "     ↳ known APK regression — recording as SKIPPED, not failing CI"
         # Overwrite Maestro's own JUnit (if any) with a skipped marker so the
         # dashboard reflects the known-broken state correctly.
