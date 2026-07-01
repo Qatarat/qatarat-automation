@@ -206,20 +206,8 @@ def _ios_skip_if_infra_error(exc: Exception) -> None:
 
 
 def pytest_collection_modifyitems(config, items):
-    """Apply platform/release guards so CI reports runnable coverage honestly."""
+    """Apply platform guards so tests without iOS page objects skip on iOS runs."""
     if PLATFORM == "ios":
-        if os.environ.get("RUN_IOS_PORTED_TESTS", "").lower() not in {"1", "true", "yes"}:
-            skip_ios_suite = pytest.mark.skip(
-                reason=(
-                    "iOS Appium suite is collected for reporting but disabled by default: "
-                    "current release/WDA/page-object coverage is not stable enough for CI. "
-                    "Set RUN_IOS_PORTED_TESTS=true to execute ported tests."
-                )
-            )
-            for item in items:
-                item.add_marker(skip_ios_suite)
-            return
-
         skip_android = pytest.mark.skip(reason="Android-only test (not yet ported to iOS)")
         skip_not_ported = pytest.mark.skip(
             reason="This Appium test uses Android-oriented page objects and is not yet ported to iOS"
@@ -231,36 +219,6 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_android)
             else:
                 item.add_marker(skip_not_ported)
-        return
-
-    if PLATFORM != "android":
-        return
-
-    blocked_android_paths = (
-        "tests/auth/test_login_negative.py",
-        "tests/account/",
-        "tests/cart/",
-        "tests/checkout/",
-        "tests/donation/",
-        "tests/favourites/",
-        "tests/gift/",
-        "tests/payment/",
-        "tests/promo/",
-        "tests/rating/",
-        "tests/subscription/",
-        "tests/wallet/",
-    )
-    skip_blocked_android = pytest.mark.skip(
-        reason=(
-            "Blocked by current released Android APK/stage data: required screen, "
-            "state, or payment/donation fixture is unavailable. Reported as skipped "
-            "until fixed app build/test data ships."
-        )
-    )
-    for item in items:
-        nodeid = item.nodeid.replace("\\", "/")
-        if any(path in nodeid for path in blocked_android_paths):
-            item.add_marker(skip_blocked_android)
 
 
 def _get_server_url() -> str:
