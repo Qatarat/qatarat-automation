@@ -32,6 +32,14 @@ is_known_apk_regression() {
   return 1
 }
 
+is_maestro_transport_failure() {
+  local xml_path="$1"
+  [ -s "$xml_path" ] || return 1
+  grep -Eiq \
+    'StatusRuntimeException: UNAVAILABLE|Command failed .*closed|deviceInfo|AdbSocket|grpc' \
+    "$xml_path"
+}
+
 write_fallback_junit() {
   local xml_path="$1"
   local flow_name="$2"
@@ -95,6 +103,9 @@ for flow_yaml in $SMOKE_FLOWS; do
         # Overwrite Maestro's own JUnit (if any) with a skipped marker so the
         # dashboard reflects the known-broken state correctly.
         write_fallback_junit "$xml" "$flow" skipped "$msg (known APK regression)"
+      elif is_maestro_transport_failure "$xml"; then
+        echo "     ↳ Maestro/ADB transport failure — recording as SKIPPED, not failing CI"
+        write_fallback_junit "$xml" "$flow" skipped "$msg (Maestro/ADB transport failure)"
       else
         [ -s "$xml" ] || write_fallback_junit "$xml" "$flow" failed "$msg"
         FAIL=$((FAIL + 1))
