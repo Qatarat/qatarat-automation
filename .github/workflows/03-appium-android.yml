@@ -5,6 +5,8 @@ on:
     branches: [main, develop]
     paths:
       - "testing/appium/**"
+      - "testing/run_appium_ci.sh"
+      - "testing/run_android_appium_with_recording.sh"
       - ".github/workflows/03-appium-android.yml"
   pull_request:
     branches: [main, develop]
