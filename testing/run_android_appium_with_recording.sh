@@ -17,8 +17,18 @@ echo "=== Waiting for device ==="
 adb wait-for-device
 
 echo "=== Installing APK ==="
-if ! timeout 120 adb install -r "$APK_NAME"; then
-    echo "::error::adb install failed"
+INSTALL_OK=0
+for attempt in 1 2 3; do
+    if timeout 180 adb install -r "$APK_NAME"; then
+        INSTALL_OK=1
+        break
+    fi
+    echo "::warning::adb install attempt $attempt failed — retrying after emulator settle"
+    adb shell pm clear com.google.android.packageinstaller >/dev/null 2>&1 || true
+    sleep 10
+done
+if [ "$INSTALL_OK" != "1" ]; then
+    echo "::error::adb install failed after 3 attempts"
     exit 1
 fi
 
