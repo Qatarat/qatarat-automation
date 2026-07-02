@@ -219,6 +219,7 @@ def pytest_collection_modifyitems(config, items):
         "tests/donation/",
         "tests/favourites/",
         "tests/gift/",
+        "tests/location/",
         "tests/payment/",
         "tests/promo/",
         "tests/rating/",
