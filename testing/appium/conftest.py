@@ -7,7 +7,7 @@ from appium import webdriver
 
 from capabilities.android_caps import ANDROID_DEVICE_CAPS, ANDROID_EMULATOR_CAPS
 from capabilities.ios_caps import IOS_DEVICE_CAPS, IOS_SIMULATOR_CAPS
-from utils.helpers import APPIUM_SERVER, screenshot
+from utils.helpers import APPIUM_SERVER, screenshot, quit_driver
 
 PLATFORM    = os.environ.get("PLATFORM", "android").lower()
 DEVICE_MODE = os.environ.get("DEVICE_MODE", "emulator").lower()
@@ -330,10 +330,7 @@ def driver():
             except Exception:
                 break
     yield d
-    try:
-        d.quit()
-    except Exception:
-        pass
+    quit_driver(d)
 
 
 @pytest.fixture(scope="module")
@@ -356,10 +353,7 @@ def driver_module():
             except Exception:
                 break
     yield d
-    try:
-        d.quit()
-    except Exception:
-        pass
+    quit_driver(d)
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)

@@ -7,7 +7,7 @@ from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.support.ui import WebDriverWait
 from pages.login_page import LoginPage
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation, edit_text_xpath
+from utils.helpers import wait_for_animation, edit_text_xpath, no_500_error
 from test_data import ValidData, InvalidPhone, BoundaryValues
 
 
@@ -39,7 +39,7 @@ class TestPhoneInputEdgeCases:
         login.tap_continue()
         page = driver.page_source
         assert "Something went wrong" not in page
-        assert "500" not in page
+        assert no_500_error(driver)
 
     def test_phone_with_country_code_plus_prefix(self, driver):
         """User types +880 prefix — should be handled."""
@@ -104,7 +104,7 @@ class TestPhoneInputEdgeCases:
         login = _reach_phone_screen(driver)
         login.enter_phone("📱8801685220417")
         login.tap_continue()
-        assert "500" not in driver.page_source
+        assert no_500_error(driver)
 
 
 @pytest.mark.auth
@@ -140,9 +140,8 @@ class TestOTPEdgeCases:
         field.send_keys("1 2 3 4")
         BasePage(driver).tap_optional("Verify")
         BasePage(driver).tap_optional("Confirm to Login")
-        page = driver.page_source
-        assert "Something went wrong" not in page
-        assert "500" not in page
+        assert "Something went wrong" not in driver.page_source
+        assert no_500_error(driver)
 
     def test_otp_uppercase_letters_blocked(self, driver):
         """OTP is numeric-only — uppercase must be rejected."""
@@ -175,5 +174,5 @@ class TestOTPEdgeCases:
         field.send_keys("1" * 100)
         BasePage(driver).tap_optional("Verify")
         BasePage(driver).tap_optional("Confirm to Login")
-        assert "500" not in driver.page_source
+        assert no_500_error(driver)
         assert "crash" not in driver.page_source.lower()
