@@ -7,13 +7,13 @@ import pytest
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.login_page import LoginPage
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation
+from utils.helpers import wait_for_animation, edit_text_xpath
 from test_data import ValidData
 
 
 def _get_search_field(driver):
     """Return the search EditText or None if not on a search screen."""
-    els = driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+    els = driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
     return els[0] if els else None
 
 

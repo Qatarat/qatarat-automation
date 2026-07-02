@@ -8,7 +8,6 @@ from utils.helpers import screenshot, wait_for_animation
 @allure.epic("Wallet")
 @allure.feature("Wallet & Top-Up")
 @pytest.mark.wallet
-@pytest.mark.android
 class TestWallet:
     """Tests covering wallet navigation, balance display, top-up, and transaction history."""
 

@@ -1,6 +1,6 @@
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation, scroll_to_text
+from utils.helpers import wait_for_animation, scroll_to_text, clickable_view_xpath
 
 _NOTIF_NAV_LABELS = ["Notifications", "Notification", "إشعارات", "الإشعارات"]
 _NOTIF_SCREEN_LABELS = ["Notifications", "إشعارات", "No notifications", "لا توجد إشعارات"]
@@ -34,7 +34,7 @@ class NotificationPage(BasePage):
         try:
             items = self.driver.find_elements(
                 AppiumBy.XPATH,
-                "//android.view.View[@clickable='true']",
+                clickable_view_xpath(),
             )
             if items:
                 items[0].click()

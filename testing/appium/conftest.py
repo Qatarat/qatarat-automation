@@ -207,42 +207,6 @@ def _ios_skip_if_infra_error(exc: Exception) -> None:
 
 def pytest_collection_modifyitems(config, items):
     """Apply platform and infra guards so CI reflects honest, actionable state."""
-    if PLATFORM == "ios":
-        skip_android = pytest.mark.skip(reason="Android-only test (not yet ported to iOS)")
-        skip_not_ported = pytest.mark.skip(
-            reason="This Appium test uses Android-oriented page objects and is not yet ported to iOS"
-        )
-        # iOS tests that call login() require a real OTP from the backend.
-        # iOS cannot use the Android emulator SMS injection trick, so login
-        # cannot complete in CI. Skip these explicitly so report shows
-        # honest blocker ("backend OTP pending") not assertion cascade.
-        ios_login_dependent_classes = ("TestIOSHomeFeed", "TestIOSProfile")
-        ios_login_dependent_tests = (
-            "test_ios_login_valid_credentials",
-            "test_ios_logout_returns_to_login",
-        )
-        skip_ios_auth = pytest.mark.skip(
-            reason=(
-                "Blocked: test requires authenticated iOS session. iOS has no SMS "
-                "injection — OTP must come from the stage backend. Will pass once "
-                "stage magic-OTP is enabled for CI."
-            )
-        )
-        for item in items:
-            if "ios" not in item.keywords:
-                if "android" in item.keywords:
-                    item.add_marker(skip_android)
-                else:
-                    item.add_marker(skip_not_ported)
-                continue
-            cls = item.cls.__name__ if item.cls else ""
-            if cls in ios_login_dependent_classes or item.name in ios_login_dependent_tests:
-                item.add_marker(skip_ios_auth)
-        return
-
-    if PLATFORM != "android":
-        return
-
     # Tests below require an authenticated (post-OTP) app state. Stage backend
     # does not yet accept the CI magic OTP "1234", so every session lands
     # on the phone-entry screen and downstream flows cascade-fail. Skip
@@ -261,6 +225,48 @@ def pytest_collection_modifyitems(config, items):
         "tests/subscription/",
         "tests/wallet/",
     )
+
+    if PLATFORM == "ios":
+        skip_android_only = pytest.mark.skip(
+            reason="Android-only test, not applicable on iOS"
+        )
+        skip_ios_auth = pytest.mark.skip(
+            reason=(
+                "Blocked: test requires authenticated iOS session. iOS has no SMS "
+                "injection — OTP must come from the stage backend. Will pass once "
+                "stage magic-OTP is enabled for CI."
+            )
+        )
+        skip_auth_dep = pytest.mark.skip(
+            reason=(
+                "Blocked: requires authenticated app state. Stage backend does not "
+                "accept the CI magic OTP yet, so login cannot complete on simulator. "
+                "Will pass once stage magic-OTP + fixture data is enabled."
+            )
+        )
+        # These specific classes/tests require a full authenticated session with
+        # OTP delivery — not yet possible on iOS simulator in CI.
+        ios_login_dependent_classes = ("TestIOSHomeFeed", "TestIOSProfile")
+        ios_login_dependent_tests = (
+            "test_ios_login_valid_credentials",
+            "test_ios_logout_returns_to_login",
+        )
+        for item in items:
+            nodeid = item.nodeid.replace("\\", "/")
+            if "android" in item.keywords:
+                item.add_marker(skip_android_only)
+                continue
+            if any(path in nodeid for path in auth_dependent_paths):
+                item.add_marker(skip_auth_dep)
+                continue
+            cls = item.cls.__name__ if item.cls else ""
+            if cls in ios_login_dependent_classes or item.name in ios_login_dependent_tests:
+                item.add_marker(skip_ios_auth)
+        return
+
+    if PLATFORM != "android":
+        return
+
     skip_auth_dependent = pytest.mark.skip(
         reason=(
             "Blocked: requires authenticated app state. Stage backend does not "

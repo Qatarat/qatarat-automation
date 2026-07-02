@@ -7,7 +7,7 @@ from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.support.ui import WebDriverWait
 from pages.login_page import LoginPage
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation
+from utils.helpers import wait_for_animation, edit_text_xpath
 from test_data import ValidData, InvalidPhone, BoundaryValues
 
 
@@ -24,7 +24,7 @@ def _reach_phone_screen(driver):
 
 def _get_phone_field(driver):
     """Return the phone input EditText, or None if not found."""
-    els = driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+    els = driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
     return els[0] if els else None
 
 
@@ -124,7 +124,7 @@ class TestOTPEdgeCases:
 
     def _get_otp_field(self, driver):
         """Return first empty EditText (OTP field), or None."""
-        els = driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+        els = driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
         for el in els:
             val = (el.get_attribute("text") or "").strip()
             if val in ("", "null", "|") or len(val) < 6:

@@ -21,6 +21,27 @@ def text_field_xpath() -> str:
     return "//android.widget.EditText"
 
 
+def edit_text_xpath() -> str:
+    """Cross-platform input field XPath (union-safe for find_elements)."""
+    return (
+        "(//XCUIElementTypeTextField | //XCUIElementTypeSecureTextField)"
+        if is_ios() else "//android.widget.EditText"
+    )
+
+
+def image_xpath() -> str:
+    """Cross-platform image element XPath."""
+    return "//XCUIElementTypeImage" if is_ios() else "//android.widget.ImageView"
+
+
+def clickable_view_xpath() -> str:
+    """Cross-platform tappable container XPath."""
+    return (
+        "//XCUIElementTypeOther[@accessible='true']"
+        if is_ios() else "//android.view.View[@clickable='true']"
+    )
+
+
 def find_elements_by_label(driver, label: str, contains: bool = False):
     """Find elements by visible label — Android content-desc/text or iOS name/label/value."""
     if is_ios():

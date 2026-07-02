@@ -1,6 +1,6 @@
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation, scroll_to_text
+from utils.helpers import wait_for_animation, scroll_to_text, clickable_view_xpath
 
 _BOOKING_NAV_LABELS = ["My Orders", "Orders", "Bookings", "طلباتي"]
 _BOOKING_SCREEN_LABELS = ["My Orders", "Bookings", "Order Number", "طلباتي"]
@@ -62,7 +62,7 @@ class BookingPage(BasePage):
         try:
             cells = self.driver.find_elements(
                 AppiumBy.XPATH,
-                '//android.view.View[@clickable="true"]',
+                clickable_view_xpath(),
             )
             if cells and len(cells) > day_offset:
                 cells[day_offset].click()

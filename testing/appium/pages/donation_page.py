@@ -1,5 +1,5 @@
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation, scroll_to_text
+from utils.helpers import wait_for_animation, scroll_to_text, edit_text_xpath
 
 
 class DonationPage(BasePage):
@@ -21,7 +21,7 @@ class DonationPage(BasePage):
         self.tap_optional("Amount")
         try:
             from appium.webdriver.common.appiumby import AppiumBy
-            els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+            els = self.driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
             if els:
                 els[0].clear()
                 els[0].send_keys(str(amount))
@@ -59,7 +59,7 @@ class DonationPage(BasePage):
     def calculate_zakat(self, wealth_amount):
         try:
             from appium.webdriver.common.appiumby import AppiumBy
-            els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+            els = self.driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
             if els:
                 els[0].clear()
                 els[0].send_keys(str(wealth_amount))

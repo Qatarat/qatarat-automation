@@ -2,7 +2,7 @@ import pytest
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.login_page import LoginPage
 from pages.base_page import BasePage
-from utils.helpers import screenshot, wait_for_animation
+from utils.helpers import screenshot, wait_for_animation, edit_text_xpath
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from test_data import InvalidPhone, InvalidOTP, ValidData
@@ -10,13 +10,13 @@ from test_data import InvalidPhone, InvalidOTP, ValidData
 
 def _get_phone_field(driver):
     """Return first EditText (phone input), or None if not found."""
-    els = driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+    els = driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
     return els[0] if els else None
 
 
 def _get_otp_field(driver):
     """Return first empty EditText (OTP field), or None."""
-    els = driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+    els = driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
     for el in els:
         val = (el.get_attribute("text") or "").strip()
         if val in ("", "null", "|") or len(val) < 6:
@@ -26,7 +26,6 @@ def _get_otp_field(driver):
 
 @pytest.mark.auth
 @pytest.mark.negative
-@pytest.mark.android
 class TestLoginNegative:
     """Negative and boundary tests for the phone + OTP login flow."""
 
@@ -203,7 +202,7 @@ class TestLoginNegative:
         # Fallback: if we are still on the OTP screen at all, the resend mechanism
         # exists — it is just hidden behind a countdown timer.
         from appium.webdriver.common.appiumby import AppiumBy as _By
-        on_otp_screen = bool(driver.find_elements(_By.XPATH, "//android.widget.EditText"))
+        on_otp_screen = bool(driver.find_elements(_By.XPATH, edit_text_xpath()))
         assert has_resend or on_otp_screen, \
             "Neither resend text nor OTP input found — OTP screen may not have loaded"
         screenshot(driver, "login_resend_otp_visible")

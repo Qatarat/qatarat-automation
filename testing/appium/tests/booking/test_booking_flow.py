@@ -11,7 +11,6 @@ from utils.markers import android_apk_regression
 @allure.epic("Booking")
 @allure.feature("Booking Flow")
 @pytest.mark.booking
-@pytest.mark.android
 class TestBookingFlow:
     """Tests covering booking list, detail, cancel, and reschedule flows."""
 
