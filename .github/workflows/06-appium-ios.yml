@@ -33,7 +33,10 @@ concurrency:
 jobs:
   appium-ios:
     name: iOS Appium — ${{ matrix.group.name }}
-    runs-on: macos-15
+    runs-on: macos-13
+    # macos-13 = Intel x86_64 — required because the IPA is an x86_64 simulator build.
+    # On arm64 runners (macos-14/15) XCUITest rejects x86_64 binaries causing all tests to skip.
+    # To switch back to arm64, first rebuild the IPA with: flutter build ios --simulator --debug --no-codesign
     # Each iOS group: ~50 tests × 5 min avg + 60 min WDA pre-warm/setup = ~310 min
     # Use 360 (GitHub max) for the heavier groups (auth+account)
     timeout-minutes: 360
