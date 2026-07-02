@@ -4,7 +4,7 @@ from pages.login_page import LoginPage
 from pages.orders_page import OrdersPage
 from pages.rating_page import RatingPage
 from pages.base_page import BasePage
-from utils.helpers import screenshot, wait_for_animation
+from utils.helpers import screenshot, wait_for_animation, image_xpath
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from test_data import ValidData, InvalidRating
@@ -34,7 +34,6 @@ def _navigate_to_rating(driver):
 @allure.epic("Orders")
 @allure.feature("Rating & Feedback")
 @pytest.mark.rating
-@pytest.mark.android
 class TestRatingHappyPath:
     """Happy-path tests for the order rating and feedback flow."""
 
@@ -98,7 +97,6 @@ class TestRatingHappyPath:
 @allure.feature("Rating & Feedback — Boundary & Negative")
 @pytest.mark.rating
 @pytest.mark.negative
-@pytest.mark.android
 class TestRatingNegative:
     """Negative and boundary tests for rating flow."""
 
@@ -192,7 +190,6 @@ class TestRatingNegative:
 @allure.epic("Orders")
 @allure.feature("Rating — Screen Presence")
 @pytest.mark.rating
-@pytest.mark.android
 class TestRatingScreenUI:
     """Tests that the rating screen itself renders correctly."""
 
@@ -208,7 +205,7 @@ class TestRatingScreenUI:
                     base.is_visible("Star", timeout=3) or \
                     len(driver.find_elements(
                         __import__("appium.webdriver.common.appiumby", fromlist=["AppiumBy"]).AppiumBy.XPATH,
-                        "//android.widget.ImageView"
+                        image_xpath()
                     )) >= 1
         assert has_stars, "Star selector not found on rating screen"
         screenshot(driver, "rating_screen_elements")

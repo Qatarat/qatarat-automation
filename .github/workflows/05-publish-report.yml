@@ -213,6 +213,29 @@ jobs:
           merge-multiple: true
         continue-on-error: true
 
+      # ── APK / IPA release tag metadata ───────────────────────────────────
+      - name: Download APK run metadata
+        if: steps.appium-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.appium-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-metadata/apk/
+          pattern: "apk-run-metadata-*"
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Download IPA run metadata
+        if: steps.appium-ios-run.outputs.id != ''
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.appium-ios-run.outputs.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: raw-metadata/ipa/
+          pattern: "ipa-run-metadata-*"
+          merge-multiple: true
+        continue-on-error: true
+
       # ── Appium artifacts (JUnit + Allure + screenshots) — separate run ─
       - name: Download Appium JUnit XML
         if: steps.appium-run.outputs.id != ''
@@ -416,9 +439,8 @@ jobs:
             -o gh-pages/run-history.json 2>/dev/null || echo "[]" > gh-pages/run-history.json
 
           python3 - <<'EOF'
-          import json, os, glob, xml.etree.ElementTree as ET
+          import json, os, glob, re, xml.etree.ElementTree as ET
 
-          # Aggregate results from all XMLs in this run
           def is_infra_skip(raw):
               r = (raw or "").lower()
               return any(p in r for p in [
@@ -430,31 +452,71 @@ jobs:
                   "architecture mismatch",
               ])
 
-          total = passed = failed = skipped = 0
-          xmls = glob.glob("raw-artifacts/**/*.xml", recursive=True)
-          for xml_path in xmls:
+          def tally_xml(xml_path):
+              p = f = s = 0
               try:
                   root = ET.parse(xml_path).getroot()
                   for tc in root.iter("testcase"):
-                      total += 1
-                      failure_el = tc.find("failure")
-                      fail_el = failure_el if failure_el is not None else tc.find("error")
+                      fail_el = tc.find("failure") or tc.find("error")
                       if fail_el is not None:
                           raw = (fail_el.get("message") or "") or (fail_el.text or "")
-                          if is_infra_skip(raw):
-                              skipped += 1
-                          else:
-                              failed += 1
-                      elif tc.find("skipped") is not None:
-                          skipped += 1
-                      else:
-                          passed += 1
+                          if is_infra_skip(raw): s += 1
+                          else: f += 1
+                      elif tc.find("skipped") is not None: s += 1
+                      else: p += 1
+              except Exception:
+                  pass
+              return p, f, s
+
+          # Per-group breakdown from appium artifact directory names
+          # Dirs: raw-artifacts/appium/appium-junit-{group}-{run_number}/
+          groups = {}
+          for xml_path in sorted(glob.glob("raw-artifacts/appium/**/*.xml", recursive=True)):
+              # Extract group name from parent directory name
+              parts = xml_path.replace("\\", "/").split("/")
+              dir_name = next((p for p in parts if p.startswith("appium-junit-") or p.startswith("appium-ios-junit-")), "")
+              m = re.match(r"appium(?:-ios)?-junit-(.+?)-\d+$", dir_name)
+              grp = m.group(1) if m else "unknown"
+              p, f, s = tally_xml(xml_path)
+              if grp not in groups:
+                  groups[grp] = {"platform": "ios" if "appium-ios" in dir_name else "android", "passed": 0, "failed": 0, "skipped": 0}
+              groups[grp]["passed"] += p
+              groups[grp]["failed"] += f
+              groups[grp]["skipped"] += s
+
+          # Also tally maestro XMLs (no per-group breakdown needed, just totals)
+          total = passed = failed = skipped = 0
+          for xml_path in glob.glob("raw-artifacts/**/*.xml", recursive=True):
+              p, f, s = tally_xml(xml_path)
+              passed += p; failed += f; skipped += s
+          total = passed + failed + skipped
+
+          # Read release tags from metadata artifacts
+          apk_tag = ""
+          for meta_file in sorted(glob.glob("raw-metadata/apk/*.json")):
+              try:
+                  data = json.loads(open(meta_file).read())
+                  if data.get("apk_tag"):
+                      apk_tag = data["apk_tag"]
+                      break
+              except Exception:
+                  pass
+          ipa_tag = ""
+          for meta_file in sorted(glob.glob("raw-metadata/ipa/*.json")):
+              try:
+                  data = json.loads(open(meta_file).read())
+                  if data.get("ipa_tag"):
+                      ipa_tag = data["ipa_tag"]
+                      break
               except Exception:
                   pass
 
+          repo = os.environ.get("GITHUB_REPOSITORY", "")
+          run_id = os.environ.get("GITHUB_RUN_ID", "")
           entry = {
               "run_number": int(os.environ.get("GITHUB_RUN_NUMBER", 0)),
-              "run_id":     os.environ.get("GITHUB_RUN_ID", ""),
+              "run_id":     run_id,
+              "run_url":    f"https://github.com/{repo}/actions/runs/{run_id}" if repo and run_id else "",
               "sha":        os.environ.get("GITHUB_SHA", "")[:7],
               "date":       os.environ.get("GITHUB_RUN_STARTED_AT", ""),
               "total":      total,
@@ -462,14 +524,17 @@ jobs:
               "failed":     failed,
               "skipped":    skipped,
               "pass_rate":  round(passed / (passed + failed) * 100, 1) if (passed + failed) else 0,
+              "apk_tag":    apk_tag,
+              "ipa_tag":    ipa_tag,
+              "groups":     [{"name": k, **v} for k, v in sorted(groups.items())],
           }
 
           history_file = "gh-pages/run-history.json"
           history = json.loads(open(history_file).read()) if os.path.exists(history_file) else []
           history.append(entry)
-          history = history[-50:]          # keep last 50 runs
+          history = history[-50:]
           open(history_file, "w").write(json.dumps(history, indent=2))
-          print(f"Run #{entry['run_number']}: {passed}/{total} passed, {failed} failed, {skipped} skipped ({entry['pass_rate']}%)")
+          print(f"Run #{entry['run_number']}: {passed}/{total} ({entry['pass_rate']}%) | APK:{apk_tag or 'n/a'} IPA:{ipa_tag or 'n/a'} | groups:{list(groups.keys())}")
           EOF
 
       - name: Generate data.js from real test results
@@ -562,20 +627,48 @@ jobs:
           bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
 
           # Load run history for trend table
-          import json
+          import json, re as _re
           history_rows = ""
+          source_links = []
+          apk_tag = ipa_tag = ""
           try:
               history = json.loads(open("gh-pages/run-history.json").read())
-              for r in reversed(history[-10:]):   # last 10 runs, newest first
+              if history:
+                  latest = history[-1]
+                  apk_tag = latest.get("apk_tag", "")
+                  ipa_tag = latest.get("ipa_tag", "")
+                  # Build per-group source links from latest entry
+                  for g in latest.get("groups", []):
+                      gname = g.get("name", "")
+                      plat = g.get("platform", "android")
+                      icon = "🤖" if plat == "android" else "🍎"
+                      gp, gf, gs = g.get("passed",0), g.get("failed",0), g.get("skipped",0)
+                      gt = gp + gf + gs
+                      status = "✅" if gf == 0 else "❌"
+                      source_links.append(f"| {icon} {gname} | {status} {gp}/{gt} |")
+              for r in reversed(history[-10:]):
                   icon = "🟢" if r["failed"] == 0 else "🔴"
+                  run_url = r.get("run_url", "")
+                  run_label = f"[#{r['run_number']}]({run_url})" if run_url else f"#{r['run_number']}"
+                  tags = ""
+                  if r.get("apk_tag"): tags += f" APK:`{r['apk_tag']}`"
+                  if r.get("ipa_tag"): tags += f" IPA:`{r['ipa_tag']}`"
                   history_rows += (
-                      f"| {icon} #{r['run_number']} | {r.get('date','')[:10]} | "
-                      f"{r['passed']}/{r['total']} | {r['pass_rate']}% |\n"
+                      f"| {icon} {run_label} | {r.get('date','')[:10]} | "
+                      f"{r['passed']}/{r['total']} | {r['pass_rate']}%{tags} |\n"
                   )
           except Exception:
               history_rows = "| — | No history yet |\n"
 
-          summary = f"""## 📊 Qatarat Test Report — Run #${{ github.run_number }}
+          groups_section = ""
+          if source_links:
+              groups_section = "\n### 🗂️ Per-Group Results\n| Group | Result |\n|-------|--------|\n" + "\n".join(source_links) + "\n"
+
+          meta_badges = ""
+          if apk_tag: meta_badges += f" · APK: `{apk_tag}`"
+          if ipa_tag: meta_badges += f" · IPA: `{ipa_tag}`"
+
+          summary = f"""## 📊 Qatarat Test Report — Run #${{ github.run_number }}{meta_badges}
           {bar}
           | Metric | Value |
           |--------|-------|
@@ -584,7 +677,7 @@ jobs:
           | ⏭️ Skipped | {skipped} |
           | 📊 Total   | {total} |
           | 📈 Pass rate | {pct}% |
-
+          {groups_section}
           ### 📅 Run History (last 10)
           | Run | Date | Passed/Total | Rate |
           |-----|------|-------------|------|

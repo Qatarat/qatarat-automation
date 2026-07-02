@@ -33,7 +33,11 @@ concurrency:
 jobs:
   appium-ios:
     name: iOS Appium — ${{ matrix.group.name }}
-    runs-on: macos-15
+    runs-on: macos-14
+    # macos-14 = Apple Silicon arm64 + Rosetta 2 + Xcode 15 + iOS 17 simulators.
+    # The IPA is x86_64 — iOS 17 simulator on macos-14 runs x86_64 apps via Rosetta 2.
+    # macos-15 (Xcode 16 + iOS 18) dropped x86_64 simulator support; macos-13 queue too slow.
+    # To remove Rosetta dependency: flutter build ios --simulator --debug --no-codesign → arm64 IPA
     # Each iOS group: ~50 tests × 5 min avg + 60 min WDA pre-warm/setup = ~310 min
     # Use 360 (GitHub max) for the heavier groups (auth+account)
     timeout-minutes: 360
@@ -62,6 +66,7 @@ jobs:
           lfs: false
 
       - name: Obtain IPA from GitHub Release
+        id: download-ipa
         if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' }}
         run: |
           set -e
@@ -77,6 +82,7 @@ jobs:
           fi
 
           IPA_OK=false
+          USED_TAG=""
           for TAG in $TAGS; do
             [ -z "$TAG" ] && continue
             echo "Trying release tag: $TAG"
@@ -90,6 +96,7 @@ jobs:
                 if [ "${SIZE:-0}" -ge 1000000 ]; then
                   echo "✅ IPA from release $TAG ($(du -sh qatarat-stage-ios.ipa | cut -f1))"
                   IPA_OK=true
+                  USED_TAG="$TAG"
                   break 2
                 fi
                 echo "File too small (${SIZE} bytes) — might be LFS pointer, trying next tag"
@@ -103,8 +110,26 @@ jobs:
             echo "::error::Create a GitHub Release (e.g. ios-ipa-v1.8.3) and upload qatarat-stage-ios.ipa to it."
             exit 1
           fi
+          echo "ipa_tag=$USED_TAG" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ github.token }}
+
+      - name: Upload IPA run metadata
+        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' }}
+        run: |
+          printf '{"ipa_tag":"%s","run_id":"%s","group":"%s"}' \
+            "${{ steps.download-ipa.outputs.ipa_tag }}" \
+            "${{ github.run_id }}" \
+            "${{ matrix.group.name }}" \
+            > ipa-run-metadata.json
+      - name: Upload IPA run metadata artifact
+        if: ${{ env.RUN_IOS_PORTED_TESTS == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipa-run-metadata-${{ matrix.group.name }}-${{ github.run_number }}
+          path: ipa-run-metadata.json
+          retention-days: 30
+          if-no-files-found: warn
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -318,8 +343,14 @@ jobs:
           executed = passed + failed
           pct = int(passed/executed*100) if executed else 0
           bar = "🟩"*(pct//10) + "🟥"*((100-pct)//10)
+          run_url = f"https://github.com/{os.environ.get('GITHUB_REPOSITORY','')}/actions/runs/{os.environ.get('GITHUB_RUN_ID','')}"
+          ipa_tag = os.environ.get("IPA_TAG", "")
+          meta_line = f"[View run]({run_url})"
+          if ipa_tag:
+              meta_line += f" · IPA: `{ipa_tag}`"
           summary = f"""## 🍎 iOS Appium — {group}: {passed}/{total} ({pct}%)
           {bar}
+          {meta_line}
           | ✅ Passed | ❌ Failed | ⏭️ Skipped | 📊 Total |
           |----------|----------|-----------|---------|
           | {passed} | {failed} | {skipped} | {total} |
@@ -332,6 +363,7 @@ jobs:
           PYEOF
         env:
           GROUP_NAME: ${{ matrix.group.name }}
+          IPA_TAG: ${{ steps.download-ipa.outputs.ipa_tag }}
 
       - name: Upload Allure results
         if: always()

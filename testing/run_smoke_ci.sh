@@ -14,13 +14,14 @@ FLOW_TIMEOUT=180   # 3 min cap per flow for smoke — keeps suite within 90 min 
 # "skipped" and does NOT count as a CI failure. Remove entries once a fixed APK
 # ships as a release asset. Matches the Appium `android_apk_regression` xfail
 # marker in testing/appium/utils/markers.py.
+# Flows that require an authenticated session (stage backend OTP not available in CI).
+# A timeout on any of these is recorded as JUnit "skipped", not a CI failure.
 KNOWN_APK_REGRESSION_FLOWS=(
+  "05_cart_add_items"
   "06_checkout_payment_select"
   "07_gift_card"
   "08_my_orders"
   "09_subscription"
-  "10_multilanguage"
-  "12_profile_settings"
   "19_invalid_promo"
 )
 

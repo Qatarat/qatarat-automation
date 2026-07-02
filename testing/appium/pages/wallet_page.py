@@ -1,6 +1,6 @@
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation, scroll_to_text
+from utils.helpers import wait_for_animation, scroll_to_text, edit_text_xpath
 
 _WALLET_NAV_LABELS  = ["Wallet", "My Wallet", "محفظة", "محفظتي"]
 _WALLET_SCREEN_LABELS = ["Wallet", "Balance", "Top Up", "محفظة", "الرصيد", "رصيدي", "إضافة رصيد", "شحن"]
@@ -45,7 +45,7 @@ class WalletPage(BasePage):
 
     def enter_topup_amount(self, amount):
         try:
-            el = self.driver.find_element(AppiumBy.XPATH, "//android.widget.EditText")
+            el = self.driver.find_element(AppiumBy.XPATH, edit_text_xpath())
             el.clear()
             el.send_keys(str(amount))
         except Exception:

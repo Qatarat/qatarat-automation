@@ -15,12 +15,11 @@ FLOW_TIMEOUT=480   # 8 min hard cap per flow for regression (some flows are heav
 # Mirror of the set in testing/run_smoke_ci.sh and the Appium
 # `android_apk_regression` xfail marker. Remove once a fixed APK ships.
 KNOWN_APK_REGRESSION_FLOWS=(
+  "05_cart_add_items"
   "06_checkout_payment_select"
   "07_gift_card"
   "08_my_orders"
   "09_subscription"
-  "10_multilanguage"
-  "12_profile_settings"
   "19_invalid_promo"
 )
 

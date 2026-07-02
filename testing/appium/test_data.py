@@ -2,12 +2,14 @@
 Centralised test data for all Qatarat test suites.
 All boundary values, invalid inputs, and negative-case data live here.
 """
+import os
 
 
 class ValidData:
-    PHONE = "8801685220417"
-    OTP = "1234"
-    PROMO = "TEST10"
+    DESTRUCTIVE = True  # live OTP/phone — real backend side effects
+    PHONE = os.environ.get("TEST_PHONE", "8801685220417")
+    OTP = os.environ.get("TEST_OTP", "1234")
+    PROMO = os.environ.get("TEST_PROMO", "TEST10")
 
     CARD = {"number": "4111111111111111", "expiry": "12/25", "cvv": "123", "name": "Test User"}
 
@@ -108,7 +110,8 @@ class BoundaryValues:
 
 
 class WalletData:
-    VALID_TOPUP_AMOUNT = "50"
+    DESTRUCTIVE = True  # wallet top-up triggers real payment flow
+    VALID_TOPUP_AMOUNT = os.environ.get("TEST_WALLET_TOPUP", "50")
     ZERO_AMOUNT = "0"
     NEGATIVE_AMOUNT = "-10"
     ALPHA_AMOUNT = "abc"
@@ -117,6 +120,15 @@ class WalletData:
 
 
 class SubscriptionData:
+    DESTRUCTIVE = True  # subscription creates recurring charges
     WEEKLY = "Weekly"
     MONTHLY = "Monthly"
     SKIP = "Skip"
+
+
+class DonationData:
+    DESTRUCTIVE = True  # donation flows trigger real payment attempts
+    SADAQAH_AMOUNT = os.environ.get("TEST_DONATION_SADAQAH", "10")
+    ZAKAT_WEALTH = os.environ.get("TEST_DONATION_ZAKAT_WEALTH", "5000")
+    RECURRING_AMOUNT = os.environ.get("TEST_DONATION_RECURRING", "25")
+    GIFT_AMOUNT = os.environ.get("TEST_DONATION_GIFT", "50")

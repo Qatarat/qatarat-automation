@@ -10,7 +10,6 @@ from test_data import BoundaryValues
 
 @pytest.mark.cart
 @pytest.mark.negative
-@pytest.mark.android
 class TestCartBoundary:
     """Boundary and edge-case tests for cart operations."""
 

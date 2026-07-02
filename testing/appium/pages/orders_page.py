@@ -1,5 +1,5 @@
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation
+from utils.helpers import wait_for_animation, is_ios, image_xpath
 
 
 class OrdersPage(BasePage):
@@ -25,7 +25,9 @@ class OrdersPage(BasePage):
         wait_for_animation(self.driver)
         # Tap the first order item
         from appium.webdriver.common.appiumby import AppiumBy
-        orders = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.ListView/android.view.View")
+        orders = self.driver.find_elements(AppiumBy.XPATH,
+            "//XCUIElementTypeTable//XCUIElementTypeCell" if is_ios()
+            else "//android.widget.ListView/android.view.View")
         if orders:
             orders[0].click()
         wait_for_animation(self.driver)
@@ -41,7 +43,7 @@ class OrdersPage(BasePage):
         wait_for_animation(self.driver)
         # Tap star rating (tap the nth star)
         from appium.webdriver.common.appiumby import AppiumBy
-        star_els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.ImageView")
+        star_els = self.driver.find_elements(AppiumBy.XPATH, image_xpath())
         if len(star_els) >= stars:
             star_els[stars - 1].click()
         self.tap_optional("Type your feedback")

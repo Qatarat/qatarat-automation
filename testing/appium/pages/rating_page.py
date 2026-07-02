@@ -1,6 +1,6 @@
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation
+from utils.helpers import wait_for_animation, edit_text_xpath, image_xpath
 
 _RATING_SCREEN_LABELS = ["Rate", "Rating", "Feedback", "Review", "تقييم"]
 _SUBMIT_LABELS = ["Submit Rating", "Submit", "Send Feedback", "إرسال"]
@@ -15,7 +15,7 @@ class RatingPage(BasePage):
     def tap_star(self, stars=5):
         """Tap the nth star (1-indexed)."""
         try:
-            star_els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.ImageView")
+            star_els = self.driver.find_elements(AppiumBy.XPATH, image_xpath())
             if len(star_els) >= stars:
                 star_els[stars - 1].click()
                 wait_for_animation(self.driver, 0.5)
@@ -25,7 +25,7 @@ class RatingPage(BasePage):
 
     def enter_feedback(self, text):
         try:
-            els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+            els = self.driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
             if els:
                 els[0].click()
                 els[0].clear()
