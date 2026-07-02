@@ -275,6 +275,12 @@ def pytest_collection_modifyitems(config, items):
             if any(path in nodeid for path in ios_browse_auth_paths):
                 item.add_marker(skip_auth_dep)
                 continue
+            # Browse-search tests call _go_to_browse() → login() → ~8 min wasted per
+            # test on iOS when stage OTP is slow. 13 tests × 10 min = 140 min → OOM.
+            # test_services_list_loads_without_login navigates as guest — keep it.
+            if "tests/browse/" in nodeid and "test_services_list_loads_without_login" not in nodeid:
+                item.add_marker(skip_auth_dep)
+                continue
             cls = item.cls.__name__ if item.cls else ""
             if cls in ios_login_dependent_classes or item.name in ios_login_dependent_tests:
                 item.add_marker(skip_ios_auth)
