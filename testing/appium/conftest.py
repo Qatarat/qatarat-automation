@@ -268,26 +268,10 @@ def pytest_collection_modifyitems(config, items):
             "Will pass once stage magic-OTP + fixture data is enabled."
         )
     )
-    # Login-negative flow tests search for phone-entry labels ("Enter phone
-    # number") that the current APK release renders under different text, so
-    # every assertion NoSuchElement-fails. Skip until the page-object text
-    # keys are updated against a fresh Appium Inspector session.
-    drift_blocked_paths = (
-        "tests/auth/test_login_negative.py",
-    )
-    skip_page_object_drift = pytest.mark.skip(
-        reason=(
-            "Blocked: page-object text keys drift from current APK. Every "
-            "phone-entry / OTP-entry lookup NoSuchElement-fails. Will pass "
-            "once page objects are updated against a fresh APK inspection."
-        )
-    )
     for item in items:
         nodeid = item.nodeid.replace("\\", "/")
         if any(path in nodeid for path in auth_dependent_paths):
             item.add_marker(skip_auth_dependent)
-        elif any(path in nodeid for path in drift_blocked_paths):
-            item.add_marker(skip_page_object_drift)
 
 
 def _get_server_url() -> str:
