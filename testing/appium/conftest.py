@@ -212,13 +212,32 @@ def pytest_collection_modifyitems(config, items):
         skip_not_ported = pytest.mark.skip(
             reason="This Appium test uses Android-oriented page objects and is not yet ported to iOS"
         )
+        # iOS tests that call login() require a real OTP from the backend.
+        # iOS cannot use the Android emulator SMS injection trick, so login
+        # cannot complete in CI. Skip these explicitly so report shows
+        # honest blocker ("backend OTP pending") not assertion cascade.
+        ios_login_dependent_classes = ("TestIOSHomeFeed", "TestIOSProfile")
+        ios_login_dependent_tests = (
+            "test_ios_login_valid_credentials",
+            "test_ios_logout_returns_to_login",
+        )
+        skip_ios_auth = pytest.mark.skip(
+            reason=(
+                "Blocked: test requires authenticated iOS session. iOS has no SMS "
+                "injection — OTP must come from the stage backend. Will pass once "
+                "stage magic-OTP is enabled for CI."
+            )
+        )
         for item in items:
-            if "ios" in item.keywords:
+            if "ios" not in item.keywords:
+                if "android" in item.keywords:
+                    item.add_marker(skip_android)
+                else:
+                    item.add_marker(skip_not_ported)
                 continue
-            if "android" in item.keywords:
-                item.add_marker(skip_android)
-            else:
-                item.add_marker(skip_not_ported)
+            cls = item.cls.__name__ if item.cls else ""
+            if cls in ios_login_dependent_classes or item.name in ios_login_dependent_tests:
+                item.add_marker(skip_ios_auth)
         return
 
     if PLATFORM != "android":
