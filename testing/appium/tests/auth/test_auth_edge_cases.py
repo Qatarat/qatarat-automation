@@ -123,10 +123,12 @@ class TestOTPEdgeCases:
         return login
 
     def _get_otp_field(self, driver):
-        """Return first empty EditText (OTP field), or None."""
+        """Return first empty input field suitable for OTP entry."""
+        from utils.helpers import is_ios
         els = driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
+        attr = "value" if is_ios() else "text"
         for el in els:
-            val = (el.get_attribute("text") or "").strip()
+            val = (el.get_attribute(attr) or "").strip()
             if val in ("", "null", "|") or len(val) < 6:
                 return el
         return els[0] if els else None
