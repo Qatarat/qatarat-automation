@@ -246,6 +246,18 @@ def pytest_collection_modifyitems(config, items):
         )
         # These specific classes/tests require a full authenticated session with
         # OTP delivery — not yet possible on iOS simulator in CI.
+        # Browse-misc paths that require a logged-in session on iOS.
+        # Android can reach these via guest browse; iOS stays on the login screen
+        # after OTP fails, so every test wastes ~4 min attempting login then skipping.
+        # Skip them at collection time to keep browse-misc runtime under 60 min.
+        ios_browse_auth_paths = (
+            "tests/mosque/",
+            "tests/home/",
+            "tests/notifications/",
+            "tests/streaming/",
+            "tests/booking/",
+            "tests/orders/",
+        )
         ios_login_dependent_classes = ("TestIOSHomeFeed", "TestIOSProfile")
         ios_login_dependent_tests = (
             "test_ios_login_valid_credentials",
@@ -257,6 +269,9 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_android_only)
                 continue
             if any(path in nodeid for path in auth_dependent_paths):
+                item.add_marker(skip_auth_dep)
+                continue
+            if any(path in nodeid for path in ios_browse_auth_paths):
                 item.add_marker(skip_auth_dep)
                 continue
             cls = item.cls.__name__ if item.cls else ""
