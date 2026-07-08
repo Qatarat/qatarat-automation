@@ -207,83 +207,16 @@ def _ios_skip_if_infra_error(exc: Exception) -> None:
 
 def pytest_collection_modifyitems(config, items):
     """Apply platform and infra guards so CI reflects honest, actionable state."""
-    # Tests below require an authenticated (post-OTP) app state. Stage backend
-    # does not yet accept the CI magic OTP "1234", so every session lands
-    # on the phone-entry screen and downstream flows cascade-fail. Skip
-    # explicitly instead of reporting cascade failures so the report shows
-    # the actual blocker: pending stage magic-OTP config + fixture data.
-    auth_dependent_paths = (
-        "tests/account/",
-        "tests/cart/",
-        "tests/checkout/",
-        "tests/donation/",
-        "tests/favourites/",
-        "tests/gift/",
-        "tests/location/",
-        "tests/payment/",
-        "tests/promo/",
-        "tests/rating/",
-        "tests/subscription/",
-        "tests/wallet/",
-    )
-
     if PLATFORM == "ios":
         skip_android_only = pytest.mark.skip(
             reason="Android-only test, not applicable on iOS"
         )
-        skip_ios_auth = pytest.mark.skip(
-            reason=(
-                "Blocked: test requires authenticated iOS session. iOS has no SMS "
-                "injection — OTP must come from the stage backend. Will pass once "
-                "stage magic-OTP is enabled for CI."
-            )
-        )
-        skip_auth_dep = pytest.mark.skip(
-            reason=(
-                "Blocked: requires authenticated app state. Stage backend does not "
-                "accept the CI magic OTP yet, so login cannot complete on simulator. "
-                "Will pass once stage magic-OTP + fixture data is enabled."
-            )
-        )
-        ios_login_dependent_classes = ("TestIOSHomeFeed", "TestIOSProfile")
-        ios_login_dependent_tests = (
-            "test_ios_login_valid_credentials",
-            "test_ios_logout_returns_to_login",
-        )
         for item in items:
-            nodeid = item.nodeid.replace("\\", "/")
             if "android" in item.keywords:
                 item.add_marker(skip_android_only)
-                continue
-            if any(path in nodeid for path in auth_dependent_paths):
-                item.add_marker(skip_auth_dep)
-                continue
-            # Browse-search tests call _go_to_browse() → login() on iOS, then
-            # self-skip when no search field found. But each login attempt takes
-            # ~115s on iOS → 13 tests × 115s = 25 min of pure login overhead with
-            # no new passes. Skip at collection time; browse listing tests still run.
-            if "tests/browse/" in nodeid and "test_services_list_loads_without_login" not in nodeid:
-                item.add_marker(skip_auth_dep)
-                continue
-            cls = item.cls.__name__ if item.cls else ""
-            if cls in ios_login_dependent_classes or item.name in ios_login_dependent_tests:
-                item.add_marker(skip_ios_auth)
         return
 
-    if PLATFORM != "android":
-        return
-
-    skip_auth_dependent = pytest.mark.skip(
-        reason=(
-            "Blocked: requires authenticated app state. Stage backend does not "
-            "accept the CI magic OTP yet, so login cannot complete on emulator. "
-            "Will pass once stage magic-OTP + fixture data is enabled."
-        )
-    )
-    for item in items:
-        nodeid = item.nodeid.replace("\\", "/")
-        if any(path in nodeid for path in auth_dependent_paths):
-            item.add_marker(skip_auth_dependent)
+    # Android: no collection-time skips — magic OTP "1234" accepted by stage backend.
 
 
 def _get_server_url() -> str:
