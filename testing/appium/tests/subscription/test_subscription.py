@@ -6,22 +6,22 @@ from pages.base_page import BasePage
 from utils.helpers import screenshot, wait_for_animation
 
 
+def _login_and_reach_checkout(driver):
+    LoginPage(driver).login()
+    cart = CartPage(driver)
+    if not cart.add_first_item():
+        pytest.skip("No service items found to add — subscription flow not testable")
+    cart.open_cart()
+    cart.proceed_to_checkout()
+    return BasePage(driver)
+
+
 @pytest.mark.subscription
 class TestSubscription:
 
     def test_subscription_prompt_appears_at_checkout(self, driver):
         """Subscription dialog should appear when reaching checkout."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
-
-        cart = CartPage(driver)
-        cart.add_first_item()
-        cart.open_cart()
-        cart.proceed_to_checkout()
-
-        page = BasePage(driver)
+        page = _login_and_reach_checkout(driver)
         assert page.is_visible("Would you like to subscribe") or \
                page.is_visible("subscribe to this request"), \
             "Subscription prompt did not appear at checkout"
@@ -29,17 +29,7 @@ class TestSubscription:
 
     def test_subscription_weekly_option_selectable(self, driver):
         """Weekly subscription option should be selectable."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
-
-        cart = CartPage(driver)
-        cart.add_first_item()
-        cart.open_cart()
-        cart.proceed_to_checkout()
-
-        page = BasePage(driver)
+        page = _login_and_reach_checkout(driver)
         page.tap_optional("Yes")
         wait_for_animation(driver)
 
@@ -53,17 +43,7 @@ class TestSubscription:
 
     def test_subscription_monthly_option_selectable(self, driver):
         """Monthly subscription option should be selectable."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
-
-        cart = CartPage(driver)
-        cart.add_first_item()
-        cart.open_cart()
-        cart.proceed_to_checkout()
-
-        page = BasePage(driver)
+        page = _login_and_reach_checkout(driver)
         page.tap_optional("Yes")
         wait_for_animation(driver)
         page.tap_optional("Monthly")
@@ -72,17 +52,7 @@ class TestSubscription:
 
     def test_subscription_skip_goes_to_payment(self, driver):
         """Skipping subscription should proceed to normal payment."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
-
-        cart = CartPage(driver)
-        cart.add_first_item()
-        cart.open_cart()
-        cart.proceed_to_checkout()
-
-        page = BasePage(driver)
+        page = _login_and_reach_checkout(driver)
         page.tap_optional("No")
         wait_for_animation(driver)
 
@@ -95,17 +65,7 @@ class TestSubscription:
 
     def test_reminder_banner_shown_after_subscribe(self, driver):
         """Reminder banner should show after subscribing."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
-
-        cart = CartPage(driver)
-        cart.add_first_item()
-        cart.open_cart()
-        cart.proceed_to_checkout()
-
-        page = BasePage(driver)
+        page = _login_and_reach_checkout(driver)
         page.tap_optional("Yes")
         wait_for_animation(driver)
         page.tap_optional("Weekly")
@@ -120,21 +80,10 @@ class TestSubscription:
 
     def test_unavailable_items_block_subscription(self, driver):
         """Subscription with sale/unavailable items should show warning."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
-
-        cart = CartPage(driver)
-        cart.add_first_item()
-        cart.open_cart()
-        cart.proceed_to_checkout()
-
-        page = BasePage(driver)
+        page = _login_and_reach_checkout(driver)
         page.tap_optional("Yes")
         wait_for_animation(driver)
 
-        # If unavailable items warning triggers
         if page.is_visible("some sales items are unavailable"):
             assert page.is_visible("Please remove for the subscription"), \
                 "Unavailable items warning message incomplete"

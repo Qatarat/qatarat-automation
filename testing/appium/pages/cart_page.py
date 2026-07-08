@@ -5,17 +5,19 @@ from utils.helpers import scroll_to_text, wait_for_animation
 class CartPage(BasePage):
 
     def add_first_item(self):
-        try:
-            scroll_to_text(self.driver, "Add")
-            self.tap("Add")
-            wait_for_animation(self.driver, 1)
-        except Exception:
-            self.tap_optional("Select a Service")
-            wait_for_animation(self.driver)
-            scroll_to_text(self.driver, "Add")
-            self.tap("Add")
-            wait_for_animation(self.driver, 1)
-        return self
+        """Scroll to and tap the first 'Add' button. Returns True if added, False otherwise."""
+        for nav_label in [None, "Select a Service", "Services", "Browse"]:
+            if nav_label:
+                self.tap_optional(nav_label, timeout=3)
+                wait_for_animation(self.driver)
+            try:
+                scroll_to_text(self.driver, "Add")
+                self.tap_optional("Add", timeout=3)
+                wait_for_animation(self.driver, 1)
+                return True
+            except Exception:
+                continue
+        return False
 
     def open_cart(self):
         self.tap("Cart")

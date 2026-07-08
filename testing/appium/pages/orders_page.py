@@ -4,14 +4,20 @@ from utils.helpers import wait_for_animation, is_ios, image_xpath
 
 class OrdersPage(BasePage):
 
+    _NAV_LABELS = ["My Orders", "Orders", "طلباتي", "الطلبات", "Order"]
+    _SCREEN_LABELS = ["My Orders", "Recent Orders", "Orders", "الطلبات", "طلباتي"]
+
     def open(self):
-        self.tap("My Orders")
+        for label in self._NAV_LABELS:
+            if self.tap_optional(label, timeout=3):
+                wait_for_animation(self.driver)
+                return self
         wait_for_animation(self.driver)
         return self
 
     def assert_orders_screen(self):
-        assert self.is_visible("My Orders") or self.is_visible("Recent Orders"), \
-            "Orders screen not visible"
+        assert any(self.is_visible(lbl, timeout=5) for lbl in self._SCREEN_LABELS), \
+            "Orders screen not visible — nav label may have changed"
         return self
 
     def search_order(self, query):

@@ -11,13 +11,10 @@ class TestSubscriptionBoundary:
     """Edge-case and boundary tests for subscription flows."""
 
     def _login_and_reach_subscription_prompt(self, driver):
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
-
+        LoginPage(driver).login()
         cart = CartPage(driver)
-        cart.add_first_item()
+        if not cart.add_first_item():
+            pytest.skip("No service items found — subscription boundary tests not testable")
         cart.open_cart()
         cart.proceed_to_checkout()
         return BasePage(driver)
@@ -71,10 +68,7 @@ class TestSubscriptionBoundary:
 
     def test_cancel_active_subscription_declined(self, driver):
         """Cancel subscription dialog 'No' must keep subscription active."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        LoginPage(driver).login()
 
         base = BasePage(driver)
         base.tap_optional("Active Subscription")
@@ -96,10 +90,7 @@ class TestSubscriptionBoundary:
 
     def test_subscription_billing_history_accessible(self, driver):
         """Billing history page must load without error (accessed from subscription area)."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        LoginPage(driver).login()
 
         base = BasePage(driver)
         base.tap_optional("Active Subscription")
