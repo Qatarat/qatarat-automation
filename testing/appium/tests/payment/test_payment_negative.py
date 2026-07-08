@@ -11,7 +11,6 @@ from test_data import InvalidCard
 
 @pytest.mark.payment
 @pytest.mark.negative
-@pytest.mark.android
 class TestPaymentNegative:
     """Negative and boundary tests for the card payment form."""
 

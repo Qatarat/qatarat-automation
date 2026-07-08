@@ -1,7 +1,7 @@
 import pytest
 from pages.login_page import LoginPage
 from pages.base_page import BasePage
-from utils.helpers import screenshot, wait_for_animation, find_by_text
+from utils.helpers import screenshot, wait_for_animation, find_by_text, image_xpath
 
 
 @pytest.mark.gift
@@ -60,7 +60,7 @@ class TestGiftCard:
         page.tap_optional("Select Template")
         wait_for_animation(driver)
         from appium.webdriver.common.appiumby import AppiumBy
-        templates = driver.find_elements(AppiumBy.XPATH, "//android.widget.ImageView")
+        templates = driver.find_elements(AppiumBy.XPATH, image_xpath())
         if templates:
             templates[0].click()
         wait_for_animation(driver)

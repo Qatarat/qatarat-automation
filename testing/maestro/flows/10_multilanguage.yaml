@@ -1,19 +1,21 @@
 appId: com.qatarat.app
 ---
-# Flow: Switch app language (Arabic RTL, Turkish, Urdu, English) and verify UI adapts
+# Flow: Switch app language (Arabic RTL → back to English) and verify UI adapts.
+# Smoke covers the two most critical directions; full 4-language coverage lives in
+# regression flows 36_language_switch_arabic and 37_language_switch_back.
 
 - launchApp:
     clearState: true
 
 - waitForAnimationToEnd:
-    timeout: 20000
+    timeout: 12000
 
 # Pick Arabic on onboarding
 - tapOn:
     text: "Select your country"
     optional: true
 - waitForAnimationToEnd:
-    timeout: 5000
+    timeout: 4000
 - tapOn:
     text: "Saudi Arabia"
     optional: true
@@ -29,75 +31,19 @@ appId: com.qatarat.app
     text: "عربي"
     optional: true
 - waitForAnimationToEnd:
-    timeout: 5000
+    timeout: 4000
 - takeScreenshot: language_arabic
 
-# Relaunch and pick Turkish
+# Relaunch and restore English
 - launchApp:
     clearState: true
 - waitForAnimationToEnd:
-    timeout: 20000
+    timeout: 12000
 - tapOn:
     text: "Select your country"
     optional: true
 - waitForAnimationToEnd:
-    timeout: 5000
-- tapOn:
-    text: "Saudi Arabia"
-    optional: true
-- waitForAnimationToEnd:
-    timeout: 3000
-- tapOn:
-    text: "Select your language"
-    optional: true
-- tapOn:
-    text: "Turkish"
-    optional: true
-- tapOn:
-    text: "Türkçe"
-    optional: true
-- waitForAnimationToEnd:
-    timeout: 5000
-- takeScreenshot: language_turkish
-
-# Relaunch and pick Urdu (RTL)
-- launchApp:
-    clearState: true
-- waitForAnimationToEnd:
-    timeout: 20000
-- tapOn:
-    text: "Select your country"
-    optional: true
-- waitForAnimationToEnd:
-    timeout: 5000
-- tapOn:
-    text: "Saudi Arabia"
-    optional: true
-- waitForAnimationToEnd:
-    timeout: 3000
-- tapOn:
-    text: "Select your language"
-    optional: true
-- tapOn:
-    text: "Urdu"
-    optional: true
-- tapOn:
-    text: "اردو"
-    optional: true
-- waitForAnimationToEnd:
-    timeout: 5000
-- takeScreenshot: language_urdu
-
-# Restore English
-- launchApp:
-    clearState: true
-- waitForAnimationToEnd:
-    timeout: 20000
-- tapOn:
-    text: "Select your country"
-    optional: true
-- waitForAnimationToEnd:
-    timeout: 5000
+    timeout: 4000
 - tapOn:
     text: "Saudi Arabia"
     optional: true
@@ -110,5 +56,5 @@ appId: com.qatarat.app
     text: "English"
     optional: true
 - waitForAnimationToEnd:
-    timeout: 5000
+    timeout: 4000
 - takeScreenshot: language_english_restored

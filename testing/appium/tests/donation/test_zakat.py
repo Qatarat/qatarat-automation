@@ -9,7 +9,6 @@ from utils.helpers import screenshot, wait_for_animation
 @allure.feature("Zakat Calculator")
 @pytest.mark.donation
 @pytest.mark.zakat
-@pytest.mark.android
 class TestZakat:
     """Tests for the Zakat calculation section."""
 

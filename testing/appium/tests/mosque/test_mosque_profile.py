@@ -9,7 +9,6 @@ from utils.markers import android_apk_regression
 @allure.epic("Mosque")
 @allure.feature("Mosque Search & Profile")
 @pytest.mark.mosque
-@pytest.mark.android
 class TestMosqueProfile:
     """Tests covering mosque search functionality and profile page content."""
 

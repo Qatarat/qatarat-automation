@@ -1,6 +1,6 @@
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation
+from utils.helpers import wait_for_animation, edit_text_xpath
 
 _MAP_LABELS = ["Map", "Location", "Select Location", "الموقع", "خريطة"]
 _CONFIRM_LABELS = ["Confirm Location", "Set Location", "Use This Location", "تأكيد الموقع"]
@@ -27,7 +27,7 @@ class LocationPage(BasePage):
 
     def search_location(self, query):
         try:
-            els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+            els = self.driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
             if els:
                 els[0].click()
                 els[0].clear()

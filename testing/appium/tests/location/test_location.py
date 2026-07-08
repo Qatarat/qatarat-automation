@@ -40,7 +40,6 @@ def _login_and_navigate_to_map(driver):
 @allure.epic("Location")
 @allure.feature("Map & Location Selection")
 @pytest.mark.location
-@pytest.mark.android
 class TestLocationMap:
     """Tests for the Map and Location selection feature."""
 
@@ -145,7 +144,6 @@ class TestLocationMap:
 @allure.feature("Location — Boundary & Negative")
 @pytest.mark.location
 @pytest.mark.negative
-@pytest.mark.android
 class TestLocationBoundary:
     """Boundary and negative tests for the Location/Map feature."""
 

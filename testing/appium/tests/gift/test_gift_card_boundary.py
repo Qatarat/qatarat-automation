@@ -9,7 +9,6 @@ from test_data import InvalidGift
 
 @pytest.mark.gift
 @pytest.mark.negative
-@pytest.mark.android
 class TestGiftCardBoundary:
     """Boundary and injection tests for the gift card creation form."""
 

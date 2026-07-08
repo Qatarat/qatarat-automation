@@ -10,7 +10,6 @@ from utils.markers import android_apk_regression
 @allure.epic("Home")
 @allure.feature("Home Feed")
 @pytest.mark.home
-@pytest.mark.android
 class TestHomeFeed:
     """Tests covering home screen content, navigation, and feed interactions."""
 

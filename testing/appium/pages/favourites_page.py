@@ -1,6 +1,6 @@
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation
+from utils.helpers import wait_for_animation, is_ios
 
 _FAV_NAV_LABELS = ["Favourites", "Favorites", "Favourite", "المفضلة", "مفضلة"]
 _FAV_SCREEN_LABELS = ["Favourites", "Favorites", "My Favourites", "المفضلة"]
@@ -24,7 +24,7 @@ class FavouritesPage(BasePage):
         try:
             items = self.driver.find_elements(
                 AppiumBy.XPATH,
-                "//*[@clickable='true']//android.view.View",
+                "//*[@accessible='true']" if is_ios() else "//*[@clickable='true']//android.view.View",
             )
             return len(items)
         except Exception:

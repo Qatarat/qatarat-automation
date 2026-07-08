@@ -1,6 +1,6 @@
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation, scroll_to_text
+from utils.helpers import wait_for_animation, scroll_to_text, edit_text_xpath
 
 
 class MosquePage(BasePage):
@@ -9,7 +9,7 @@ class MosquePage(BasePage):
         self.tap_optional("Search")
         self.tap_optional("Search Mosques")
         try:
-            els = self.driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+            els = self.driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
             if els:
                 els[0].clear()
                 els[0].send_keys(name)

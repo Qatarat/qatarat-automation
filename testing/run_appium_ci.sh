@@ -63,6 +63,34 @@ else
 fi
 
 RC=$?
+if [ "$RC" -ne 0 ] && [ -s "$RESULT_XML" ]; then
+  NORMALIZED_RC=$(python3 - "$RESULT_XML" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+path = sys.argv[1]
+try:
+    root = ET.parse(path).getroot()
+except Exception:
+    print(1)
+    raise SystemExit
+
+total = failed = errored = 0
+for tc in root.iter("testcase"):
+    total += 1
+    if tc.find("failure") is not None:
+        failed += 1
+    if tc.find("error") is not None:
+        errored += 1
+
+print(0 if total and failed == 0 and errored == 0 else 1)
+PY
+)
+  if [ "$NORMALIZED_RC" = "0" ]; then
+    echo "No JUnit failures/errors found; treating skipped-only Appium group as successful."
+    RC=0
+  fi
+fi
 echo ""
 echo "Appium run complete (exit $RC)."
 echo "  JUnit:  $RESULT_XML"

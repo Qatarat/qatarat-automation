@@ -10,7 +10,6 @@ from test_data import InvalidPromo, ValidData
 
 @pytest.mark.promo
 @pytest.mark.negative
-@pytest.mark.android
 class TestPromoCodes:
     """Exhaustive promo-code tests: valid, invalid, boundary, and injection attempts."""
 

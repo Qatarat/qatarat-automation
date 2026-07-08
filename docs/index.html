@@ -1366,6 +1366,31 @@ function appendUnmatchedLiveTests(groups, resultMap, platform){
   });
 }
 
+function appiumStatusSummary(groups){
+  var tests=groups.reduce(function(acc,g){return acc.concat(g.tests||[]);},[]);
+  var c={pass:0,fail:0,skip:0,idle:0,total:tests.length};
+  tests.forEach(function(t){
+    var s=t.status||'idle';
+    c[s]=(c[s]||0)+1;
+  });
+  c.executed=c.pass+c.fail;
+  c.ran=c.pass+c.fail+c.skip;
+  c.onlySkipped=c.ran>0&&c.executed===0&&c.skip>0;
+  return c;
+}
+
+function appiumSummaryText(c){
+  if(!c.ran) return 'Pending';
+  if(c.onlySkipped) return '0 run · '+c.skip+' collected/skipped';
+  return c.pass+' pass · '+c.skip+' skip · '+c.fail+' fail';
+}
+
+function appiumSummaryTitle(c, platform){
+  if(!c.ran) return platform+' Appium CI has not uploaded JUnit yet.';
+  if(c.onlySkipped) return platform+' Appium collected '+c.skip+' tests but did not execute them in this CI mode.';
+  return platform+' Appium: '+c.pass+' passed, '+c.fail+' failed, '+c.skip+' skipped, '+c.total+' collected.';
+}
+
 function updateOverviewFromLive(live){
   if(!live||!live.currentRun||!live.currentRun.ran) return;
   var passed=Number(live.currentRun.passed||0);
@@ -1504,10 +1529,10 @@ function initRecordings(){
   // Dynamically probe for video files; show <video> if found, placeholder otherwise
   var base=window.location.origin+window.location.pathname.replace(/\/[^/]*$/,'/');
   var videos=[
-    {id:'android-appium', url:base+'videos/android-appium.mp4',   ph:'rec-ph-android-appium', label:'Android Appium · Pixel 7 · API 34'},
-    {id:'android-maestro',url:base+'videos/android-maestro.mp4',  ph:'rec-ph-android-maestro',label:'Android Maestro · 50 flows · Pixel 7'},
-    {id:'ios-appium',     url:base+'videos/ios-appium.mp4',        ph:'rec-ph-ios-appium',     label:'iOS Appium · iPhone 15 · iOS 17'},
-    {id:'ios-maestro',    url:base+'videos/ios-maestro.mp4',       ph:'rec-ph-ios-maestro',    label:'iOS Maestro · regression · iPhone 15'},
+    {id:'android-appium', url:base+'videos/android-appium.mp4',   ph:'rec-ph-android-appium', label:'Android Appium · Pixel 7 · API 34', missing:'No Android Appium recording artifact uploaded for selected run.'},
+    {id:'android-maestro',url:base+'videos/android-maestro.mp4',  ph:'rec-ph-android-maestro',label:'Android Maestro · 50 flows · Pixel 7', missing:'No Android Maestro recording artifact uploaded for selected run.'},
+    {id:'ios-appium',     url:base+'videos/ios-appium.mp4',        ph:'rec-ph-ios-appium',     label:'iOS Appium · iPhone 15 · iOS 17', missing:'No iOS Appium recording artifact uploaded. Enable run_ported_tests=true and record_video=true.'},
+    {id:'ios-maestro',    url:base+'videos/ios-maestro.mp4',       ph:'rec-ph-ios-maestro',    label:'iOS Maestro · regression · iPhone 15', missing:'No iOS Maestro recording artifact uploaded. Enable run_flows=true to record simulator flows.'},
   ];
   var PHsvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;color:var(--border);opacity:.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>';
   videos.forEach(function(v){
@@ -1528,11 +1553,15 @@ function initRecordings(){
           card.replaceChild(videoEl,ph);
           card.appendChild(lbl);
         } else {
-          ph.querySelector('.rec-ph-title').textContent='Recording Coming Soon';
+          ph.querySelector('.rec-ph-title').textContent='No Recording Uploaded';
+          var body=ph.querySelector('.rec-ph-body');
+          if(body) body.textContent=v.missing;
         }
       })
       .catch(function(){
-        ph.querySelector('.rec-ph-title').textContent='Recording Coming Soon';
+        ph.querySelector('.rec-ph-title').textContent='No Recording Uploaded';
+        var body=ph.querySelector('.rec-ph-body');
+        if(body) body.textContent=v.missing;
       });
   });
 }
@@ -1921,7 +1950,7 @@ function renderAppium(){
     var countColor=failCount>0?'var(--red)':(ranCount===0?'var(--text3)':(skipCount>0?'var(--amber)':(passCount===g.tests.length?'var(--green)':'var(--text2)')));
     var countLabel=ranCount===0
       ? 'pending · '+g.tests.length
-      : (passCount+'/'+g.tests.length
+      : (passCount+' pass'
         +(failCount>0?' <span style="color:var(--red)">'+failCount+' fail</span>':'')
         +(skipCount>0?' <span style="color:var(--amber)">'+skipCount+' skipped</span>':''));
     html+='<div class="accordion"><div class="acc-header" data-gi="'+gi+'"><div class="acc-left"><div class="acc-icon" style="background:'+g.iconBg+'">'+g.icon+'</div><div><div class="acc-title">'+escH(g.title)+'</div><div class="acc-meta">'+escH(g.file)+'</div></div></div><div class="acc-right"><span class="acc-count" style="color:'+countColor+'">'+countLabel+'</span><svg class="acc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div></div><div class="acc-body" id="acc-body-'+gi+'">'+rows+'</div></div>';
@@ -2099,9 +2128,9 @@ function renderAppiumIOS(){
     });
     var passCnt=g.tests.filter(function(t){return t.status==='pass';}).length;
     var countColor=failCnt>0?'var(--red)':(skipCnt>0?'var(--amber)':(passCnt===g.tests.length?'var(--green)':'var(--text3)'));
-    var countLabel=failCnt>0?(passCnt+'/'+g.tests.length+' <span style="color:var(--red)">'+failCnt+' fail</span>')
-      :(skipCnt>0?(passCnt+'/'+g.tests.length+' <span style="color:var(--amber)">'+skipCnt+' skipped</span>')
-      :(passCnt+'/'+g.tests.length));
+    var countLabel=failCnt>0?(passCnt+' pass <span style="color:var(--red)">'+failCnt+' fail</span>'+(skipCnt>0?' <span style="color:var(--amber)">'+skipCnt+' skipped</span>':''))
+      :(skipCnt>0?(passCnt+' pass <span style="color:var(--amber)">'+skipCnt+' skipped</span>')
+      :(passCnt+' pass'));
     html+='<div class="accordion"><div class="acc-header" data-gi="ios-'+gi+'">'
       +'<div class="acc-left"><div class="acc-icon" style="background:'+g.iconBg+'">'+g.icon+'</div>'
       +'<div><div class="acc-title">'+escH(g.title)+' <span style="font-size:10px;color:var(--text3)">🍎 iOS</span></div>'
@@ -2167,11 +2196,16 @@ function renderAppiumIOS(){
   var iosDot=document.getElementById('sb-ios-dot');
 
   // Always update Android counters (compute total dynamically — avoids stale hardcoded count)
-  var andTotalTests=APPIUM_GROUPS.reduce(function(acc,g){return acc+g.tests.length;},0);
-  var andRan=andPass+andFail+andSkip;
+  var andSummary=appiumStatusSummary(APPIUM_GROUPS);
+  var andTotalTests=andSummary.total;
+  var andRan=andSummary.ran;
   if(andRan>0){
-    if(andEl){andEl.textContent=andPass+'/'+andTotalTests;andEl.style.color=andFail>0?'var(--red)':'var(--green)';}
-    if(sbAnd) sbAnd.textContent=andPass+'/'+andTotalTests+(andFail>0?' ⚠':'');
+    if(andEl){
+      andEl.textContent=appiumSummaryText(andSummary);
+      andEl.title=appiumSummaryTitle(andSummary,'Android');
+      andEl.style.color=andSummary.fail>0?'var(--red)':(andSummary.skip>0?'var(--amber)':'var(--green)');
+    }
+    if(sbAnd) sbAnd.textContent=appiumSummaryText(andSummary);
   } else {
     if(andEl){andEl.textContent='Pending';andEl.style.color='var(--text3)';}
     if(sbAnd) sbAnd.textContent='Awaiting Android CI';
@@ -2210,22 +2244,17 @@ function renderAppiumIOS(){
   }
   // Platform banner counts
   var iosHasData=live.iosTestResults&&Object.keys(live.iosTestResults).length>0;
-  var iosPassLive=iosHasData?(window.IOS_APPIUM_GROUPS||[]).reduce(function(acc,g){return acc+g.tests.filter(function(t){return t.status==='pass';}).length;},0):null;
+  var iosSummary=appiumStatusSummary(window.IOS_APPIUM_GROUPS||[]);
+  var iosPassLive=iosHasData?iosSummary.pass:null;
   var iosMaestroRan=live.iosMaestroStatuses&&Object.keys(live.iosMaestroStatuses).length>0;
-  // Always show denominator as total defined tests — same as Android.
-  // This way iOS counter matches Android: "X/252", not only the currently completed group.
   var iosTestsRan=live.iosTestResults?Object.keys(live.iosTestResults).length:0;
-  var iosTotalDisplay=andTotalTests;
-  // Recompute pass count from raw iosTestResults (not IOS_APPIUM_GROUPS which has idle entries)
-  var iosPassActual=iosHasData?Object.values(live.iosTestResults).filter(function(i){return (typeof i==='object'?i.status:i)==='pass';}).length:null;
-  if(iosPassActual!==null)iosPassLive=iosPassActual;
-  var iosAppiumHasFail=iosPassLive!==null&&Object.values(live.iosTestResults||{}).some(function(i){return (typeof i==='object'?i.status:i)==='fail';});
-  var iosAppiumSkip=iosHasData?Object.values(live.iosTestResults||{}).filter(function(i){return (typeof i==='object'?i.status:i)==='skip';}).length:0;
-  var iosAppiumFail=iosHasData?Object.values(live.iosTestResults||{}).filter(function(i){return (typeof i==='object'?i.status:i)==='fail';}).length:0;
+  var iosAppiumHasFail=iosSummary.fail>0;
+  var iosAppiumSkip=iosSummary.skip;
+  var iosAppiumFail=iosSummary.fail;
   if(iosEl&&iosPassLive!==null){
-    iosEl.textContent=iosPassLive+'/'+iosTotalDisplay;
-    iosEl.title=iosTestsRan+' iOS Appium tests produced JUnit results; '+iosAppiumFail+' failed, '+iosAppiumSkip+' skipped.';
-    iosEl.style.color=iosAppiumHasFail?'var(--red)':'var(--green)';
+    iosEl.textContent=appiumSummaryText(iosSummary);
+    iosEl.title=appiumSummaryTitle(iosSummary,'iOS')+' '+iosTestsRan+' raw JUnit testcases uploaded.';
+    iosEl.style.color=iosAppiumHasFail?'var(--red)':(iosAppiumSkip>0?'var(--amber)':'var(--green)');
   } else if(iosEl&&iosMaestroRan){
     var iosMPass=Object.values(live.iosMaestroStatuses||{}).filter(function(s){return s==='pass';}).length;
     var iosMFail=Object.values(live.iosMaestroStatuses||{}).filter(function(s){return s==='fail';}).length;
@@ -2234,9 +2263,7 @@ function renderAppiumIOS(){
     iosEl.style.color=iosMFail>0?'var(--red)':'var(--green)';
   }
   if(sbIos&&iosPassLive!==null){
-    sbIos.textContent=iosPassLive+'/'+iosTotalDisplay+' · '+iosTestsRan+' ran'
-      +(iosAppiumFail>0?' · '+iosAppiumFail+' fail':'')
-      +(iosAppiumSkip>0?' · '+iosAppiumSkip+' skip':'');
+    sbIos.textContent=appiumSummaryText(iosSummary);
   } else if(sbIos&&iosMaestroRan){
     var iosMF=Object.values(live.iosMaestroStatuses||{}).filter(function(s){return s==='fail';}).length;
     sbIos.textContent=iosMF>0?'CI ran — failures':'Smoke passed';

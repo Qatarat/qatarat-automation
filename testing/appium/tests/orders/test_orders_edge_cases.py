@@ -11,7 +11,6 @@ from test_data import InvalidRating, BoundaryValues
 
 @android_apk_regression
 @pytest.mark.orders
-@pytest.mark.android
 class TestOrdersEdgeCases:
     """Edge-case and negative tests for the My Orders section."""
 

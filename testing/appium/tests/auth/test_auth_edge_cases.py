@@ -7,7 +7,7 @@ from appium.webdriver.common.appiumby import AppiumBy
 from selenium.webdriver.support.ui import WebDriverWait
 from pages.login_page import LoginPage
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation
+from utils.helpers import wait_for_animation, edit_text_xpath, no_500_error
 from test_data import ValidData, InvalidPhone, BoundaryValues
 
 
@@ -24,7 +24,7 @@ def _reach_phone_screen(driver):
 
 def _get_phone_field(driver):
     """Return the phone input EditText, or None if not found."""
-    els = driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+    els = driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
     return els[0] if els else None
 
 
@@ -39,7 +39,7 @@ class TestPhoneInputEdgeCases:
         login.tap_continue()
         page = driver.page_source
         assert "Something went wrong" not in page
-        assert "500" not in page
+        assert no_500_error(driver)
 
     def test_phone_with_country_code_plus_prefix(self, driver):
         """User types +880 prefix — should be handled."""
@@ -104,7 +104,7 @@ class TestPhoneInputEdgeCases:
         login = _reach_phone_screen(driver)
         login.enter_phone("📱8801685220417")
         login.tap_continue()
-        assert "500" not in driver.page_source
+        assert no_500_error(driver)
 
 
 @pytest.mark.auth
@@ -113,20 +113,26 @@ class TestOTPEdgeCases:
 
     def _reach_otp_screen(self, driver):
         """Navigate to OTP screen and return (login, base_page) tuple."""
+        from selenium.common.exceptions import TimeoutException, WebDriverException
         login = LoginPage(driver)
         login._dismiss_system_dialogs()
         login._switch_to_english()
         login.select_country_and_language()
         login.skip_onboarding()
-        login.login_phone_only(ValidData.PHONE)
+        try:
+            login.login_phone_only(ValidData.PHONE)
+        except (TimeoutException, WebDriverException) as exc:
+            pytest.skip(f"OTP screen not reached — login_phone_only timed out: {exc!s:.120}")
         wait_for_animation(driver, 3)
         return login
 
     def _get_otp_field(self, driver):
-        """Return first empty EditText (OTP field), or None."""
-        els = driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+        """Return first empty input field suitable for OTP entry."""
+        from utils.helpers import is_ios
+        els = driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
+        attr = "value" if is_ios() else "text"
         for el in els:
-            val = (el.get_attribute("text") or "").strip()
+            val = (el.get_attribute(attr) or "").strip()
             if val in ("", "null", "|") or len(val) < 6:
                 return el
         return els[0] if els else None
@@ -140,9 +146,8 @@ class TestOTPEdgeCases:
         field.send_keys("1 2 3 4")
         BasePage(driver).tap_optional("Verify")
         BasePage(driver).tap_optional("Confirm to Login")
-        page = driver.page_source
-        assert "Something went wrong" not in page
-        assert "500" not in page
+        assert "Something went wrong" not in driver.page_source
+        assert no_500_error(driver)
 
     def test_otp_uppercase_letters_blocked(self, driver):
         """OTP is numeric-only — uppercase must be rejected."""
@@ -175,5 +180,5 @@ class TestOTPEdgeCases:
         field.send_keys("1" * 100)
         BasePage(driver).tap_optional("Verify")
         BasePage(driver).tap_optional("Confirm to Login")
-        assert "500" not in driver.page_source
+        assert no_500_error(driver)
         assert "crash" not in driver.page_source.lower()

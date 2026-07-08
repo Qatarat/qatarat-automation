@@ -21,6 +21,27 @@ def text_field_xpath() -> str:
     return "//android.widget.EditText"
 
 
+def edit_text_xpath() -> str:
+    """Cross-platform input field XPath (union-safe for find_elements)."""
+    return (
+        "(//XCUIElementTypeTextField | //XCUIElementTypeSecureTextField)"
+        if is_ios() else "//android.widget.EditText"
+    )
+
+
+def image_xpath() -> str:
+    """Cross-platform image element XPath."""
+    return "//XCUIElementTypeImage" if is_ios() else "//android.widget.ImageView"
+
+
+def clickable_view_xpath() -> str:
+    """Cross-platform tappable container XPath."""
+    return (
+        "//XCUIElementTypeOther[@accessible='true']"
+        if is_ios() else "//android.view.View[@clickable='true']"
+    )
+
+
 def find_elements_by_label(driver, label: str, contains: bool = False):
     """Find elements by visible label — Android content-desc/text or iOS name/label/value."""
     if is_ios():
@@ -130,6 +151,41 @@ def screenshot(driver, name):
 
 def wait_for_animation(driver, seconds=1.5):
     time.sleep(seconds)
+
+
+def no_500_error(driver, timeout: int = 2) -> bool:
+    """Return True if no '500 error' text is visible on screen.
+
+    Safe for both Android and iOS. On iOS, driver.page_source is XCUITest XML
+    where numeric attributes (processId, etc.) can accidentally contain '500'
+    as a substring — a raw string check produces false positives. This helper
+    checks only visible UI text elements.
+    """
+    from pages.base_page import BasePage
+    return not BasePage(driver).is_visible("500", timeout=timeout)
+
+
+def quit_driver(driver, timeout: int = 30) -> None:
+    """Quit Appium driver with a hard timeout to prevent teardown hangs.
+
+    When pytest-timeout interrupts a test via SIGALRM and Appium is left in
+    a bad state, driver.quit() can block indefinitely. This helper runs quit()
+    in a daemon thread and abandons it after `timeout` seconds.
+    """
+    import threading as _threading
+    done = _threading.Event()
+
+    def _quit():
+        try:
+            driver.quit()
+        except Exception:
+            pass
+        finally:
+            done.set()
+
+    t = _threading.Thread(target=_quit, daemon=True)
+    t.start()
+    done.wait(timeout=timeout)
 
 
 def scroll_to_text(driver, text, direction="down", max_scrolls=10):

@@ -8,7 +8,6 @@ from utils.helpers import screenshot, wait_for_animation
 @allure.epic("Donation")
 @allure.feature("Donation Flow")
 @pytest.mark.donation
-@pytest.mark.android
 class TestDonationFlow:
     """End-to-end and boundary tests for the general donation flow."""
 

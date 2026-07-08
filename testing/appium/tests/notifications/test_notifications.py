@@ -11,7 +11,6 @@ from utils.markers import android_apk_regression
 @allure.epic("Notifications")
 @allure.feature("Notification Centre")
 @pytest.mark.notifications
-@pytest.mark.android
 class TestNotifications:
     """Tests covering notification centre navigation, content, and interactions."""
 

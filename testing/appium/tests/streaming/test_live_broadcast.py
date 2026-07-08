@@ -1,11 +1,10 @@
 import pytest
 from pages.login_page import LoginPage
 from pages.base_page import BasePage
-from utils.helpers import screenshot, wait_for_animation
+from utils.helpers import screenshot, wait_for_animation, image_xpath
 from utils.markers import android_apk_regression
 
 
-@pytest.mark.android
 class TestLiveBroadcast:
     """
     Agora RTC live streaming flow tests.
@@ -60,7 +59,7 @@ class TestLiveBroadcast:
 
         # Attempt to join a stream if one is listed
         from appium.webdriver.common.appiumby import AppiumBy
-        streams = driver.find_elements(AppiumBy.XPATH, "//android.widget.ImageView")
+        streams = driver.find_elements(AppiumBy.XPATH, image_xpath())
         if streams:
             streams[0].click()
             wait_for_animation(driver, 3)

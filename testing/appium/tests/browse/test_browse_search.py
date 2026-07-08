@@ -7,13 +7,13 @@ import pytest
 from appium.webdriver.common.appiumby import AppiumBy
 from pages.login_page import LoginPage
 from pages.base_page import BasePage
-from utils.helpers import wait_for_animation
+from utils.helpers import wait_for_animation, edit_text_xpath, no_500_error
 from test_data import ValidData
 
 
 def _get_search_field(driver):
     """Return the search EditText or None if not on a search screen."""
-    els = driver.find_elements(AppiumBy.XPATH, "//android.widget.EditText")
+    els = driver.find_elements(AppiumBy.XPATH, edit_text_xpath())
     return els[0] if els else None
 
 
@@ -44,7 +44,7 @@ class TestSearchInput:
         wait_for_animation(driver)
         page = driver.page_source
         assert "Something went wrong" not in page
-        assert "500" not in page
+        assert no_500_error(driver)
 
     def test_search_100_chars_does_not_crash(self, driver):
         field = _go_to_browse(driver)
@@ -52,7 +52,7 @@ class TestSearchInput:
             pytest.skip("Search field not found")
         field.send_keys("a" * 100)
         wait_for_animation(driver)
-        assert "500" not in driver.page_source
+        assert no_500_error(driver)
 
     def test_search_arabic_text(self, driver):
         """Arabic search query — Qatarat is an Arabic-first app."""
@@ -63,7 +63,7 @@ class TestSearchInput:
         wait_for_animation(driver)
         page = driver.page_source
         assert "Something went wrong" not in page
-        assert "500" not in page
+        assert no_500_error(driver)
 
     def test_search_emoji_does_not_crash(self, driver):
         field = _go_to_browse(driver)
@@ -71,7 +71,7 @@ class TestSearchInput:
             pytest.skip("Search field not found")
         field.send_keys("🕌")
         wait_for_animation(driver)
-        assert "500" not in driver.page_source
+        assert no_500_error(driver)
 
     def test_search_all_uppercase_query(self, driver):
         """MOSQUE — uppercase search should work (case-insensitive)."""
@@ -80,8 +80,7 @@ class TestSearchInput:
             pytest.skip("Search field not found")
         field.send_keys("MOSQUE")
         wait_for_animation(driver)
-        page = driver.page_source
-        assert "500" not in page
+        assert no_500_error(driver)
 
     def test_search_mixed_case(self, driver):
         """MoSqUe — mixed case should return same results as lowercase."""
@@ -100,8 +99,7 @@ class TestSearchInput:
             pytest.skip("Search field not found")
         field.send_keys("123")
         wait_for_animation(driver)
-        page = driver.page_source
-        assert "500" not in page
+        assert no_500_error(driver)
 
     def test_search_with_html_tags_is_safe(self, driver):
         """<b>mosque</b> — HTML in search field must not render as HTML (XSS check)."""
@@ -112,7 +110,7 @@ class TestSearchInput:
         wait_for_animation(driver)
         page = driver.page_source
         assert "Something went wrong" not in page
-        assert "500" not in page
+        assert no_500_error(driver)
 
     def test_search_sql_injection_is_safe(self, driver):
         field = _go_to_browse(driver)
@@ -159,7 +157,7 @@ class TestServiceListing:
             page.tap_optional(label, timeout=3)
         source = driver.page_source
         assert "Something went wrong" not in source
-        assert "500" not in source
+        assert no_500_error(driver)
 
     def test_service_card_tap_opens_detail(self, driver):
         """Tapping a service card must open detail view without crash."""

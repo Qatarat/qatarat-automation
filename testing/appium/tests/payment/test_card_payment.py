@@ -6,7 +6,6 @@ from utils.helpers import screenshot, wait_for_animation
 
 
 @pytest.mark.payment
-@pytest.mark.android
 class TestCardPayment:
     """
     HyperPay card payment flow.

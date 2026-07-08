@@ -7,7 +7,6 @@ from utils.helpers import screenshot, wait_for_animation
 
 @pytest.mark.subscription
 @pytest.mark.negative
-@pytest.mark.android
 class TestSubscriptionBoundary:
     """Edge-case and boundary tests for subscription flows."""
 
