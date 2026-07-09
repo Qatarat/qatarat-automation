@@ -57,18 +57,37 @@ PYTEST_ARGS=(
 # Hard outer timeout: 200min for Android, 280min for iOS.
 # Per-test --timeout=300s handles individual hangs; this kills pytest itself
 # if the emulator freezes between tests (QEMU ignores job-level timeout-minutes).
+# macOS runners ship GNU coreutils as gtimeout; Linux has timeout built-in.
 if [ "$PLATFORM" = "ios" ]; then
   OUTER_TIMEOUT=280m
 else
   OUTER_TIMEOUT=200m
 fi
 
+TIMEOUT_CMD="timeout"
+if ! command -v timeout >/dev/null 2>&1; then
+  if command -v gtimeout >/dev/null 2>&1; then
+    TIMEOUT_CMD="gtimeout"
+  else
+    # No timeout available — run pytest directly without outer timeout guard
+    TIMEOUT_CMD=""
+  fi
+fi
+
 if [ -n "$MARKER" ]; then
   echo "Running Appium tests — paths: ${TEST_PATHS_ARR[*]} | marker: $MARKER | platform: $PLATFORM | outer timeout: $OUTER_TIMEOUT"
-  timeout "$OUTER_TIMEOUT" python3 -m pytest "${PYTEST_ARGS[@]}" -m "$MARKER"
+  if [ -n "$TIMEOUT_CMD" ]; then
+    "$TIMEOUT_CMD" "$OUTER_TIMEOUT" python3 -m pytest "${PYTEST_ARGS[@]}" -m "$MARKER"
+  else
+    python3 -m pytest "${PYTEST_ARGS[@]}" -m "$MARKER"
+  fi
 else
   echo "Running Appium tests — paths: ${TEST_PATHS_ARR[*]} | all tests | platform: $PLATFORM | outer timeout: $OUTER_TIMEOUT"
-  timeout "$OUTER_TIMEOUT" python3 -m pytest "${PYTEST_ARGS[@]}"
+  if [ -n "$TIMEOUT_CMD" ]; then
+    "$TIMEOUT_CMD" "$OUTER_TIMEOUT" python3 -m pytest "${PYTEST_ARGS[@]}"
+  else
+    python3 -m pytest "${PYTEST_ARGS[@]}"
+  fi
 fi
 
 RC=$?
