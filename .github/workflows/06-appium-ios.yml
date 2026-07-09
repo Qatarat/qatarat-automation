@@ -155,6 +155,7 @@ jobs:
           appium driver install --source=npm appium-flutter-driver || true
           appium driver list --installed
           brew install ffmpeg --quiet 2>/dev/null || true
+          brew install coreutils --quiet 2>/dev/null || true  # provides gtimeout on macOS
           brew tap wix/brew 2>/dev/null || true
           brew install wix/brew/applesimutils 2>/dev/null || \
             brew install applesimutils 2>/dev/null || true
