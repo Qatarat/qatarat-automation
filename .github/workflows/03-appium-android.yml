@@ -164,6 +164,7 @@ jobs:
 
       - name: Run Appium Tests on Emulator — ${{ matrix.group.name }}
         uses: reactivecircus/android-emulator-runner@v2
+        timeout-minutes: 210
         env:
           PLATFORM: android
           DEVICE_MODE: emulator
