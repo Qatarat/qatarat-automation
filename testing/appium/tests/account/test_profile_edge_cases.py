@@ -3,6 +3,7 @@ from pages.login_page import LoginPage
 from pages.profile_page import ProfilePage
 from pages.base_page import BasePage
 from utils.helpers import screenshot, wait_for_animation, scroll_to_text
+from utils.markers import android_apk_regression
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from test_data import BoundaryValues, InvalidRating
@@ -62,6 +63,7 @@ class TestProfileEdgeCases:
             "User was logged out despite tapping 'No'"
         screenshot(driver, "profile_logout_cancelled")
 
+    @android_apk_regression
     def test_delete_account_cancel_stays_active(self, driver):
         """Tapping 'No' on delete account dialog must not delete the account."""
         base = self._login_and_open_profile(driver)
@@ -198,6 +200,7 @@ class TestProfileEdgeCases:
             pass
         return None
 
+    @android_apk_regression
     def test_help_search_no_results_shows_empty_state(self, driver):
         """Searching help with a nonsense term must show an empty state, not crash."""
         LoginPage(driver).login()
@@ -213,6 +216,7 @@ class TestProfileEdgeCases:
             "Help search with no-match term crashed or showed a server error"
         screenshot(driver, "profile_help_search_empty")
 
+    @android_apk_regression
     def test_help_search_sql_injection_is_safe(self, driver):
         """SQL injection in help search must not produce a database error."""
         LoginPage(driver).login()

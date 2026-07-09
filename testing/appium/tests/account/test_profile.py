@@ -4,6 +4,7 @@ from pages.login_page import LoginPage
 from pages.profile_page import ProfilePage
 from pages.base_page import BasePage
 from utils.helpers import screenshot, wait_for_animation, scroll_to_text
+from utils.markers import android_apk_regression
 
 
 @allure.epic("Account")
@@ -77,6 +78,7 @@ class TestProfile:
             page.tap_optional(label, timeout=2)
         screenshot(driver, "logout_confirmation")
 
+    @android_apk_regression
     @allure.story("Delete Account")
     @allure.title("Delete account option exists with confirmation")
     def test_delete_account_has_confirmation(self, driver):
@@ -134,6 +136,7 @@ class TestProfile:
             pytest.skip("Help & Support not reachable — profile UI may have changed")
         screenshot(driver, "help_support_page")
 
+    @android_apk_regression
     @allure.story("Billing")
     @allure.title("Billing history is accessible")
     def test_billing_history_accessible(self, driver):

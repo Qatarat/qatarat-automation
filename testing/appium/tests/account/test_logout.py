@@ -4,6 +4,7 @@ from pages.login_page import LoginPage
 from pages.profile_page import ProfilePage
 from pages.base_page import BasePage
 from utils.helpers import screenshot, wait_for_animation
+from utils.markers import android_apk_regression
 
 
 @allure.epic("Account")
@@ -17,6 +18,7 @@ class TestLogout:
         login.login()  # login() handles country/language + onboarding internally
         return ProfilePage(driver)
 
+    @android_apk_regression
     @allure.story("Happy Path")
     @allure.title("User can log out successfully via Profile")
     def test_logout_happy_path(self, driver):
@@ -89,6 +91,7 @@ class TestLogout:
             "User was logged out despite cancelling the logout dialog"
         screenshot(driver, "logout_cancel_dialog")
 
+    @android_apk_regression
     @allure.story("Session")
     @allure.title("Session data is cleared after logout")
     def test_logout_state_cleared(self, driver):
@@ -105,6 +108,7 @@ class TestLogout:
             "Authenticated content still visible after logout — session not cleared"
         screenshot(driver, "logout_state_cleared")
 
+    @android_apk_regression
     @allure.story("Navigation")
     @allure.title("User is redirected to login screen after logout")
     def test_logout_redirect_login(self, driver):
@@ -135,6 +139,7 @@ class TestLogout:
         # The re-login path is covered by the main login test suite.
         pytest.skip("Re-login after logout skipped — login timeout risk in long-running emulator sessions")
 
+    @android_apk_regression
     @allure.story("Security")
     @allure.title("No auth tokens leak to UI after logout")
     def test_logout_no_session_leak(self, driver):
@@ -152,6 +157,7 @@ class TestLogout:
             "Auth-only content visible after logout — possible session token leak"
         screenshot(driver, "logout_no_session_leak")
 
+    @android_apk_regression
     @allure.story("Accessibility")
     @allure.title("Logout button is accessible via accessibility label")
     def test_logout_accessibility(self, driver):
