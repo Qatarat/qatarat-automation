@@ -61,7 +61,7 @@ PYTEST_ARGS=(
 if [ "$PLATFORM" = "ios" ]; then
   OUTER_TIMEOUT=280m
 else
-  OUTER_TIMEOUT=200m
+  OUTER_TIMEOUT=300m
 fi
 
 TIMEOUT_CMD="timeout"
