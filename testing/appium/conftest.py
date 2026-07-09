@@ -211,9 +211,21 @@ def pytest_collection_modifyitems(config, items):
         skip_android_only = pytest.mark.skip(
             reason="Android-only test, not applicable on iOS"
         )
+        # Payment/checkout/promo tests each waste 6-8 min trying to create a WDA session
+        # before skipping with "Unable to start". Skip them at collection time so the
+        # outer timeout budget is spent on wallet/auth/account tests that actually run.
+        skip_ios_payment_infra = pytest.mark.skip(
+            reason="iOS CI: payment/checkout/promo tests skipped at collection — "
+            "WDA session startup fails for every test in these paths, wasting 6-8 min each"
+        )
         for item in items:
             if "android" in item.keywords:
                 item.add_marker(skip_android_only)
+            elif any(
+                item.nodeid.startswith(p)
+                for p in ["tests/payment/", "tests/checkout/", "tests/promo/"]
+            ):
+                item.add_marker(skip_ios_payment_infra)
         return
 
     # Android: no collection-time skips — magic OTP "1234" accepted by stage backend.
