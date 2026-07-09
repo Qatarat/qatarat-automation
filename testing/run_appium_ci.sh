@@ -54,12 +54,21 @@ PYTEST_ARGS=(
   --alluredir="$ALLURE_DIR"
 )
 
-if [ -n "$MARKER" ]; then
-  echo "Running Appium tests — paths: ${TEST_PATHS_ARR[*]} | marker: $MARKER | platform: $PLATFORM"
-  python3 -m pytest "${PYTEST_ARGS[@]}" -m "$MARKER"
+# Hard outer timeout: 200min for Android, 280min for iOS.
+# Per-test --timeout=300s handles individual hangs; this kills pytest itself
+# if the emulator freezes between tests (QEMU ignores job-level timeout-minutes).
+if [ "$PLATFORM" = "ios" ]; then
+  OUTER_TIMEOUT=280m
 else
-  echo "Running Appium tests — paths: ${TEST_PATHS_ARR[*]} | all tests | platform: $PLATFORM"
-  python3 -m pytest "${PYTEST_ARGS[@]}"
+  OUTER_TIMEOUT=200m
+fi
+
+if [ -n "$MARKER" ]; then
+  echo "Running Appium tests — paths: ${TEST_PATHS_ARR[*]} | marker: $MARKER | platform: $PLATFORM | outer timeout: $OUTER_TIMEOUT"
+  timeout "$OUTER_TIMEOUT" python3 -m pytest "${PYTEST_ARGS[@]}" -m "$MARKER"
+else
+  echo "Running Appium tests — paths: ${TEST_PATHS_ARR[*]} | all tests | platform: $PLATFORM | outer timeout: $OUTER_TIMEOUT"
+  timeout "$OUTER_TIMEOUT" python3 -m pytest "${PYTEST_ARGS[@]}"
 fi
 
 RC=$?
