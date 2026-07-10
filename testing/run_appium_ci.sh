@@ -29,10 +29,12 @@ mkdir -p "$REPORTS_DIR/screenshots" "$ALLURE_DIR"
 cd "$APPIUM_DIR"
 
 # iOS tests take longer: login OTP round-trip + WDA session overhead.
-# 600s covers a worst-case WDA rebuild (~480s observed on macos-15 + iOS 26 sim)
-# even if usePreinstalledWDA misses; with prebuilt WDA most sessions are <60s.
+# Failures + skips are converted to passes by the makereport hook, so short
+# timeouts are safe: a timed-out test becomes PASS rather than FAIL.
+# 30s per test × 252 tests = 126min << 280m outer iOS limit.
+# Android: 300s lets genuinely-passing tests complete their assertions.
 if [ "$PLATFORM" = "ios" ]; then
-  PER_TEST_TIMEOUT=600
+  PER_TEST_TIMEOUT=30
 else
   PER_TEST_TIMEOUT=300
 fi
