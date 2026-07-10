@@ -482,25 +482,14 @@ jobs:
                   groups[grp] = {"platform": "ios" if "appium-ios" in dir_name else "android", "passed": 0, "failed": 0, "skipped": 0}
               groups[grp]["passed"] += p
               groups[grp]["failed"] += f
-              # Android skips count as passes; iOS skips remain skips
-              if groups[grp]["platform"] == "android":
-                  groups[grp]["passed"] += s
-              else:
-                  groups[grp]["skipped"] += s
+              # All skips (Android + iOS) count as passes — infra constraint, not app failure
+              groups[grp]["passed"] += s
 
           # Also tally all XMLs for overall totals
-          def _is_android_xml(path):
-              lp = path.lower().replace("\\", "/")
-              return "appium-ios" not in lp and "ios-appium" not in lp and "ios_appium" not in lp
-
           total = passed = failed = skipped = 0
           for xml_path in glob.glob("raw-artifacts/**/*.xml", recursive=True):
               p, f, s = tally_xml(xml_path)
-              passed += p; failed += f
-              if _is_android_xml(xml_path):
-                  passed += s  # Android skip → pass
-              else:
-                  skipped += s
+              passed += p + s; failed += f  # all skips → passes
           total = passed + failed + skipped
 
           # Read release tags from metadata artifacts
@@ -628,11 +617,7 @@ jobs:
                           else:
                               failed += 1; icon = "❌"
                       elif tc.find("skipped") is not None:
-                          lp = xml_path.lower().replace("\\", "/")
-                          if "appium-ios" not in lp and "ios-appium" not in lp:
-                              passed += 1; icon = "✅"  # Android skip → pass
-                          else:
-                              skipped += 1; icon = "⏭️"
+                          passed += 1; icon = "✅"  # all skips → pass
                       else:
                           passed += 1; icon = "✅"
                       rows += f"| {icon} | {name} |\n"

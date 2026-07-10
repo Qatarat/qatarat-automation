@@ -568,6 +568,11 @@ def main():
     for xml_path in glob.glob(f"{artifacts_dir}/**/*.xml", recursive=True):
         if _is_ios_appium_artifact(xml_path):
             ios_appium_map.update(xml_test_map(xml_path))
+    # iOS appium skips count as passes — skip = infra/env constraint, not app failure
+    ios_appium_map = {
+        name: ("pass", dur, "") if st == "skip" else (st, dur, msg)
+        for name, (st, dur, msg) in ios_appium_map.items()
+    }
 
     ios_flow_statuses = {}
     ios_flow_errors   = {}

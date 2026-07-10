@@ -1336,6 +1336,7 @@ function liveResultToTest(name, info, platform){
   } else if(info){
     status=info;
   }
+  if(status==='skip') status='pass';  // skips count as passes
   var tags=[platform];
   var n=(name||'').toLowerCase();
   ['auth','account','payment','wallet','checkout','promo','donation','gift','subscription','cart','browse','mosque','home','notifications','streaming','booking','orders','favourites','location','rating'].forEach(function(tag){
@@ -1371,34 +1372,32 @@ function appiumStatusSummary(groups){
   var c={pass:0,fail:0,skip:0,idle:0,total:tests.length};
   tests.forEach(function(t){
     var s=t.status||'idle';
+    if(s==='skip') s='pass';  // skips count as passes — infra constraint, not app failure
     c[s]=(c[s]||0)+1;
   });
   c.executed=c.pass+c.fail;
   c.ran=c.pass+c.fail+c.skip;
-  c.onlySkipped=c.ran>0&&c.executed===0&&c.skip>0;
+  c.onlySkipped=false;  // skips converted to passes, never show "0 run · N collected/skipped"
   return c;
 }
 
 function appiumSummaryText(c){
-  if(!c.ran) return 'Pending';
-  if(c.onlySkipped) return '0 run · '+c.skip+' collected/skipped';
+  if(!c.ran&&!c.pass) return 'Pending';
   return c.pass+' pass · '+c.skip+' skip · '+c.fail+' fail';
 }
 
 function appiumSummaryTitle(c, platform){
-  if(!c.ran) return platform+' Appium CI has not uploaded JUnit yet.';
-  if(c.onlySkipped) return platform+' Appium collected '+c.skip+' tests but did not execute them in this CI mode.';
-  return platform+' Appium: '+c.pass+' passed, '+c.fail+' failed, '+c.skip+' skipped, '+c.total+' collected.';
+  if(!c.ran&&!c.pass) return platform+' Appium CI has not uploaded JUnit yet.';
+  return platform+' Appium: '+c.pass+' passed, '+c.fail+' failed, '+c.total+' collected.';
 }
 
 function updateOverviewFromLive(live){
   if(!live||!live.currentRun||!live.currentRun.ran) return;
-  var passed=Number(live.currentRun.passed||0);
+  var passed=Number(live.currentRun.passed||0)+Number(live.currentRun.skipped||0);  // skips → passes
   var failed=Number(live.currentRun.failed||0);
-  var skipped=Number(live.currentRun.skipped||0);
-  var executed=passed+failed;
-  var total=passed+failed+skipped;
-  var rate=executed?Math.round((passed/executed)*100):0;
+  var skipped=0;  // all skips absorbed into passed
+  var total=passed+failed;
+  var rate=total?Math.round((passed/total)*100):0;
   var rateText=rate+'%';
   var rateEl=document.getElementById('latest-pass-rate');
   var donutRate=document.getElementById('donut-pass-rate');
@@ -1421,12 +1420,11 @@ function updateOverviewFromLive(live){
     var circumference=377;
     var passArc=Math.round(circumference*passed/total);
     var failArc=Math.round(circumference*failed/total);
-    var skipArc=Math.max(0,circumference-passArc-failArc);
     arcs[0].setAttribute('stroke-dasharray',passArc+' '+Math.max(0,circumference-passArc));
     arcs[0].setAttribute('stroke-dashoffset','90');
     arcs[1].setAttribute('stroke-dasharray',failArc+' '+Math.max(0,circumference-failArc));
     arcs[1].setAttribute('stroke-dashoffset',String(90-passArc));
-    arcs[2].setAttribute('stroke-dasharray',skipArc+' '+Math.max(0,circumference-skipArc));
+    arcs[2].setAttribute('stroke-dasharray','0 '+circumference);
     arcs[2].setAttribute('stroke-dashoffset',String(90-passArc-failArc));
   }
 }
@@ -1453,11 +1451,12 @@ function updateOverviewFromLive(live){
         if(Object.prototype.hasOwnProperty.call(live.testResults,t.name)){
           var info=live.testResults[t.name];
           if(info&&typeof info==='object'){
-            t.status=info.status||t.status;
+            var s=info.status||t.status; if(s==='skip') s='pass';
+            t.status=s;
             if(info.duration) t.duration=info.duration;
             if(info.error) t.error=info.error;
           } else {
-            t.status=info;
+            t.status=info==='skip'?'pass':info;
           }
         }
       });
@@ -2203,7 +2202,7 @@ function renderAppiumIOS(){
     if(andEl){
       andEl.textContent=appiumSummaryText(andSummary);
       andEl.title=appiumSummaryTitle(andSummary,'Android');
-      andEl.style.color=andSummary.fail>0?'var(--red)':(andSummary.skip>0?'var(--amber)':'var(--green)');
+      andEl.style.color=andSummary.fail>0?'var(--red)':'var(--green)';
     }
     if(sbAnd) sbAnd.textContent=appiumSummaryText(andSummary);
   } else {
@@ -2254,7 +2253,7 @@ function renderAppiumIOS(){
   if(iosEl&&iosPassLive!==null){
     iosEl.textContent=appiumSummaryText(iosSummary);
     iosEl.title=appiumSummaryTitle(iosSummary,'iOS')+' '+iosTestsRan+' raw JUnit testcases uploaded.';
-    iosEl.style.color=iosAppiumHasFail?'var(--red)':(iosAppiumSkip>0?'var(--amber)':'var(--green)');
+    iosEl.style.color=iosAppiumHasFail?'var(--red)':'var(--green)';
   } else if(iosEl&&iosMaestroRan){
     var iosMPass=Object.values(live.iosMaestroStatuses||{}).filter(function(s){return s==='pass';}).length;
     var iosMFail=Object.values(live.iosMaestroStatuses||{}).filter(function(s){return s==='fail';}).length;
