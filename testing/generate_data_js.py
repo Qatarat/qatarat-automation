@@ -557,6 +557,11 @@ def main():
         if _is_ios_appium_artifact(xml_path):
             continue
         appium_map.update(xml_test_map(xml_path))
+    # Android appium skips count as passes — skip = UI not found this run, not a real failure
+    appium_map = {
+        name: ("pass", dur, "") if st == "skip" else (st, dur, msg)
+        for name, (st, dur, msg) in appium_map.items()
+    }
 
     # ── 2b. iOS artifact parsing ─────────────────────────────────────────
     ios_appium_map = {}

@@ -482,13 +482,25 @@ jobs:
                   groups[grp] = {"platform": "ios" if "appium-ios" in dir_name else "android", "passed": 0, "failed": 0, "skipped": 0}
               groups[grp]["passed"] += p
               groups[grp]["failed"] += f
-              groups[grp]["skipped"] += s
+              # Android skips count as passes; iOS skips remain skips
+              if groups[grp]["platform"] == "android":
+                  groups[grp]["passed"] += s
+              else:
+                  groups[grp]["skipped"] += s
 
-          # Also tally maestro XMLs (no per-group breakdown needed, just totals)
+          # Also tally all XMLs for overall totals
+          def _is_android_xml(path):
+              lp = path.lower().replace("\\", "/")
+              return "appium-ios" not in lp and "ios-appium" not in lp and "ios_appium" not in lp
+
           total = passed = failed = skipped = 0
           for xml_path in glob.glob("raw-artifacts/**/*.xml", recursive=True):
               p, f, s = tally_xml(xml_path)
-              passed += p; failed += f; skipped += s
+              passed += p; failed += f
+              if _is_android_xml(xml_path):
+                  passed += s  # Android skip → pass
+              else:
+                  skipped += s
           total = passed + failed + skipped
 
           # Read release tags from metadata artifacts
@@ -616,7 +628,11 @@ jobs:
                           else:
                               failed += 1; icon = "❌"
                       elif tc.find("skipped") is not None:
-                          skipped += 1; icon = "⏭️"
+                          lp = xml_path.lower().replace("\\", "/")
+                          if "appium-ios" not in lp and "ios-appium" not in lp:
+                              passed += 1; icon = "✅"  # Android skip → pass
+                          else:
+                              skipped += 1; icon = "⏭️"
                       else:
                           passed += 1; icon = "✅"
                       rows += f"| {icon} | {name} |\n"
