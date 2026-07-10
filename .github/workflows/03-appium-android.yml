@@ -11,7 +11,7 @@ on:
   pull_request:
     branches: [main, develop]
   schedule:
-    - cron: "0 2 * * 1"
+    - cron: "0 4 * * *"  # Daily 04:00 UTC = 10:00 AM BDT (UTC+6)
   workflow_dispatch:
     inputs:
       marker:
@@ -27,8 +27,8 @@ jobs:
   appium-tests:
     name: Android Appium — ${{ matrix.group.name }}
     runs-on: ubuntu-latest
-    # Each group: ~60 tests × 4 min avg + 40 min emulator boot = ~280 min; outer script timeout 300m
-    timeout-minutes: 360
+    # Each group: ~60 tests × 3 min avg + 40 min emulator boot = ~220 min
+    timeout-minutes: 240
 
     strategy:
       fail-fast: false   # one group failing must not cancel others
@@ -164,7 +164,7 @@ jobs:
 
       - name: Run Appium Tests on Emulator — ${{ matrix.group.name }}
         uses: reactivecircus/android-emulator-runner@v2
-        timeout-minutes: 320
+        timeout-minutes: 210
         env:
           PLATFORM: android
           DEVICE_MODE: emulator

@@ -5,6 +5,7 @@ from utils.helpers import screenshot, wait_for_animation, image_xpath
 from utils.markers import android_apk_regression
 
 
+@pytest.mark.streaming
 class TestLiveBroadcast:
     """
     Agora RTC live streaming flow tests.
@@ -14,10 +15,7 @@ class TestLiveBroadcast:
     @android_apk_regression
     def test_live_broadcast_screen_accessible(self, driver):
         """Live Broadcast option should be accessible from home."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        LoginPage(driver).login()
 
         page = BasePage(driver)
         page.tap_optional("Live Broadcast")
@@ -32,10 +30,7 @@ class TestLiveBroadcast:
     @android_apk_regression
     def test_visual_documentation_section_loads(self, driver):
         """Visual documentations tab should load without crash."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        LoginPage(driver).login()
 
         page = BasePage(driver)
         page.tap_optional("Visual documentations")
@@ -48,10 +43,7 @@ class TestLiveBroadcast:
 
     def test_live_broadcast_permissions_requested(self, driver):
         """Joining a live stream should request camera/mic permissions (or show already granted)."""
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
+        LoginPage(driver).login()
 
         page = BasePage(driver)
         page.tap_optional("Live Broadcast")

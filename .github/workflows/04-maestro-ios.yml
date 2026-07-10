@@ -20,7 +20,7 @@ on:
         required: false
         default: ""
   schedule:
-    - cron: "0 3 * * 2"   # Every Tuesday 03:00 UTC — runs smoke (see suite resolution below)
+    - cron: "0 4 * * *"  # Daily 04:00 UTC = 10:00 AM BDT (UTC+6)
 
 concurrency:
   group: maestro-ios-${{ github.ref }}
@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   ios-maestro:
-    name: Maestro ${{ github.event.inputs.suite || (github.event_name == 'schedule' && 'smoke' || 'regression') }} — iOS Simulator
+    name: Maestro ${{ github.event.inputs.suite || 'regression' }} — iOS Simulator
     runs-on: macos-15
     timeout-minutes: 300
     env:
@@ -125,11 +125,7 @@ jobs:
 
       - name: Run Maestro Suite (per-flow JUnit)
         run: |
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            SUITE="smoke"
-          else
-            SUITE="${{ github.event.inputs.suite || 'regression' }}"
-          fi
+          SUITE="${{ github.event.inputs.suite || 'regression' }}"
           echo "Running Maestro suite: $SUITE"
           bash testing/run_maestro_ios_ci.sh "$SUITE"
 
@@ -198,7 +194,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: maestro-ios-junit-${{ github.event.inputs.suite || 'smoke' }}-${{ github.run_number }}
+          name: maestro-ios-junit-${{ github.event.inputs.suite || 'regression' }}-${{ github.run_number }}
           path: testing/maestro/reports/
           retention-days: 30
 

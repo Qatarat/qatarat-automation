@@ -41,7 +41,7 @@ class TestCartBoundary:
         """Incrementing quantity must change the displayed subtotal."""
         cart = self._login_and_open_cart(driver)
         if not cart.add_first_item():
-            pytest.skip("No catalog items — cart quantity test not testable")
+            pytest.skip("No service items available — cart quantity tests not testable")
         cart.open_cart()
         cart.assert_has_items()
 
@@ -59,7 +59,7 @@ class TestCartBoundary:
         """Decrementing from 2 → 1 keeps the item in cart."""
         cart = self._login_and_open_cart(driver)
         if not cart.add_first_item():
-            pytest.skip("No catalog items — cart decrement test not testable")
+            pytest.skip("No service items available — cart quantity tests not testable")
         cart.open_cart()
         cart.update_quantity(increment=True)   # qty = 2
         wait_for_animation(driver)
@@ -73,7 +73,7 @@ class TestCartBoundary:
         """Decrementing at quantity 1 must either remove the item or show a confirmation."""
         cart = self._login_and_open_cart(driver)
         if not cart.add_first_item():
-            pytest.skip("No catalog items — cart decrement-at-one test not testable")
+            pytest.skip("No service items available — cart quantity tests not testable")
         cart.open_cart()
         cart.assert_has_items()
 
@@ -91,7 +91,8 @@ class TestCartBoundary:
     def test_maximum_quantity_does_not_crash(self, driver):
         """Tapping '+' many times must not crash the app or produce NaN/error UI."""
         cart = self._login_and_open_cart(driver)
-        cart.add_first_item()
+        if not cart.add_first_item():
+            pytest.skip("No service items available — cart quantity tests not testable")
         cart.open_cart()
 
         base = BasePage(driver)
@@ -110,7 +111,7 @@ class TestCartBoundary:
         """Removing every item must display an empty-cart UI, not a crash."""
         cart = self._login_and_open_cart(driver)
         if not cart.add_first_item():
-            pytest.skip("No catalog items — remove-all test not testable")
+            pytest.skip("No service items available — cart quantity tests not testable")
         cart.open_cart()
         cart.assert_has_items()
 

@@ -29,7 +29,8 @@ class TestProfileEdgeCases:
         found_logout = False
         for _ in range(6):
             for lbl in ["Logout", "Log out", "Sign out", "تسجيل الخروج"]:
-                if base.tap_optional(lbl, timeout=2):
+                if base.is_visible(lbl, timeout=2):
+                    base.tap_optional(lbl, timeout=2)
                     found_logout = True
                     break
             if found_logout:
@@ -48,7 +49,8 @@ class TestProfileEdgeCases:
             pytest.skip("Logout confirmation dialog did not appear — dialog UI may have changed")
 
         for cancel_label in ["No", "Cancel", "Keep me logged in", "Stay", "لا", "إلغاء"]:
-            if base.tap_optional(cancel_label, timeout=2):
+            if base.is_visible(cancel_label, timeout=2):
+                base.tap_optional(cancel_label, timeout=2)
                 break
         wait_for_animation(driver)
 
@@ -91,7 +93,8 @@ class TestProfileEdgeCases:
             pytest.skip("Delete account confirmation dialog did not appear")
 
         for cancel in ["No", "Cancel", "Keep", "لا", "إلغاء"]:
-            if base.tap_optional(cancel, timeout=2):
+            if base.is_visible(cancel, timeout=2):
+                base.tap_optional(cancel, timeout=2)
                 break
         wait_for_animation(driver)
 

@@ -13,12 +13,8 @@ class TestMosqueProfile:
     """Tests covering mosque search functionality and profile page content."""
 
     def _login_and_open_search(self, driver):
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
-        page = MosquePage(driver)
-        return page
+        LoginPage(driver).login()
+        return MosquePage(driver)
 
     @allure.story("Search")
     @allure.title("Search for a mosque by a valid full name returns results")

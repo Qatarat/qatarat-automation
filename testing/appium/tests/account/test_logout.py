@@ -61,7 +61,8 @@ class TestLogout:
             pytest.skip("Logout confirmation dialog not shown — app may log out directly")
 
         for cancel_label in ["No", "Cancel", "Keep me logged in", "Stay", "لا", "إلغاء"]:
-            if base.tap_optional(cancel_label, timeout=2):
+            if base.is_visible(cancel_label, timeout=2):
+                base.tap_optional(cancel_label, timeout=2)
                 break
         wait_for_animation(driver)
 
@@ -150,10 +151,10 @@ class TestLogout:
         wait_for_animation(driver, 2)
         base = BasePage(driver)
         # None of the authenticated-only labels should appear
-        assert not base.is_visible("My Orders", timeout=3) and \
-               not base.is_visible("Cart", timeout=3) or \
-               base.is_visible("Login") or \
-               base.is_visible("Phone"), \
+        assert base.is_visible("Login") or \
+               base.is_visible("Phone") or \
+               (not base.is_visible("My Orders", timeout=3) and
+                not base.is_visible("Cart", timeout=3)), \
             "Auth-only content visible after logout — possible session token leak"
         screenshot(driver, "logout_no_session_leak")
 

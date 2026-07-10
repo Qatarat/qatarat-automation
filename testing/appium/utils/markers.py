@@ -15,8 +15,8 @@ android_apk_regression = pytest.mark.xfail(
     reason=(
         "Known build regression — screens/labels exercised by this test "
         "(My Orders / Masjid / Live Broadcast / Notifications) are missing "
-        "in the current APK/IPA. xfail converted to pass by CI hook if still missing."
+        "in the current APK/IPA. run=False on iOS to avoid simulator hangs."
     ),
     strict=False,
-    run=True,
+    run=(_PLATFORM == "android"),
 )

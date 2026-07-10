@@ -92,9 +92,9 @@ if [ "${IOS_MAESTRO_RUN_FLOWS:-false}" != "true" ]; then
       skipped \
       "iOS Maestro flow execution disabled by default; set IOS_MAESTRO_RUN_FLOWS=true to run simulator flows"
     echo "⏭ $flow skipped — iOS Maestro flow execution disabled"
-  done < <(flows_for_suite)
+  done < <(ls "$FLOWS_DIR"/[0-9][0-9]_*.yaml 2>/dev/null | sort)
   echo ""
-  echo "iOS Maestro ${SUITE} complete: flows collected as skipped."
+  echo "iOS Maestro ${SUITE} complete: all flows collected as skipped."
   exit 0
 fi
 

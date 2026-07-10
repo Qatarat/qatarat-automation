@@ -14,14 +14,10 @@ class TestPromoCodes:
     """Exhaustive promo-code tests: valid, invalid, boundary, and injection attempts."""
 
     def _login_and_reach_promo(self, driver):
-        login = LoginPage(driver)
-        login.select_country_and_language()
-        login.skip_onboarding()
-        login.login()
-
+        LoginPage(driver).login()
         cart = CartPage(driver)
         if not cart.add_first_item():
-            pytest.skip("No catalog items found — promo tests not testable")
+            pytest.skip("No service items found — promo tests not testable")
         cart.open_cart()
         return cart
 
@@ -32,7 +28,7 @@ class TestPromoCodes:
         try:
             cart.assert_promo_applied()
         except AssertionError:
-            pytest.skip(f"Promo code {ValidData.PROMO!r} not applied — may not be configured on stage")
+            pytest.skip(f"Promo code '{ValidData.PROMO}' not applied — code may be expired or invalid in stage")
         screenshot(driver, "promo_valid_applied")
 
     def test_invalid_promo_shows_error(self, driver):
