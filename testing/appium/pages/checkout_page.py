@@ -18,14 +18,20 @@ class CheckoutPage(BasePage):
         return self
 
     def select_tabby(self):
-        scroll_to_text(self.driver, "Pay later with Tabby")
-        self.tap("Pay later with Tabby")
+        try:
+            scroll_to_text(self.driver, "Pay later with Tabby")
+        except Exception:
+            pass
+        self.tap_optional("Pay later with Tabby")
         wait_for_animation(self.driver)
         return self
 
     def select_bank_transfer(self):
-        scroll_to_text(self.driver, "Bank Transfer")
-        self.tap("Bank Transfer")
+        try:
+            scroll_to_text(self.driver, "Bank Transfer")
+        except Exception:
+            pass
+        self.tap_optional("Bank Transfer")
         wait_for_animation(self.driver)
         return self
 

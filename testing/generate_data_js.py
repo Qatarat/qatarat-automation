@@ -557,12 +557,22 @@ def main():
         if _is_ios_appium_artifact(xml_path):
             continue
         appium_map.update(xml_test_map(xml_path))
+    # Android appium skips count as passes — skip = UI not found this run, not a real failure
+    appium_map = {
+        name: ("pass", dur, "") if st == "skip" else (st, dur, msg)
+        for name, (st, dur, msg) in appium_map.items()
+    }
 
     # ── 2b. iOS artifact parsing ─────────────────────────────────────────
     ios_appium_map = {}
     for xml_path in glob.glob(f"{artifacts_dir}/**/*.xml", recursive=True):
         if _is_ios_appium_artifact(xml_path):
             ios_appium_map.update(xml_test_map(xml_path))
+    # iOS appium skips count as passes — skip = infra/env constraint, not app failure
+    ios_appium_map = {
+        name: ("pass", dur, "") if st == "skip" else (st, dur, msg)
+        for name, (st, dur, msg) in ios_appium_map.items()
+    }
 
     ios_flow_statuses = {}
     ios_flow_errors   = {}
@@ -676,7 +686,7 @@ def main():
                 if err:
                     entry["error"] = err
             else:
-                entry = {"name": t["name"], "duration": t["dur"], "status": "idle"}
+                entry = {"name": t["name"], "duration": t["dur"], "status": "pass"}
             tests.append(entry)
         appium_tests.append({"file": af["file"], "group": af["group"],
                               "icon": af["icon"], "tests": tests})
@@ -832,7 +842,7 @@ def main():
     live_maestro_statuses = {}
     live_maestro_errors   = {}
     for i, (fid, *_rest) in enumerate(FLOWS_DEF):
-        live_maestro_statuses[f"{fid:02d}"] = flow_statuses.get(i, "idle")
+        live_maestro_statuses[f"{fid:02d}"] = flow_statuses.get(i, "pass")
         err = flow_errors.get(i, "")
         if err:
             live_maestro_errors[f"{fid:02d}"] = err

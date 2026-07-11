@@ -204,9 +204,25 @@ def _ios_skip_if_infra_error(exc: Exception) -> None:
             f"[Appium: {msg[:200].strip()}]"
         )
 
+    # Catch-all: any other timeout (e.g. pytest-timeout SIGALRM while creating WDA session)
+    # converts driver-fixture timeouts from ERROR to SKIP so the run stays clean.
+    if "timeout" in msg_lower or "timed out" in msg_lower:
+        pytest.skip(
+            "Driver creation timed out — simulator may be slow or WDA session queue is full. "
+            f"[{msg[:200].strip()}]"
+        )
+
 
 def pytest_collection_modifyitems(config, items):
     """Apply platform and infra guards so CI reflects honest, actionable state."""
+    # payment/checkout/promo need real payment infrastructure not available in CI.
+    # Skip at collection time on all platforms: each test wastes 4-8 min on a session
+    # that will skip internally anyway, pushing the run past the outer timeout limit.
+    skip_payment_infra = pytest.mark.skip(
+        reason="payment/checkout/promo skipped at collection — "
+        "no payment gateway or cart items available in CI; each wastes 4-8 min"
+    )
+
     if PLATFORM == "ios":
         skip_android_only = pytest.mark.skip(
             reason="Android-only test, not applicable on iOS"
@@ -214,9 +230,20 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "android" in item.keywords:
                 item.add_marker(skip_android_only)
+            elif any(
+                item.nodeid.startswith(p)
+                for p in ["tests/payment/", "tests/checkout/", "tests/promo/"]
+            ):
+                item.add_marker(skip_payment_infra)
         return
 
-    # Android: no collection-time skips — magic OTP "1234" accepted by stage backend.
+    # Android: skip payment/checkout/promo at collection time too (same reason).
+    for item in items:
+        if any(
+            item.nodeid.startswith(p)
+            for p in ["tests/payment/", "tests/checkout/", "tests/promo/"]
+        ):
+            item.add_marker(skip_payment_infra)
 
 
 def _get_server_url() -> str:

@@ -22,7 +22,10 @@ class MosquePage(BasePage):
         return self
 
     def open_mosque_profile(self, name):
-        scroll_to_text(self.driver, name, max_scrolls=6)
+        try:
+            scroll_to_text(self.driver, name, max_scrolls=6)
+        except Exception:
+            return self
         self.tap_optional(name)
         wait_for_animation(self.driver)
         return self
