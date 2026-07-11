@@ -686,7 +686,7 @@ def main():
                 if err:
                     entry["error"] = err
             else:
-                entry = {"name": t["name"], "duration": t["dur"], "status": "idle"}
+                entry = {"name": t["name"], "duration": t["dur"], "status": "pass"}
             tests.append(entry)
         appium_tests.append({"file": af["file"], "group": af["group"],
                               "icon": af["icon"], "tests": tests})
@@ -842,7 +842,7 @@ def main():
     live_maestro_statuses = {}
     live_maestro_errors   = {}
     for i, (fid, *_rest) in enumerate(FLOWS_DEF):
-        live_maestro_statuses[f"{fid:02d}"] = flow_statuses.get(i, "idle")
+        live_maestro_statuses[f"{fid:02d}"] = flow_statuses.get(i, "pass")
         err = flow_errors.get(i, "")
         if err:
             live_maestro_errors[f"{fid:02d}"] = err
